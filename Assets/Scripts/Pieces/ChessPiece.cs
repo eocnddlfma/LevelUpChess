@@ -10,9 +10,12 @@ public enum Team
 public class ChessPiece : MonoBehaviour
 {
     public Team team = Team.White;
-    public int maxHealth = 10;
-    public int currentHealth = 10;
-    public int attackPower = 3;
+    public int maxHealth = 1;
+    public int currentHealth = 1;
+    public int attackPower = 1;
+
+    // true if this piece has moved at least once (used for pawn initial two-square move, castling, etc.)
+    public bool HasMoved = false;
 
     // 이동/공격 가능한 좌표는 게임로직에서 계산하여 Tile.ShowHighlight로 표시할 예정
 
@@ -28,6 +31,7 @@ public class ChessPiece : MonoBehaviour
 
     public void PlaceOnTile(Tile tile)
     {
+        var previous = currentTile;
         if (currentTile != null)
         {
             currentTile.OccupyingPiece = null;
@@ -37,18 +41,13 @@ public class ChessPiece : MonoBehaviour
         if (tile != null)
         {
             tile.OccupyingPiece = this;
-            // 2D 공간에서는 tile의 position.x,y를 사용하고 약간 위로 띄우려면 z를 변경하지 않음
             Vector3 target = tile.transform.position;
-            // 만약 SpriteRenderer가 있으면 sorting과 Y offset을 고려해서 위치 보정
-            if (_spriteRenderer != null)
-            {
-                transform.position = new Vector3(target.x, target.y, target.z);
-            }
-            else
-            {
-                transform.position = new Vector3(target.x, target.y, target.z);
-            }
+            transform.position = new Vector3(target.x, target.y, target.z);
         }
+
+        // If we moved from a previous tile to a new tile, mark as moved.
+        if (previous != null && tile != null && previous != tile)
+            HasMoved = true;
     }
 
     public void TakeDamage(int amount)

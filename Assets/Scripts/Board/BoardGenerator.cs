@@ -6,38 +6,32 @@ using UnityEngine;
 /// </summary>
 public class BoardGenerator : MonoBehaviour
 {
-    public GameObject tilePrefab; // 타일 프리팹 (Plane 혹은 Quad에 Tile 컴포넌트를 붙인 것)
+    public GameObject tilePrefab; 
     public int width = 8;
     public int height = 8;
-    public float spacing = 1.1f; // 타일 간 간격
+    public float spacing = 1.1f; 
     public Color whiteColor = Color.white;
     public Color greenColor = Color.green;
 
     private Tile[,] _tiles;
 
-    // Note: generation is done explicitly via editor button or by calling GenerateBoard().
-    // This avoids creating the board automatically at Play Mode start so designers can
-    // control board creation in the Editor.
-    private void Start()
-    {
-        // Intentionally left blank. Use GenerateBoard() from editor or runtime explicitly.
-    }
-
     public void GenerateBoard()
     {
         // 기존 보드가 있으면 삭제
         ClearBoard();
-
         _tiles = new Tile[width, height];
+
+        // reset local position so placement is deterministic
+        transform.localPosition = Vector3.zero;
 
         for (int x = 0; x < width; x++)
         {
             for (int y = 0; y < height; y++)
             {
-                // 2D: use X/Y plane (z set to 0)
-                Vector3 pos = new Vector3(x * spacing, y * spacing, 0f);
-                GameObject go = Instantiate(tilePrefab, pos, Quaternion.identity, transform);
-                go.name = $"Tile_{x}_{y}";
+                Vector3 localPos = new Vector3(x * spacing, y * spacing, 0f);
+                GameObject go = Instantiate(tilePrefab, transform);
+                go.name = "Tile_" + x + "_" + y;
+                go.transform.localPosition = localPos;
 
                 Tile tile = go.GetComponent<Tile>();
                 if (tile == null)
@@ -48,7 +42,6 @@ public class BoardGenerator : MonoBehaviour
 
                 tile.coordinate = new Vector2Int(x, y);
 
-                // 색상 교차 (흰/검)
                 bool isWhite = ((x + y) % 2 == 0);
                 tile.SetColor(isWhite ? whiteColor : greenColor);
 
@@ -56,9 +49,9 @@ public class BoardGenerator : MonoBehaviour
             }
         }
 
-    // 보드 가운데로 이동 (2D: X/Y)
-    Vector3 centerOffset = new Vector3((width - 1) * spacing / 2f, (height - 1) * spacing / 2f, 0f);
-    transform.position = -centerOffset;
+        // center board locally
+        Vector3 centerOffset = new Vector3((width - 1) * spacing / 2f, (height - 1) * spacing / 2f, 0f);
+        transform.localPosition = -centerOffset;
     }
 
     /// <summary>

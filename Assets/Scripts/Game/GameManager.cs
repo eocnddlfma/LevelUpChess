@@ -11,7 +11,9 @@ public class GameManager : MonoBehaviour
     private void Awake()
     {
         if (boardGenerator == null)
-            boardGenerator = FindObjectOfType<BoardGenerator>();
+            // FindFirstObjectByType replaces the deprecated FindObjectOfType API.
+            // It returns the first matching instance in the scene and is the recommended replacement.
+            boardGenerator = Object.FindFirstObjectByType<BoardGenerator>();
 
         if (boardGenerator == null)
             Debug.LogError("No BoardGenerator found in scene. Attach GameManager to scene and assign or add a BoardGenerator.");
