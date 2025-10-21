@@ -1,24 +1,19 @@
 using UnityEngine;
 
 [RequireComponent(typeof(Collider2D))]
-public class Tile : MonoBehaviour
+public class Tile : Clickable
 {
     public Vector2Int coordinate;
-    [SerializeField] GameObject highlightObject;
-    [SerializeField] GameObject baseColorObject;
-
-    ChessPiece _occupyingPiece;
+    [SerializeField] private GameObject highlightObject;
+    [SerializeField] private GameObject baseColorObject;
+    [SerializeField] private GameObject moveableIndicator;
+    [SerializeField] private GameObject attackableIndicator;
+    public ChessPiece occupyingPiece;
 
     public ChessPiece OccupyingPiece
     {
-        get
-        {
-            return _occupyingPiece;
-        }
-        set
-        {
-            _occupyingPiece = value;
-        }
+        get { return occupyingPiece; }
+        set { occupyingPiece = value; }
     }
 
     void Awake()
@@ -26,6 +21,16 @@ public class Tile : MonoBehaviour
         if (highlightObject != null)
         {
             highlightObject.SetActive(false);
+        }
+
+        if (moveableIndicator != null)
+        {
+            moveableIndicator.SetActive(false);
+        }
+
+        if (attackableIndicator != null)
+        {
+            attackableIndicator.SetActive(false);
         }
     }
     public void SetColor(Color color)
@@ -36,16 +41,39 @@ public class Tile : MonoBehaviour
         }
     }
 
-    public void ShowHighlight(bool show)
+    public void SetHighlight(bool show)
     {
+        Debug.Log($"[Tile.SetHighlight] Coordinate: {coordinate}, Show: {show}, highlightObject: {highlightObject}");
         if (highlightObject != null)
         {
             highlightObject.SetActive(show);
         }
+        else
+        {
+            Debug.LogWarning($"[Tile] highlightObject is null on tile {coordinate}");
+        }
     }
 
-    void OnMouseDown()
+    public void SetMoveable(bool show)
     {
-        Debug.Log("Tile clicked: " + coordinate);
+        if (moveableIndicator != null)
+        {
+            moveableIndicator.SetActive(show);
+        }
+    }
+
+    public void SetAttackable(bool show)
+    {
+        if (attackableIndicator != null)
+        {
+            attackableIndicator.SetActive(show);
+        }
+    }
+
+    public void ClearIndicators()
+    {
+        SetHighlight(false);
+        SetMoveable(false);
+        SetAttackable(false);
     }
 }
