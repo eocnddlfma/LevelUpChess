@@ -1,9 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-/// <summary>
-/// 룩의 이동 방식을 정의합니다
-/// </summary>
+
 [CreateAssetMenu(fileName = "RookMovement", menuName = "Chess/Piece Movement/Rook")]
 public class RookMovement : PieceMovement
 {
