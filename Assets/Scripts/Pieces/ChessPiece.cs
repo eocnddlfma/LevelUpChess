@@ -1,5 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
+using DG.Tweening;
+using Events;
 
 public enum Team
 {
@@ -27,14 +29,15 @@ public class ChessPiece : Interactable
     public int maxHealth = 1;
     public int currentHealth = 1;
     public int attackPower = 1;
+    public float moveDuration = 0.1f;
 
-    // true if this piece has moved at least once (used for pawn initial two-square move, castling, etc.)
     public bool HasMoved = false;
 
     [HideInInspector]
     public Tile currentTile;
 
     private SpriteRenderer _spriteRenderer;
+    private Tween _currentMoveTween;  // 진행 중인 이동 트윈 추적
 
     private void Awake()
     {
@@ -56,16 +59,52 @@ public class ChessPiece : Interactable
             Vector3 target = tile.transform.position;
             transform.position = new Vector3(target.x, target.y, target.z);
 
-            // BoardManager에 말 위치 등록
             if (BoardManager.Instance != null)
             {
                 BoardManager.Instance.RegisterPiece(this, tile.coordinate);
             }
         }
 
-        // If we moved from a previous tile to a new tile, mark as moved.
         if (previous != null && tile != null && previous != tile)
             HasMoved = true;
+    }
+
+    public Tween MoveToTile(Tile tile, float duration = -1f)
+    {
+        if (duration < 0)
+            duration = moveDuration;
+
+        // 이전 트윈이 있으면 정리
+        if (_currentMoveTween != null && _currentMoveTween.IsActive())
+        {
+            _currentMoveTween.Kill();
+        }
+
+        var previous = currentTile;
+        if (currentTile != null)
+        {
+            currentTile.occupyingPiece = null;
+        }
+
+        currentTile = tile;
+        if (tile != null)
+        {
+            tile.OccupyingPiece = this;
+
+            if (BoardManager.Instance != null)
+            {
+                BoardManager.Instance.RegisterPiece(this, tile.coordinate);
+            }
+        }
+
+        Vector3 targetPos = tile.transform.position;
+        targetPos.z = transform.position.z;
+
+        if (previous != null && tile != null && previous != tile)
+            HasMoved = true;
+
+        _currentMoveTween = transform.DOMove(targetPos, duration).SetEase(Ease.InOutQuad);
+        return _currentMoveTween;
     }
 
     public void TakeDamage(int amount)
@@ -79,15 +118,26 @@ public class ChessPiece : Interactable
 
     public void Die()
     {
+        // 진행 중인 트윈 정리
+        if (_currentMoveTween != null && _currentMoveTween.IsActive())
+        {
+            _currentMoveTween.Kill();
+        }
+
         if (currentTile != null)
         {
             currentTile.OccupyingPiece = null;
         }
 
-        // BoardManager에서 말 등록 해제
         if (BoardManager.Instance != null)
         {
             BoardManager.Instance.UnregisterPiece(this);
+        }
+
+        if (pieceType == PieceType.King)
+        {
+            Team winnerTeam = team == Team.White ? Team.Black : Team.White;
+            Bus<GameOverEvent>.Raise(new GameOverEvent { WinnerTeam = winnerTeam });
         }
 
         Destroy(gameObject);

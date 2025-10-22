@@ -1,5 +1,5 @@
 using UnityEngine;
-using Code.CoreSystem;
+using Events;
 
 public class InputManager : MonoBehaviour
 {

@@ -15,7 +15,6 @@ public class ChessPiecePrefabGenerator : EditorWindow
     private RookMovement rookMovement;
     private KnightMovement knightMovement;
     private BishopMovement bishopMovement;
-    private QueenMovement queenMovement;
     private KingMovement kingMovement;
 
     [MenuItem("Tools/Chess/Generate Piece Prefabs")]
@@ -44,7 +43,6 @@ public class ChessPiecePrefabGenerator : EditorWindow
         rookMovement = (RookMovement)EditorGUILayout.ObjectField("Rook Movement", rookMovement, typeof(RookMovement), false);
         knightMovement = (KnightMovement)EditorGUILayout.ObjectField("Knight Movement", knightMovement, typeof(KnightMovement), false);
         bishopMovement = (BishopMovement)EditorGUILayout.ObjectField("Bishop Movement", bishopMovement, typeof(BishopMovement), false);
-        queenMovement = (QueenMovement)EditorGUILayout.ObjectField("Queen Movement", queenMovement, typeof(QueenMovement), false);
         kingMovement = (KingMovement)EditorGUILayout.ObjectField("King Movement", kingMovement, typeof(KingMovement), false);
 
         EditorGUILayout.Space();

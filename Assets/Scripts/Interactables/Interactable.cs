@@ -1,7 +1,7 @@
 using System;
 using UnityEngine;
 using UnityEngine.EventSystems;
-using Code.CoreSystem;
+using Events;
 
 public abstract class Interactable : Clickable, IBeginDragHandler, IDragHandler, IEndDragHandler
 {

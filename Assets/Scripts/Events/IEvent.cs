@@ -1,4 +1,4 @@
-namespace Code.CoreSystem
+namespace Events
 {
         public interface IEvent { }
 }

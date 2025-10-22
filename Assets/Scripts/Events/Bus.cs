@@ -1,6 +1,4 @@
-using System;
-
-namespace Code.CoreSystem
+namespace Events
 {
     public static class Bus<T> where T : IEvent
     {

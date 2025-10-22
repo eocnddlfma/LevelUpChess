@@ -1,11 +1,13 @@
 using System.Collections.Generic;
 using UnityEngine;
-using Code.CoreSystem;
+using DG.Tweening;
+using Events;
 
 public class MovementManager : MonoBehaviour
 {
     private ChessPiece selectedPiece;
     private List<Tile> indicatedTiles = new List<Tile>();
+    private bool isMoving = false;  // 중복 이동 방지
 
     private void OnEnable()
     {
@@ -19,6 +21,9 @@ public class MovementManager : MonoBehaviour
 
     private void OnClickableSelected(ClickableSelectedEvent eventData)
     {
+        if (GameManager.Instance.IsGameOver)
+            return;
+
         ChessPiece piece = eventData.Clickable as ChessPiece;
         if (piece != null)
         {
@@ -130,28 +135,51 @@ public class MovementManager : MonoBehaviour
         if (selectedPiece == null || targetTile == null)
             return;
 
+        if (isMoving)  // 중복 이동 방지
+            return;
+
+        isMoving = true;
+
         Vector2Int fromPos = selectedPiece.currentTile.coordinate;
         Vector2Int toPos = targetTile.coordinate;
         Move usedMove = GetMoveInfo(selectedPiece, toPos);
 
-        HandleCapture(targetTile, usedMove);
-        HandleEnPassant(usedMove);
-        HandleCastling(usedMove);
+        // 캡처 대상이 있으면 먼저 제거
+        ChessPiece capturedPiece = targetTile.OccupyingPiece;
+        if (capturedPiece != null && capturedPiece.team != selectedPiece.team)
+        {
+            capturedPiece.Die();
+        }
 
-        selectedPiece.PlaceOnTile(targetTile);
-        GameManager.Instance.RecordLastMove(selectedPiece, fromPos, toPos);
+        HandleCastlingBeforeMove(usedMove);
 
-        ClearSelection();
-        GameManager.Instance.EndTurn();
+        Tween moveTween = selectedPiece.MoveToTile(targetTile);
+
+        moveTween.OnComplete(() =>
+        {
+            HandleEnPassant(usedMove);
+            
+            // 캐슬링: Rook 애니메이션 완료 대기
+            if (usedMove.isCastling)
+            {
+                HandleCastlingAfterMove(usedMove, () =>
+                {
+                    CompleteMove(fromPos, toPos);
+                });
+            }
+            else
+            {
+                CompleteMove(fromPos, toPos);
+            }
+        });
     }
 
-    private void HandleCapture(Tile targetTile, Move move)
+    private void CompleteMove(Vector2Int fromPos, Vector2Int toPos)
     {
-        if (!move.isCapture && targetTile.OccupyingPiece == null)
-            return;
-
-        if (targetTile.OccupyingPiece != null && targetTile.OccupyingPiece.team != selectedPiece.team)
-            targetTile.OccupyingPiece.Die();
+        GameManager.Instance.RecordLastMove(selectedPiece, fromPos, toPos);
+        ClearSelection();
+        GameManager.Instance.EndTurn();
+        isMoving = false;
     }
 
     private void HandleEnPassant(Move move)
@@ -174,8 +202,36 @@ public class MovementManager : MonoBehaviour
         {
             Tile rookTargetTile = BoardManager.Instance.GetTileAt(move.rookToPos);
             if (rookTargetTile != null)
-                rook.PlaceOnTile(rookTargetTile);
+                rook.MoveToTile(rookTargetTile);
         }
+    }
+
+    private void HandleCastlingBeforeMove(Move move)
+    {
+        // 캐슬링 전에 필요한 처리 (현재는 없음)
+    }
+
+    private void HandleCastlingAfterMove(Move move, System.Action onComplete = null)
+    {
+        if (!move.isCastling)
+        {
+            onComplete?.Invoke();
+            return;
+        }
+
+        ChessPiece rook = BoardManager.Instance.GetPieceAt(move.rookFromPos);
+        if (rook != null && rook.pieceType == PieceType.Rook)
+        {
+            Tile rookTargetTile = BoardManager.Instance.GetTileAt(move.rookToPos);
+            if (rookTargetTile != null)
+            {
+                Tween rookTween = rook.MoveToTile(rookTargetTile);
+                rookTween.OnComplete(() => onComplete?.Invoke());
+                return;
+            }
+        }
+
+        onComplete?.Invoke();
     }
 
     private Move GetMoveInfo(ChessPiece piece, Vector2Int targetPos)
