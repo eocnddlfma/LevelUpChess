@@ -15,7 +15,12 @@ using Unity.Networking.Transport.Relay;
 public class ChessNetworkManager : MonoBehaviour
 {
     private const int MAX_PLAYERS = 2;
-    private const string CONNECTION_TYPE = "dtls";
+    
+#if UNITY_WEBGL
+    private const string CONNECTION_TYPE = "wss";  // WebGL: WebSocket Secure
+#else
+    private const string CONNECTION_TYPE = "dtls";  // Desktop/Mobile: DTLS
+#endif
 
     [Header("Networking")]
     [SerializeField] private UnityLobbyManager lobbyManager;
@@ -233,17 +238,28 @@ public class ChessNetworkManager : MonoBehaviour
             // 1. Relay Allocation 생성
             AddChatMessage("[HOST] Creating Relay allocation...");
             allocation = await RelayService.Instance.CreateAllocationAsync(MAX_PLAYERS);
-            AddChatMessage("[HOST] [OK] Relay allocation created");
+            AddChatMessage("[HOST] ✓ Relay allocation created");
+            Debug.Log($"[ChessNetwork] Allocation ID: {allocation.AllocationId}");
             
             AddChatMessage("[HOST] Generating join code...");
             joinCode = await RelayService.Instance.GetJoinCodeAsync(allocation.AllocationId);
             Debug.Log($"[ChessNetwork] Relay Join Code: {joinCode}");
-            AddChatMessage($"[HOST] [OK] Join code: {joinCode}");
+            AddChatMessage($"[HOST] ✓ Join code: {joinCode}");
 
             // 2. Lobby에 Join Code 저장 (클라이언트가 가져갈 수 있도록)
             AddChatMessage("[HOST] Sharing connection info with lobby...");
-            await lobbyManager.UpdateRelayCodeAsync(joinCode);
-            AddChatMessage("[HOST] [OK] Connection info shared");
+            try
+            {
+                await lobbyManager.UpdateRelayCodeAsync(joinCode);
+                AddChatMessage("[HOST] ✓ Connection info shared to lobby");
+                Debug.Log("[ChessNetwork] Relay code successfully saved to lobby");
+            }
+            catch (Exception lobbyEx)
+            {
+                Debug.LogError($"[ChessNetwork] Failed to update lobby with relay code: {lobbyEx.Message}");
+                AddChatMessage($"[HOST] ⚠️ Lobby update failed: {lobbyEx.Message}");
+                throw;
+            }
 
             // 3. Transport 설정
             AddChatMessage("[HOST] Configuring transport...");
@@ -251,12 +267,16 @@ public class ChessNetworkManager : MonoBehaviour
             if (transport == null)
                 throw new Exception("UnityTransport not found");
 
-            transport.SetRelayServerData(allocation.ToRelayServerData(CONNECTION_TYPE));
-            AddChatMessage("[HOST] [OK] Transport configured");
-
 #if UNITY_WEBGL
+            Debug.Log("[ChessNetwork] WebGL mode: Enabling WebSockets");
             transport.UseWebSockets = true;
+#else
+            Debug.Log("[ChessNetwork] Desktop/Mobile mode: Using DTLS");
 #endif
+
+            transport.SetRelayServerData(allocation.ToRelayServerData(CONNECTION_TYPE));
+            AddChatMessage("[HOST] ✓ Transport configured");
+            Debug.Log($"[ChessNetwork] Transport configured with connection type: {CONNECTION_TYPE}");
 
             // 4. Host 시작
             AddChatMessage("[HOST] Starting network host...");
@@ -264,7 +284,7 @@ public class ChessNetworkManager : MonoBehaviour
             if (!hostStarted)
                 throw new Exception("Failed to start host");
 
-            AddChatMessage("[HOST] [OK] Network host started - Waiting for client...");
+            AddChatMessage("[HOST] ✓ Network host started - Waiting for client...");
             Debug.Log("[ChessNetwork] Host setup completed successfully");
 
             // 5. 완료 처리
@@ -273,7 +293,9 @@ public class ChessNetworkManager : MonoBehaviour
         catch (Exception ex)
         {
             Debug.LogError($"[ChessNetwork] Host setup failed: {ex.Message}");
-            AddChatMessage($"[HOST] Error: {ex.Message}");
+            Debug.LogError($"[ChessNetwork] Exception type: {ex.GetType().Name}");
+            Debug.LogError($"[ChessNetwork] Stack: {ex.StackTrace}");
+            AddChatMessage($"[HOST] ❌ Error: {ex.Message}");
             throw;
         }
     }
@@ -318,12 +340,16 @@ public class ChessNetworkManager : MonoBehaviour
             if (transport == null)
                 throw new Exception("UnityTransport not found");
 
-            transport.SetRelayServerData(joinAllocation.ToRelayServerData(CONNECTION_TYPE));
-            AddChatMessage("[CLIENT] [OK] Transport configured");
-
 #if UNITY_WEBGL
+            Debug.Log("[ChessNetwork] WebGL mode: Enabling WebSockets");
             transport.UseWebSockets = true;
+#else
+            Debug.Log("[ChessNetwork] Desktop/Mobile mode: Using DTLS");
 #endif
+
+            transport.SetRelayServerData(joinAllocation.ToRelayServerData(CONNECTION_TYPE));
+            AddChatMessage("[CLIENT] ✓ Transport configured");
+            Debug.Log($"[ChessNetwork] Transport configured with connection type: {CONNECTION_TYPE}");
 
             // 4. Client 시작
             AddChatMessage("[CLIENT] Starting network client...");
@@ -350,21 +376,34 @@ public class ChessNetworkManager : MonoBehaviour
     /// </summary>
     private async Task<string> WaitForRelayCode()
     {
-        float timeout = 15f;
+        float timeout = 30f;  // 타임아웃 30초로 증가
         float elapsed = 0f;
+        int checkCount = 0;
 
         while (elapsed < timeout)
         {
             string code = lobbyManager.GetRelayJoinCode();
+            checkCount++;
+            
             if (!string.IsNullOrEmpty(code))
             {
+                Debug.Log($"[ChessNetwork] Relay code received after {elapsed:F1}s ({checkCount} checks)");
+                AddChatMessage($"[CLIENT] ✓ Relay code received!");
                 return code;
+            }
+
+            if (checkCount % 4 == 0)  // 2초마다 로그 (0.5초 * 4)
+            {
+                AddChatMessage($"[CLIENT] Waiting for relay code... ({elapsed:F0}s)");
+                Debug.Log($"[ChessNetwork] Still waiting for relay code... {elapsed:F1}s elapsed");
             }
 
             await Task.Delay(500);
             elapsed += 0.5f;
         }
 
+        Debug.LogError("[ChessNetwork] Timeout waiting for relay code!");
+        AddChatMessage("[CLIENT] ❌ Timeout! Host may not have shared relay code");
         return null;
     }
 
