@@ -3,7 +3,7 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using Events;
 
-public abstract class Interactable : Clickable, IBeginDragHandler, IDragHandler, IEndDragHandler
+public abstract class Interactable : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler
 {
     private Vector3 dragOffset;
     private Transform dragTransform;

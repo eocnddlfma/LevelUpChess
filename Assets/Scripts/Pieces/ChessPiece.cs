@@ -134,10 +134,21 @@ public class ChessPiece : Interactable
             BoardManager.Instance.UnregisterPiece(this);
         }
 
+        // King이 죽으면 게임 오버 (NetworkGameManager가 처리)
         if (pieceType == PieceType.King)
         {
             Team winnerTeam = team == Team.White ? Team.Black : Team.White;
-            Bus<GameOverEvent>.Raise(new GameOverEvent { WinnerTeam = winnerTeam });
+            
+            // 네트워크 모드: 서버에 게임 오버 알림
+            if (NetworkGameManager.Instance != null)
+            {
+                NetworkGameManager.Instance.SetGameOverServerRpc(winnerTeam);
+            }
+            else
+            {
+                // 폴백: 로컬 이벤트
+                Bus<GameOverEvent>.Raise(new GameOverEvent { WinnerTeam = winnerTeam });
+            }
         }
 
         Destroy(gameObject);

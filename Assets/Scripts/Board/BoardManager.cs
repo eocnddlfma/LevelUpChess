@@ -1,12 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
 
-
-
-
-
-
-
 public class BoardManager : MonoBehaviour
 {
     public static BoardManager Instance { get; private set; }
@@ -38,8 +32,6 @@ public class BoardManager : MonoBehaviour
         }
     }
 
-    
-    
     
     private void RestoreTilesFrom1DArray()
     {
@@ -122,25 +114,16 @@ public class BoardManager : MonoBehaviour
 
         return _tiles[x, y];
     }
-
-    
-    
     
     public Tile GetTileAt(Vector2Int coord)
     {
         return GetTileAt(coord.x, coord.y);
     }
-
-    
-    
     
     public void RegisterPiece(ChessPiece piece, Vector2Int position)
     {
         _piecePositions[piece] = position;
     }
-
-    
-    
     
     public void MovePiece(ChessPiece piece, Vector2Int fromPos, Vector2Int toPos)
     {
@@ -154,17 +137,11 @@ public class BoardManager : MonoBehaviour
             _piecePositions[piece] = toPos;
         }
     }
-
-    
-    
     
     public void UnregisterPiece(ChessPiece piece)
     {
         _piecePositions.Remove(piece);
     }
-
-    
-    
     
     public Vector2Int GetPiecePosition(ChessPiece piece)
     {
@@ -174,18 +151,12 @@ public class BoardManager : MonoBehaviour
         }
         return Vector2Int.one * -1; 
     }
-
-    
-    
     
     public ChessPiece GetPieceAt(Vector2Int coord)
     {
         Tile tile = GetTileAt(coord);
         return tile != null ? tile.OccupyingPiece : null;
     }
-
-    
-    
     
     public List<ChessPiece> GetPiecesByTeam(Team team)
     {
@@ -199,15 +170,9 @@ public class BoardManager : MonoBehaviour
         }
         return pieces;
     }
-
-    
-    
     
     public int Width => _width;
     public int Height => _height;
-
-    
-    
     
     public Tile[,] Tiles => _tiles;
 }

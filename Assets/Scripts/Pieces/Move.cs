@@ -1,6 +1,7 @@
 using UnityEngine;
+using Unity.Netcode;
 
-public struct Move
+public struct Move : INetworkSerializable
 {
     public Vector2Int from;
     public Vector2Int to;
@@ -23,5 +24,18 @@ public struct Move
         isCastling = false;
         rookFromPos = Vector2Int.zero;
         rookToPos = Vector2Int.zero;
+    }
+
+    public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
+    {
+        serializer.SerializeValue(ref from);
+        serializer.SerializeValue(ref to);
+        serializer.SerializeValue(ref isCapture);
+        serializer.SerializeValue(ref isPromotion);
+        serializer.SerializeValue(ref isEnPassant);
+        serializer.SerializeValue(ref enPassantCapturePos);
+        serializer.SerializeValue(ref isCastling);
+        serializer.SerializeValue(ref rookFromPos);
+        serializer.SerializeValue(ref rookToPos);
     }
 }

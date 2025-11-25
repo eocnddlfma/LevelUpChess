@@ -1,7 +1,7 @@
 using UnityEngine;
 
 [RequireComponent(typeof(Collider2D))]
-public class Tile : Clickable
+public class Tile : MonoBehaviour
 {
     public Vector2Int coordinate;
     [SerializeField] private GameObject highlightObject;

@@ -55,27 +55,28 @@ public class PawnMovement : PieceMovement
 
     private void CheckEnPassant(ChessPiece piece, List<Move> moves, Vector2Int pos, int dir)
     {
-        if (GameManager.Instance.LastMovedPiece == null)
+        // NetworkGameManager 사용 (GameManager 대신)
+        if (NetworkGameManager.Instance == null || NetworkGameManager.Instance.LastMovedPiece == null)
             return;
 
-        if (GameManager.Instance.LastMovedPiece.team == piece.team || 
-            GameManager.Instance.LastMovedPiece.pieceType != PieceType.Pawn)
+        if (NetworkGameManager.Instance.LastMovedPiece.team == piece.team || 
+            NetworkGameManager.Instance.LastMovedPiece.pieceType != PieceType.Pawn)
             return;
 
-        if (GameManager.Instance.LastMovedPiece.currentTile.coordinate.y != pos.y)
+        if (NetworkGameManager.Instance.LastMovedPiece.currentTile.coordinate.y != pos.y)
             return;
 
-        Vector2Int lastFrom = GameManager.Instance.LastMoveFrom;
-        Vector2Int lastTo = GameManager.Instance.LastMoveTo;
+        Vector2Int lastFrom = NetworkGameManager.Instance.LastMoveFrom;
+        Vector2Int lastTo = NetworkGameManager.Instance.LastMoveTo;
 
         if (Mathf.Abs(lastTo.y - lastFrom.y) != 2)
             return;
 
-        if (Mathf.Abs(GameManager.Instance.LastMovedPiece.currentTile.coordinate.x - pos.x) != 1)
+        if (Mathf.Abs(NetworkGameManager.Instance.LastMovedPiece.currentTile.coordinate.x - pos.x) != 1)
             return;
 
         Vector2Int enPassantTarget = new Vector2Int(
-            GameManager.Instance.LastMovedPiece.currentTile.coordinate.x, 
+            NetworkGameManager.Instance.LastMovedPiece.currentTile.coordinate.x, 
             pos.y + dir
         );
 
@@ -86,7 +87,7 @@ public class PawnMovement : PieceMovement
             {
                 isCapture = true,
                 isEnPassant = true,
-                enPassantCapturePos = GameManager.Instance.LastMovedPiece.currentTile.coordinate
+                enPassantCapturePos = NetworkGameManager.Instance.LastMovedPiece.currentTile.coordinate
             };
             moves.Add(enPassantMove);
         }

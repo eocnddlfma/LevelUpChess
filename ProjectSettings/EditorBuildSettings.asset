@@ -6,6 +6,9 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
+    path: Assets/Scenes/MultiScene.unity
+    guid: 6e9a3ab515aaa2c49a267fc814f23e1f
+  - enabled: 1
     path: Assets/Scenes/ChessScene.unity
     guid: 6d2a73ee39b266e45a66e26868131451
   m_configObjects:

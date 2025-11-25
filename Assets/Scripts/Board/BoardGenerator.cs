@@ -23,19 +23,40 @@ public class BoardGenerator : MonoBehaviour
     {
         Debug.Log("[BoardGenerator] Generating board...");
         
+        // 기존 피스만 제거 (타일은 유지)
+        ClearPieces();
         
-        ClearBoard();
-        _tiles = new Tile[width, height];
+        // 타일이 없으면 생성
+        if (_tiles == null || _tiles.Length == 0)
+        {
+            _tiles = new Tile[width, height];
+            GenerateTiles();
+            InitializeBoardManager();
+        }
+        
+        // 피스 배치
+        ApplyDefaultSetup();
+        
+        Debug.Log("[BoardGenerator] Board generation completed");
+    }
 
+    /// <summary>
+    /// 타일 생성 (별도 메서드로 분리)
+    /// </summary>
+    private void GenerateTiles()
+    {
+        Debug.Log("[BoardGenerator] Generating tiles...");
         
-        transform.localPosition = Vector3.zero;
+        // 부모 오브젝트의 중앙을 기준으로 보드 생성 (오프셋 미리 계산)
+        Vector3 centerOffset = new Vector3((width - 1) * spacing / 2f, (height - 1) * spacing / 2f, 0f);
 
-        
+        // 타일 생성 (중앙 기준)
         for (int x = 0; x < width; x++)
         {
             for (int y = 0; y < height; y++)
             {
-                Vector3 localPos = new Vector3(x * spacing, y * spacing, 0f);
+                // 중앙 기준 위치 계산
+                Vector3 localPos = new Vector3(x * spacing, y * spacing, 0f) - centerOffset;
                 
 #if UNITY_EDITOR
                 GameObject go = (GameObject)PrefabUtility.InstantiatePrefab(tilePrefab, transform);
@@ -62,12 +83,15 @@ public class BoardGenerator : MonoBehaviour
                 _tiles[x, y] = tile;
             }
         }
-
         
-        Vector3 centerOffset = new Vector3((width - 1) * spacing / 2f, (height - 1) * spacing / 2f, 0f);
-        transform.localPosition = -centerOffset;
+        Debug.Log("[BoardGenerator] Tiles generated successfully");
+    }
 
-        
+    /// <summary>
+    /// BoardManager 초기화
+    /// </summary>
+    private void InitializeBoardManager()
+    {
 #if UNITY_EDITOR
         if (!Application.isPlaying)
         {
@@ -98,15 +122,7 @@ public class BoardGenerator : MonoBehaviour
                 Debug.LogError("[BoardGenerator] BoardManager.Instance is null!");
             }
         }
-
-        
-        ApplyDefaultSetup();
-        
-        Debug.Log("[BoardGenerator] Board generation completed");
     }
-
-    
-    
     
     public void ClearBoard()
     {
@@ -197,26 +213,45 @@ public class BoardGenerator : MonoBehaviour
 
     void ClearPieces()
     {
-        if (_tiles == null) return;
-        for (int x = 0; x < width; x++)
+        // 방법 1: Tile의 참조로 제거
+        if (_tiles != null)
         {
-            for (int y = 0; y < height; y++)
+            for (int x = 0; x < width; x++)
             {
-                Tile t = _tiles[x, y];
-                if (t == null) continue;
-                if (t.OccupyingPiece != null)
+                for (int y = 0; y < height; y++)
                 {
-                    if (Application.isPlaying)
+                    Tile t = _tiles[x, y];
+                    if (t == null) continue;
+                    if (t.OccupyingPiece != null)
                     {
-                        Destroy(t.OccupyingPiece.gameObject);
-                    }
-                    else
-                    {
-                        DestroyImmediate(t.OccupyingPiece.gameObject);
-                    }
+                        if (Application.isPlaying)
+                        {
+                            Destroy(t.OccupyingPiece.gameObject);
+                        }
+                        else
+                        {
+                            DestroyImmediate(t.OccupyingPiece.gameObject);
+                        }
 
-                    t.OccupyingPiece = null;
+                        t.OccupyingPiece = null;
+                    }
                 }
+            }
+        }
+
+        // 방법 2: 씬의 모든 ChessPiece 제거 (이전 로드의 고아 피스도 제거)
+        ChessPiece[] allPieces = FindObjectsByType<ChessPiece>(FindObjectsSortMode.None);
+        Debug.Log($"[BoardGenerator] Found {allPieces.Length} orphaned pieces, clearing them...");
+        
+        foreach (var piece in allPieces)
+        {
+            if (Application.isPlaying)
+            {
+                Destroy(piece.gameObject);
+            }
+            else
+            {
+                DestroyImmediate(piece.gameObject);
             }
         }
     }
@@ -230,24 +265,23 @@ public class BoardGenerator : MonoBehaviour
             return;
         }
 
-        
-        string prefabPath = $"Assets/Prefabs/Pieces/{team}_{pieceType}.prefab";
-        
         GameObject prefab = null;
         
 #if UNITY_EDITOR
-        prefab = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
+        string editorPrefabPath = $"Assets/Prefabs/Pieces/{team}_{pieceType}.prefab";
+        prefab = AssetDatabase.LoadAssetAtPath<GameObject>(editorPrefabPath);
         if (prefab == null)
         {
-            Debug.LogError($"[EDITOR] Cannot load prefab from: {prefabPath}");
+            Debug.LogError($"[EDITOR] Cannot load prefab from: {editorPrefabPath}");
         }
 #else
-        
-        string resourcePath = prefabPath.Replace("Assets/Resources/", "").Replace(".prefab", "");
+        // 빌드본: Resources 폴더에서 로드
+        string resourcePath = $"Prefabs/Pieces/{team}_{pieceType}";
         prefab = Resources.Load<GameObject>(resourcePath);
         if (prefab == null)
         {
-            Debug.LogError($"[RUNTIME] Cannot load prefab from: {resourcePath}");
+            Debug.LogError($"[RUNTIME] Cannot load prefab from Resources: {resourcePath}");
+            Debug.LogError($"[RUNTIME] Make sure prefabs are in Assets/Resources/Prefabs/Pieces/ folder");
         }
 #endif
 
@@ -263,7 +297,7 @@ public class BoardGenerator : MonoBehaviour
         ChessPiece piece = go.GetComponent<ChessPiece>();
         if (piece == null)
         {
-            Debug.LogError($"ChessPiece component missing on {prefabPath}");
+            Debug.LogError($"ChessPiece component missing on {team}_{pieceType}");
             if (Application.isPlaying)
             {
                 Destroy(go);
@@ -279,7 +313,7 @@ public class BoardGenerator : MonoBehaviour
         Collider2D collider = go.GetComponent<Collider2D>();
         if (collider == null)
         {
-            Debug.LogError($"Collider2D missing on {prefabPath}! Adding BoxCollider2D...");
+            Debug.LogError($"Collider2D missing on {team}_{pieceType}! Adding BoxCollider2D...");
             collider = go.AddComponent<BoxCollider2D>();
         }
         

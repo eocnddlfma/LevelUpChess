@@ -40,4 +40,5 @@ public struct TurnChangedEvent : IEvent
 public struct GameOverEvent : IEvent
 {
     public Team WinnerTeam;
+    public bool IsRematch; // 리매치인 경우 UI를 숨기기 위한 플래그
 }

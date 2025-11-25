@@ -18,6 +18,17 @@ public class InputManager : MonoBehaviour
 
     private void HandleMouseClick()
     {
+        // 카메라가 파괴되었거나 null이면 다시 찾기
+        if (_camera == null)
+        {
+            _camera = Camera.main;
+            if (_camera == null)
+            {
+                Debug.LogWarning("[InputManager] No main camera found");
+                return;
+            }
+        }
+        
         Vector3 mousePos = Input.mousePosition;
         Vector3 worldPos = _camera.ScreenToWorldPoint(mousePos);
         RaycastHit2D[] hits = Physics2D.RaycastAll(worldPos, Vector2.zero);
