@@ -85,29 +85,55 @@ public class ChessNetworkManager : MonoBehaviour
     {
         try
         {
+            Debug.Log("[ChessNetwork] Starting service initialization...");
+            
             if (UnityServices.State != ServicesInitializationState.Initialized)
             {
+                Debug.Log("[ChessNetwork] UnityServices not initialized, initializing now...");
                 await UnityServices.InitializeAsync();
+                Debug.Log("[ChessNetwork] UnityServices initialized successfully");
+            }
+            else
+            {
+                Debug.Log("[ChessNetwork] UnityServices already initialized");
             }
 
             // 한 컴퓨터에서 여러 빌드를 실행할 때 필수!!!
             // 기존 토큰을 완전히 삭제해야 새로운 Anonymous 계정으로 로그인됨
+            Debug.Log("[ChessNetwork] Clearing session token...");
             AuthenticationService.Instance.ClearSessionToken();
 
             Debug.Log("[ChessNetwork] Signing in as NEW anonymous user...");
             AuthenticationService.Instance.SignedIn += () =>
             {
-                Debug.Log($"[ChessNetwork] Signed in as new player: {AuthenticationService.Instance.PlayerId}");
+                Debug.Log($"[ChessNetwork] SignedIn event fired - PlayerId: {AuthenticationService.Instance.PlayerId}");
             };
 
             await AuthenticationService.Instance.SignInAnonymouslyAsync();
-
-            Chat.AddMessage($"Player ID: {AuthenticationService.Instance.PlayerId.Substring(0, 8)}");
+            
+            string playerId = AuthenticationService.Instance.PlayerId;
+            Debug.Log($"[ChessNetwork] ✓ Successfully signed in as: {playerId.Substring(0, 8)}");
+            
+            // Chat UI가 준비될 때까지 대기
+            if (Chat.Instance != null)
+            {
+                Chat.AddMessage($"Player ID: {playerId.Substring(0, 8)}");
+            }
+            else
+            {
+                Debug.LogWarning("[ChessNetwork] Chat instance not ready yet, message skipped");
+            }
         }
         catch (Exception ex)
         {
             Debug.LogError($"[ChessNetwork] Failed to initialize services: {ex.Message}");
-            Chat.AddMessage($"Error: {ex.Message}");
+            Debug.LogError($"[ChessNetwork] Exception type: {ex.GetType().Name}");
+            Debug.LogError($"[ChessNetwork] Stack trace: {ex.StackTrace}");
+            
+            if (Chat.Instance != null)
+            {
+                Chat.AddMessage($"❌ Init Error: {ex.Message}");
+            }
         }
     }
 

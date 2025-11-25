@@ -112,20 +112,27 @@
 
       var script = document.createElement("script");
       script.src = loaderUrl;
+      script.onerror = () => {
+        unityShowBanner("Failed to load game script: " + loaderUrl, "error");
+      };
       script.onload = () => {
+        console.log("[Unity] Game script loaded successfully");
         createUnityInstance(canvas, config, (progress) => {
+          console.log("[Unity] Loading progress: " + (100 * progress).toFixed(1) + "%");
           document.querySelector("#unity-progress-bar-full").style.width = 100 * progress + "%";
-              }).then((unityInstance) => {
-                document.querySelector("#unity-loading-bar").style.display = "none";
-                document.querySelector("#unity-fullscreen-button").onclick = () => {
-                  unityInstance.SetFullscreen(1);
-                };
+        }).then((unityInstance) => {
+          console.log("[Unity] ✓ Game loaded successfully");
+          document.querySelector("#unity-loading-bar").style.display = "none";
+          document.querySelector("#unity-fullscreen-button").onclick = () => {
+            unityInstance.SetFullscreen(1);
+          };
+        }).catch((message) => {
+          console.error("[Unity] ✗ Failed to create Unity instance:", message);
+          unityShowBanner("Failed to initialize game: " + message, "error");
+        });
+      };
 
-              }).catch((message) => {
-                alert(message);
-              });
-            };
-
+      console.log("[Unity] Loading game from: " + loaderUrl);
       document.body.appendChild(script);
 
     </script>

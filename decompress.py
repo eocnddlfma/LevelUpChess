@@ -4,9 +4,9 @@ import os
 build_dir = "Build"
 
 files_to_decompress = [
-    "BasicChessWeb.data.br",
-    "BasicChessWeb.framework.js.br",
-    "BasicChessWeb.wasm.br"
+    "Build.data.br",
+    "Build.framework.js.br",
+    "Build.wasm.br"
 ]
 
 for filename in files_to_decompress:
