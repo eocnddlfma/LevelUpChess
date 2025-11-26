@@ -24,6 +24,17 @@
       </div>
     </div>
     <script>
+      // WebGL 호환성 경고 필터링
+      const originalWarn = console.warn;
+      console.warn = function(...args) {
+        const message = args.join(' ');
+        // WebGL INVALID_ENUM 경고는 무시 (무해함)
+        if (message.includes('INVALID_ENUM') && message.includes('getInternalformatParameter')) {
+          return;
+        }
+        originalWarn.apply(console, args);
+      };
+
       var canvas = document.querySelector("#unity-canvas");
 
       // Shows a temporary message banner/ribbon for a few seconds, or

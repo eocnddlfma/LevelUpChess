@@ -159,11 +159,11 @@ public class UnityLobbyManager : MonoBehaviour
     {
         try
         {
-            Debug.Log("[UnityLobby] Creating lobby...");
+            Debug.Log("[UnityLobby] HOST: Creating lobby...");
             OnStatusUpdate?.Invoke("Creating lobby...");
             
             string playerId = AuthenticationService.Instance.PlayerId;
-            Debug.Log($"[UnityLobby] Creating lobby for player: {playerId}");
+            Debug.Log($"[UnityLobby] HOST: PlayerId: {playerId}");
 
             var options = new CreateLobbyOptions
             {
@@ -176,18 +176,32 @@ public class UnityLobbyManager : MonoBehaviour
                 }
             };
 
+            Debug.Log("[UnityLobby] HOST: Calling LobbyService.CreateLobbyAsync...");
             currentLobby = await LobbyService.Instance.CreateLobbyAsync(lobbyName, maxPlayers, options);
             isHost = true;
             heartbeatTimer = heartbeatInterval;
 
-            Debug.Log($"[UnityLobby] Lobby created: {currentLobby.Id}, Code: {currentLobby.LobbyCode}");
+            Debug.Log($"[UnityLobby] ✓ HOST: Lobby created successfully!");
+            Debug.Log($"[UnityLobby] HOST: LobbyId: {currentLobby.Id}");
+            Debug.Log($"[UnityLobby] HOST: LobbyCode: {currentLobby.LobbyCode}");
+            Debug.Log($"[UnityLobby] HOST: Players: {currentLobby.Players.Count}/{maxPlayers}");
+            
             OnStatusUpdate?.Invoke("Waiting for opponent...");
             
             await WaitForOpponentAsync();
         }
+        catch (LobbyServiceException lobbyEx)
+        {
+            Debug.LogError($"[UnityLobby] HOST: LobbyServiceException creating lobby: {lobbyEx.Message}");
+            Debug.LogError($"[UnityLobby] HOST: Reason: {lobbyEx.Reason}");
+            OnError?.Invoke($"Lobby creation failed: {lobbyEx.Message}");
+            throw;
+        }
         catch (Exception ex)
         {
-            Debug.LogError($"[UnityLobby] CreateLobby error: {ex}");
+            Debug.LogError($"[UnityLobby] HOST: Exception creating lobby: {ex.GetType().Name} - {ex.Message}");
+            Debug.LogError($"[UnityLobby] HOST: Stack: {ex.StackTrace}");
+            OnError?.Invoke($"Error: {ex.Message}");
             throw;
         }
     }
@@ -196,7 +210,7 @@ public class UnityLobbyManager : MonoBehaviour
     {
         try
         {
-            Debug.Log($"[UnityLobby] Joining lobby: {lobby.Id}");
+            Debug.Log($"[UnityLobby] CLIENT: Joining lobby: {lobby.Id}");
             OnStatusUpdate?.Invoke("Joining lobby...");
             
             var options = new JoinLobbyByIdOptions
@@ -204,81 +218,148 @@ public class UnityLobbyManager : MonoBehaviour
                 Player = new Player { Data = new Dictionary<string, PlayerDataObject> { } }
             };
 
+            Debug.Log("[UnityLobby] CLIENT: Calling LobbyService.JoinLobbyByIdAsync...");
             currentLobby = await LobbyService.Instance.JoinLobbyByIdAsync(lobby.Id, options);
             isHost = false;
 
-            Debug.Log($"[UnityLobby] Joined lobby: {currentLobby.Id}");
+            Debug.Log($"[UnityLobby] ✓ CLIENT: Joined lobby successfully!");
+            Debug.Log($"[UnityLobby] CLIENT: Players: {currentLobby.Players.Count}/{maxPlayers}");
             OnStatusUpdate?.Invoke("Waiting for relay code...");
             
             await WaitForRelayCodeAsync();
         }
         catch (LobbyServiceException ex) when (ex.Reason == LobbyExceptionReason.LobbyFull)
         {
-            Debug.LogWarning("[UnityLobby] Lobby is full, retrying...");
+            Debug.LogWarning("[UnityLobby] CLIENT: Lobby is full, retrying...");
+            OnStatusUpdate?.Invoke("Lobby full, retrying...");
             await QuickMatchAsync();
         }
         catch (LobbyServiceException ex) when (ex.Message.Contains("already a member"))
         {
-            Debug.LogWarning("[UnityLobby] Already a member of this lobby, using existing connection...");
-            // 이미 로비에 있으면 현재 로비로 진행
+            Debug.LogWarning("[UnityLobby] CLIENT: Already a member of this lobby");
             currentLobby = lobby;
             isHost = false;
             await WaitForRelayCodeAsync();
         }
+        catch (LobbyServiceException lobbyEx)
+        {
+            Debug.LogError($"[UnityLobby] CLIENT: LobbyServiceException joining lobby: {lobbyEx.Message}");
+            Debug.LogError($"[UnityLobby] CLIENT: Reason: {lobbyEx.Reason}");
+            OnError?.Invoke($"Failed to join lobby: {lobbyEx.Message}");
+            throw;
+        }
         catch (Exception ex)
         {
-            Debug.LogError($"[UnityLobby] JoinLobby error: {ex}");
+            Debug.LogError($"[UnityLobby] CLIENT: Exception joining lobby: {ex.GetType().Name} - {ex.Message}");
+            Debug.LogError($"[UnityLobby] CLIENT: Stack: {ex.StackTrace}");
+            OnError?.Invoke($"Error: {ex.Message}");
             throw;
         }
     }
 
     private async Task WaitForOpponentAsync()
     {
-        for (int i = 0; i < 60; i++)  // 120초 대기 (3초 간격)
+        Debug.Log("[UnityLobby] HOST: Waiting for opponent to join...");
+        int maxAttempts = 60;  // 180초 대기 (3초 간격)
+        
+        for (int i = 0; i < maxAttempts; i++)
         {
             await Task.Delay(3000);  // 3초마다 체크 (레이트 제한 방지)
             
             try
             {
                 currentLobby = await LobbyService.Instance.GetLobbyAsync(currentLobby.Id);
+                int playerCount = currentLobby.Players.Count;
+                
+                Debug.Log($"[UnityLobby] HOST: Poll attempt {i+1}/{maxAttempts} - Players: {playerCount}/{maxPlayers}");
 
-                if (currentLobby.Players.Count >= maxPlayers)
+                if (playerCount >= maxPlayers)
                 {
-                    Debug.Log("[UnityLobby] Opponent joined!");
+                    Debug.Log("[UnityLobby] ✓ HOST: Opponent joined!");
+                    OnStatusUpdate?.Invoke("Opponent found!");
                     NotifyMatchFound();
                     return;
                 }
 
-                if (i % 10 == 0)
-                    OnStatusUpdate?.Invoke($"Waiting for opponent... ({i * 3}s)");
+                if ((i + 1) % 10 == 0)
+                    OnStatusUpdate?.Invoke($"Waiting for opponent... ({(i+1) * 3}s)");
+            }
+            catch (LobbyServiceException lobbyEx)
+            {
+                Debug.LogError($"[UnityLobby] HOST: LobbyServiceException during poll (attempt {i+1}): {lobbyEx.Message}");
+                Debug.LogError($"[UnityLobby] HOST: Reason: {lobbyEx.Reason}");
             }
             catch (Exception ex)
             {
-                Debug.LogWarning($"[UnityLobby] WaitForOpponent poll error: {ex.Message}");
+                Debug.LogError($"[UnityLobby] HOST: Exception during poll (attempt {i+1}): {ex.GetType().Name} - {ex.Message}");
             }
         }
 
-        Debug.LogError("[UnityLobby] WaitForOpponent timeout");
+        Debug.LogError("[UnityLobby] ✗ HOST: Timeout waiting for opponent (180 seconds)");
+        OnStatusUpdate?.Invoke("Timeout waiting for opponent");
         OnError?.Invoke("Timeout waiting for opponent");
         await LeaveLobbyAsync();
     }
 
     private async Task WaitForRelayCodeAsync()
     {
-        for (int i = 0; i < 30; i++)
+        Debug.Log("[UnityLobby] CLIENT: Waiting for relay code from HOST...");
+        int maxAttempts = 30;  // 60초 대기 (2초 간격)
+        int attempts = 0;
+        
+        for (int i = 0; i < maxAttempts; i++)
         {
             await Task.Delay(2000);
-            currentLobby = await LobbyService.Instance.GetLobbyAsync(currentLobby.Id);
-
-            if (currentLobby.Data.TryGetValue(KEY_RELAY_CODE, out var relayData) && 
-                !string.IsNullOrEmpty(relayData.Value))
+            attempts++;
+            
+            try
             {
-                NotifyMatchFound();
-                return;
+                currentLobby = await LobbyService.Instance.GetLobbyAsync(currentLobby.Id);
+                Debug.Log($"[UnityLobby] CLIENT: Lobby refreshed (attempt {attempts}/{maxAttempts})");
+
+                if (currentLobby.Data != null)
+                {
+                    Debug.Log($"[UnityLobby] CLIENT: Lobby data keys: {string.Join(", ", currentLobby.Data.Keys)}");
+                    
+                    if (currentLobby.Data.TryGetValue(KEY_RELAY_CODE, out var relayData))
+                    {
+                        if (!string.IsNullOrEmpty(relayData.Value))
+                        {
+                            Debug.Log($"[UnityLobby] ✓ CLIENT: Relay code received!");
+                            OnStatusUpdate?.Invoke("Relay code received!");
+                            NotifyMatchFound();
+                            return;
+                        }
+                        else
+                        {
+                            Debug.LogWarning($"[UnityLobby] CLIENT: Relay code key exists but value is empty (attempt {attempts})");
+                        }
+                    }
+                    else
+                    {
+                        Debug.LogWarning($"[UnityLobby] CLIENT: KEY_RELAY_CODE not found in lobby data (attempt {attempts})");
+                    }
+                }
+                else
+                {
+                    Debug.LogError("[UnityLobby] CLIENT: currentLobby.Data is null!");
+                }
+            }
+            catch (LobbyServiceException lobbyEx)
+            {
+                Debug.LogError($"[UnityLobby] CLIENT: LobbyServiceException during poll (attempt {attempts}): {lobbyEx.Message}");
+                Debug.LogError($"[UnityLobby] CLIENT: Reason: {lobbyEx.Reason}");
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"[UnityLobby] CLIENT: Exception during poll (attempt {attempts}): {ex.GetType().Name} - {ex.Message}");
+                Debug.LogError($"[UnityLobby] CLIENT: Stack: {ex.StackTrace}");
             }
         }
 
-        OnError?.Invoke("Failed to receive relay code");
+        Debug.LogError("[UnityLobby] ✗ CLIENT: Timeout waiting for relay code from HOST (60 seconds)");
+        OnStatusUpdate?.Invoke("Timeout waiting for relay code");
+        OnError?.Invoke("Failed to receive relay code from host (timeout)");
         await LeaveLobbyAsync();
     }
 
@@ -312,25 +393,70 @@ public class UnityLobbyManager : MonoBehaviour
 
     public async Task UpdateRelayCodeAsync(string joinCode)
     {
-        if (currentLobby == null || !isHost) return;
-
-        var options = new UpdateLobbyOptions
+        if (currentLobby == null)
         {
-            Data = new Dictionary<string, DataObject>
-            {
-                { KEY_RELAY_CODE, new DataObject(DataObject.VisibilityOptions.Member, joinCode) },
-                { KEY_GAME_STARTED, new DataObject(DataObject.VisibilityOptions.Public, "true", DataObject.IndexOptions.S1) }
-            }
-        };
+            Debug.LogError("[UnityLobby] Cannot update relay code: currentLobby is null");
+            return;
+        }
 
-        currentLobby = await LobbyService.Instance.UpdateLobbyAsync(currentLobby.Id, options);
+        if (!isHost)
+        {
+            Debug.LogWarning("[UnityLobby] Only host can update relay code");
+            return;
+        }
+
+        try
+        {
+            Debug.Log($"[UnityLobby] Updating lobby with relay code: {joinCode}");
+            
+            var options = new UpdateLobbyOptions
+            {
+                Data = new Dictionary<string, DataObject>
+                {
+                    { KEY_RELAY_CODE, new DataObject(DataObject.VisibilityOptions.Member, joinCode) },
+                    { KEY_GAME_STARTED, new DataObject(DataObject.VisibilityOptions.Public, "true", DataObject.IndexOptions.S1) }
+                }
+            };
+
+            currentLobby = await LobbyService.Instance.UpdateLobbyAsync(currentLobby.Id, options);
+            Debug.Log($"[UnityLobby] ✓ Successfully updated lobby with relay code");
+        }
+        catch (LobbyServiceException ex)
+        {
+            Debug.LogError($"[UnityLobby] ✗ Failed to update relay code - LobbyServiceException: {ex.Message}");
+            Debug.LogError($"[UnityLobby] Reason: {ex.Reason}");
+            throw;
+        }
+        catch (Exception ex)
+        {
+            Debug.LogError($"[UnityLobby] ✗ Failed to update relay code - {ex.GetType().Name}: {ex.Message}");
+            Debug.LogError($"[UnityLobby] Stack: {ex.StackTrace}");
+            throw;
+        }
     }
 
     public string GetRelayJoinCode()
     {
-        if (currentLobby?.Data != null && 
-            currentLobby.Data.TryGetValue(KEY_RELAY_CODE, out var relayData))
-            return relayData.Value;
+        if (currentLobby == null)
+        {
+            Debug.LogWarning("[UnityLobby] GetRelayJoinCode: currentLobby is null");
+            return null;
+        }
+
+        if (currentLobby.Data == null)
+        {
+            Debug.LogWarning("[UnityLobby] GetRelayJoinCode: currentLobby.Data is null");
+            return null;
+        }
+
+        if (currentLobby.Data.TryGetValue(KEY_RELAY_CODE, out var relayData))
+        {
+            string code = relayData.Value;
+            Debug.Log($"[UnityLobby] Retrieved relay code: {(string.IsNullOrEmpty(code) ? "[EMPTY]" : code.Substring(0, Math.Min(10, code.Length)) + "...")}");
+            return code;
+        }
+
+        Debug.LogWarning($"[UnityLobby] KEY_RELAY_CODE not found in lobby data. Available keys: {string.Join(", ", currentLobby.Data.Keys)}");
         return null;
     }
 
