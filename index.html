@@ -4,8 +4,8 @@
     <meta charset="utf-8">
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <title>Unity Web Player | LevelUpChess</title>
-    <link rel="shortcut icon" href="TemplateData/favicon.ico">
-    <link rel="stylesheet" href="TemplateData/style.css">
+    <link rel="shortcut icon" href="Build/TemplateData/favicon.ico">
+    <link rel="stylesheet" href="Build/TemplateData/style.css">
   </head>
   <body>
     <div id="unity-container" class="unity-desktop">
@@ -24,28 +24,6 @@
       </div>
     </div>
     <script>
-      // WebGL 호환성 경고 필터링
-      const originalWarn = console.warn;
-      const originalError = console.error;
-      const originalLog = console.log;
-      
-      console.warn = function(...args) {
-        const message = args.join(' ');
-        // WebGL INVALID_ENUM 경고는 무시 (무해함)
-        if (message.includes('INVALID_ENUM') && message.includes('getInternalformatParameter')) {
-          return;
-        }
-        // WebGL 관련 무해한 경고들 필터링
-        if (message.includes('WebGL') && (
-          message.includes('INVALID_ENUM') ||
-          message.includes('getInternalformatParameter') ||
-          message.includes('invalid internalformat')
-        )) {
-          return;
-        }
-        originalWarn.apply(console, args);
-      };
-
       var canvas = document.querySelector("#unity-canvas");
 
       // Shows a temporary message banner/ribbon for a few seconds, or
@@ -135,27 +113,20 @@
 
       var script = document.createElement("script");
       script.src = loaderUrl;
-      script.onerror = () => {
-        unityShowBanner("Failed to load game script: " + loaderUrl, "error");
-      };
       script.onload = () => {
-        console.log("[Unity] Game script loaded successfully");
         createUnityInstance(canvas, config, (progress) => {
-          console.log("[Unity] Loading progress: " + (100 * progress).toFixed(1) + "%");
           document.querySelector("#unity-progress-bar-full").style.width = 100 * progress + "%";
-        }).then((unityInstance) => {
-          console.log("[Unity] ✓ Game loaded successfully");
-          document.querySelector("#unity-loading-bar").style.display = "none";
-          document.querySelector("#unity-fullscreen-button").onclick = () => {
-            unityInstance.SetFullscreen(1);
-          };
-        }).catch((message) => {
-          console.error("[Unity] ✗ Failed to create Unity instance:", message);
-          unityShowBanner("Failed to initialize game: " + message, "error");
-        });
-      };
+              }).then((unityInstance) => {
+                document.querySelector("#unity-loading-bar").style.display = "none";
+                document.querySelector("#unity-fullscreen-button").onclick = () => {
+                  unityInstance.SetFullscreen(1);
+                };
 
-      console.log("[Unity] Loading game from: " + loaderUrl);
+              }).catch((message) => {
+                alert(message);
+              });
+            };
+
       document.body.appendChild(script);
 
     </script>

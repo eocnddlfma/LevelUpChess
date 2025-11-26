@@ -279,75 +279,87 @@ public class UnityLobbyManager : MonoBehaviour
 
     private async Task WaitForOpponentAsync()
     {
-        Debug.Log("[UnityLobby] HOST: ========== WaitForOpponentAsync START ==========");
-        Debug.Log("[UnityLobby] HOST: Waiting for opponent to join...");
-        Debug.Log($"[UnityLobby] HOST: Current lobby ID: {currentLobby?.Id}");
-        Debug.Log($"[UnityLobby] HOST: Current lobby is null? {currentLobby == null}");
-        int maxAttempts = 60;  // 180초 대기 (3초 간격)
-        int errorCount = 0;
-        
-        for (int i = 0; i < maxAttempts; i++)
+        try
         {
-            await Task.Delay(3000);  // 3초마다 체크 (레이트 제한 방지)
+            Debug.Log("[UnityLobby] HOST: ========== WaitForOpponentAsync START ==========");
+            Debug.Log("[UnityLobby] HOST: Waiting for opponent to join...");
+            Debug.Log($"[UnityLobby] HOST: Lobby ID = {currentLobby.Id}");
+            Debug.Log($"[UnityLobby] HOST: Current player count = {currentLobby.Players.Count}");
             
-            try
+            int maxAttempts = 60;
+            int errorCount = 0;
+            
+            for (int i = 0; i < maxAttempts; i++)
             {
-                Debug.Log($"[UnityLobby] HOST: GetLobbyAsync attempt {i+1}/{maxAttempts}...");
-                currentLobby = await LobbyService.Instance.GetLobbyAsync(currentLobby.Id);
-                int playerCount = currentLobby.Players.Count;
-                
-                Debug.Log($"[UnityLobby] ✓ HOST: GetLobbyAsync succeeded - Players: {playerCount}/{maxPlayers}");
-                
-                // 에러 카운트 리셋
-                errorCount = 0;
+                try
+                {
+                    Debug.Log($"[UnityLobby] HOST: Attempt {i+1} - Waiting 3 seconds before poll...");
+                    await Task.Delay(3000);
+                    Debug.Log($"[UnityLobby] HOST: Attempt {i+1} - Calling GetLobbyAsync for lobby {currentLobby.Id}");
+                    
+                    var lobby = await LobbyService.Instance.GetLobbyAsync(currentLobby.Id);
+                    currentLobby = lobby;
+                    
+                    int playerCount = currentLobby.Players.Count;
+                    Debug.Log($"[UnityLobby] HOST: Attempt {i+1} - Players: {playerCount}");
+                    
+                    // 플레이어 목록 출력
+                    foreach (var player in currentLobby.Players)
+                    {
+                        Debug.Log($"[UnityLobby] HOST:   - Player: {player.Id}");
+                    }
+                    
+                    errorCount = 0;
 
-                if (playerCount >= maxPlayers)
-                {
-                    Debug.Log("[UnityLobby] ✓ HOST: Opponent joined!");
-                    OnStatusUpdate?.Invoke("Opponent found!");
-                    NotifyMatchFound();
-                    return;
+                    if (playerCount >= maxPlayers)
+                    {
+                        Debug.Log($"[UnityLobby] ✓ HOST: OPPONENT FOUND! Players: {playerCount}/{maxPlayers}");
+                        OnStatusUpdate?.Invoke("Opponent found!");
+                        NotifyMatchFound();
+                        return;
+                    }
+                    
+                    if ((i + 1) % 5 == 0)
+                        OnStatusUpdate?.Invoke($"Waiting for opponent... ({(i+1) * 3}s)");
                 }
+                catch (LobbyServiceException lobbyEx)
+                {
+                    errorCount++;
+                    Debug.LogError($"[UnityLobby] HOST: LobbyServiceException attempt {i+1}: {lobbyEx.Message} (Reason: {lobbyEx.Reason})");
+                    
+                    if (errorCount >= 3)
+                    {
+                        Debug.LogError($"[UnityLobby] HOST: Too many LobbyService errors, aborting");
+                        OnError?.Invoke($"Lobby service error: {lobbyEx.Reason}");
+                        await LeaveLobbyAsync();
+                        return;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    errorCount++;
+                    Debug.LogError($"[UnityLobby] HOST: Exception attempt {i+1}: {ex.GetType().Name}: {ex.Message}");
+                    
+                    if (errorCount >= 3)
+                    {
+                        Debug.LogError($"[UnityLobby] HOST: Too many errors, aborting");
+                        OnError?.Invoke($"Error: {ex.Message}");
+                        await LeaveLobbyAsync();
+                        return;
+                    }
+                }
+            }
 
-                if ((i + 1) % 10 == 0)
-                    OnStatusUpdate?.Invoke($"Waiting for opponent... ({(i+1) * 3}s)");
-            }
-            catch (LobbyServiceException lobbyEx)
-            {
-                errorCount++;
-                Debug.LogError($"[UnityLobby] HOST: LobbyServiceException (attempt {i+1}, error #{errorCount}): {lobbyEx.Message}");
-                Debug.LogError($"[UnityLobby] HOST: Reason: {lobbyEx.Reason}");
-                Debug.LogError($"[UnityLobby] HOST: Stack: {lobbyEx.StackTrace}");
-                
-                // 3번 이상 에러가 계속되면 즉시 실패
-                if (errorCount >= 3)
-                {
-                    Debug.LogError($"[UnityLobby] HOST: ✗ Too many LobbyServiceExceptions, aborting");
-                    OnError?.Invoke($"Lobby service error: {lobbyEx.Reason}");
-                    await LeaveLobbyAsync();
-                    return;
-                }
-            }
-            catch (Exception ex)
-            {
-                errorCount++;
-                Debug.LogError($"[UnityLobby] HOST: {ex.GetType().Name} (attempt {i+1}, error #{errorCount}): {ex.Message}");
-                Debug.LogError($"[UnityLobby] HOST: Stack: {ex.StackTrace}");
-                
-                if (errorCount >= 3)
-                {
-                    Debug.LogError($"[UnityLobby] HOST: ✗ Too many exceptions, aborting");
-                    OnError?.Invoke($"Error: {ex.Message}");
-                    await LeaveLobbyAsync();
-                    return;
-                }
-            }
+            Debug.LogError("[UnityLobby] ✗ HOST: TIMEOUT - No opponent found after 180 seconds");
+            OnStatusUpdate?.Invoke("Timeout waiting for opponent");
+            OnError?.Invoke("Timeout waiting for opponent");
+            await LeaveLobbyAsync();
         }
-
-        Debug.LogError("[UnityLobby] ✗ HOST: Timeout waiting for opponent (180 seconds)");
-        OnStatusUpdate?.Invoke("Timeout waiting for opponent");
-        OnError?.Invoke("Timeout waiting for opponent");
-        await LeaveLobbyAsync();
+        catch (Exception ex)
+        {
+            Debug.LogError($"[UnityLobby] HOST: FATAL ERROR: {ex.GetType().Name}: {ex.Message}");
+            Debug.LogError($"[UnityLobby] HOST: Stack: {ex.StackTrace}");
+        }
     }
 
     private async Task WaitForRelayCodeAsync()
