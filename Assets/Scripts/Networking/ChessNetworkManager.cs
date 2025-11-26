@@ -172,7 +172,7 @@ public class ChessNetworkManager : MonoBehaviour
     /// <summary>
     /// Lobby 이벤트 핸들러 - 매치 발견
     /// </summary>
-    private async void OnLobbyMatchFound(UnityLobbyManager.LobbyMatchResult result)
+    private void OnLobbyMatchFound(UnityLobbyManager.LobbyMatchResult result)
     {
         matchResult = result;
         isHost = result.isHost;
@@ -180,17 +180,8 @@ public class ChessNetworkManager : MonoBehaviour
         Debug.Log($"[ChessNetwork] Match Found! IsHost: {isHost}, Opponent: {result.opponentId}");
         AddChatMessage("[OK] Opponent found!");
 
-        try
-        {
-            await SetupRelayConnection();
-        }
-        catch (Exception ex)
-        {
-            Debug.LogError($"[ChessNetwork] Relay setup failed: {ex.Message}");
-            AddChatMessage($"Connection error: {ex.Message}");
-            OnError?.Invoke(ex.Message);
-            isInitializing = false;
-        }
+        // Fire and forget - SetupRelayConnection 실행
+        _ = SetupRelayConnection();
     }
     
     /// <summary>
@@ -216,13 +207,23 @@ public class ChessNetworkManager : MonoBehaviour
     /// </summary>
     private async Task SetupRelayConnection()
     {
-        if (isHost)
+        try
         {
-            await SetupAsHost();
+            if (isHost)
+            {
+                await SetupAsHost();
+            }
+            else
+            {
+                await SetupAsClient();
+            }
         }
-        else
+        catch (Exception ex)
         {
-            await SetupAsClient();
+            Debug.LogError($"[ChessNetwork] Relay setup failed: {ex.Message}");
+            AddChatMessage($"Connection error: {ex.Message}");
+            OnError?.Invoke(ex.Message);
+            isInitializing = false;
         }
     }
 
@@ -376,7 +377,7 @@ public class ChessNetworkManager : MonoBehaviour
     /// </summary>
     private async Task<string> WaitForRelayCode()
     {
-        float timeout = 30f;  // 타임아웃 30초로 증가
+        float timeout = 30f;
         float elapsed = 0f;
         int checkCount = 0;
 
@@ -392,14 +393,15 @@ public class ChessNetworkManager : MonoBehaviour
                 return code;
             }
 
-            if (checkCount % 4 == 0)  // 2초마다 로그 (0.5초 * 4)
+            if (checkCount % 2 == 0)  // 매 폴링마다 체크
             {
                 AddChatMessage($"[CLIENT] Waiting for relay code... ({elapsed:F0}s)");
                 Debug.Log($"[ChessNetwork] Still waiting for relay code... {elapsed:F1}s elapsed");
             }
 
-            await Task.Delay(500);
-            elapsed += 0.5f;
+            // WebGL에서 작동하지 않는 Task.Delay() 제거 - 폴링만 수행
+            // 빠른 폴링으로 relay code 즉시 감지 가능
+            elapsed += 0.1f;  // 시뮬레이션 시간만 증가
         }
 
         Debug.LogError("[ChessNetwork] Timeout waiting for relay code!");

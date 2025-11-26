@@ -396,64 +396,128 @@ public class UnityLobbyManager : MonoBehaviour
 
     private async Task WaitForRelayCodeAsync()
     {
+        Debug.Log("[UnityLobby] CLIENT: ========== WaitForRelayCodeAsync START ==========");
         Debug.Log("[UnityLobby] CLIENT: Waiting for relay code from HOST...");
-        int maxAttempts = 30;  // 60초 대기 (2초 간격)
-        int attempts = 0;
+        Debug.Log($"[UnityLobby] CLIENT: Lobby ID = {currentLobby.Id}");
+        
+        // 코루틴으로 폴링 시작 (WebGL에서 Task.Delay가 작동 안 하므로)
+        Debug.Log("[UnityLobby] CLIENT: Starting coroutine-based polling...");
+        StartCoroutine(PollForRelayCodeCoroutine());
+        
+        // 코루틴이 완료될 때까지 대기하지 않고 즉시 반환
+        // 코루틴에서 NotifyMatchFound() 호출
+    }
+    
+    private IEnumerator PollForRelayCodeCoroutine()
+    {
+        Debug.Log("[UnityLobby] CLIENT: PollForRelayCodeCoroutine started");
+        
+        int maxAttempts = 30;  // 60초 (2초 간격)
+        int errorCount = 0;
         
         for (int i = 0; i < maxAttempts; i++)
         {
-            await Task.Delay(2000);
-            attempts++;
+            Debug.Log($"[UnityLobby] CLIENT: Poll attempt {i+1}/{maxAttempts}");
             
-            try
+            // Unity의 WaitForSeconds 사용
+            if (i > 0)
             {
-                currentLobby = await LobbyService.Instance.GetLobbyAsync(currentLobby.Id);
-                Debug.Log($"[UnityLobby] CLIENT: Lobby refreshed (attempt {attempts}/{maxAttempts})");
-
-                if (currentLobby.Data != null)
+                Debug.Log($"[UnityLobby] CLIENT: Waiting 2 seconds...");
+                yield return new WaitForSeconds(2f);
+                Debug.Log($"[UnityLobby] CLIENT: Wait complete, polling now");
+            }
+            
+            // GetLobbyAsync 호출
+            bool pollComplete = false;
+            bool pollSuccess = false;
+            string relayCode = "";
+            
+            // 비동기 작업 시작
+            PollLobbyForRelayCodeOnce((success, code, error) =>
+            {
+                pollSuccess = success;
+                relayCode = code;
+                if (!success)
                 {
-                    Debug.Log($"[UnityLobby] CLIENT: Lobby data keys: {string.Join(", ", currentLobby.Data.Keys)}");
-                    
-                    if (currentLobby.Data.TryGetValue(KEY_RELAY_CODE, out var relayData))
-                    {
-                        if (!string.IsNullOrEmpty(relayData.Value))
-                        {
-                            Debug.Log($"[UnityLobby] ✓ CLIENT: Relay code received!");
-                            OnStatusUpdate?.Invoke("Relay code received!");
-                            NotifyMatchFound();
-                            return;
-                        }
-                        else
-                        {
-                            Debug.LogWarning($"[UnityLobby] CLIENT: Relay code key exists but value is empty (attempt {attempts})");
-                        }
-                    }
-                    else
-                    {
-                        Debug.LogWarning($"[UnityLobby] CLIENT: KEY_RELAY_CODE not found in lobby data (attempt {attempts})");
-                    }
+                    errorCount++;
+                    Debug.LogError($"[UnityLobby] CLIENT: Poll error: {error}");
                 }
                 else
                 {
-                    Debug.LogError("[UnityLobby] CLIENT: currentLobby.Data is null!");
+                    errorCount = 0;
+                    if (!string.IsNullOrEmpty(code))
+                    {
+                        Debug.Log($"[UnityLobby] CLIENT: Relay code found!");
+                    }
+                    else
+                    {
+                        Debug.Log($"[UnityLobby] CLIENT: Lobby polled but no relay code yet");
+                    }
                 }
-            }
-            catch (LobbyServiceException lobbyEx)
+                pollComplete = true;
+            });
+            
+            // 폴링 완료 대기
+            float waitTime = 0;
+            while (!pollComplete && waitTime < 10f)
             {
-                Debug.LogError($"[UnityLobby] CLIENT: LobbyServiceException during poll (attempt {attempts}): {lobbyEx.Message}");
-                Debug.LogError($"[UnityLobby] CLIENT: Reason: {lobbyEx.Reason}");
+                yield return null;
+                waitTime += Time.deltaTime;
             }
-            catch (Exception ex)
+            
+            if (!pollComplete)
             {
-                Debug.LogError($"[UnityLobby] CLIENT: Exception during poll (attempt {attempts}): {ex.GetType().Name} - {ex.Message}");
-                Debug.LogError($"[UnityLobby] CLIENT: Stack: {ex.StackTrace}");
+                Debug.LogWarning($"[UnityLobby] CLIENT: Poll timeout at attempt {i+1}");
+                errorCount++;
+            }
+            else if (pollSuccess && !string.IsNullOrEmpty(relayCode))
+            {
+                Debug.Log($"[UnityLobby] ✓ CLIENT: RELAY CODE RECEIVED!");
+                OnStatusUpdate?.Invoke("Relay code received!");
+                NotifyMatchFound();
+                yield break;
+            }
+            
+            if (errorCount >= 3)
+            {
+                Debug.LogError("[UnityLobby] CLIENT: Too many errors, aborting");
+                OnError?.Invoke("Too many lobby errors");
+                _ = LeaveLobbyAsync();
+                yield break;
             }
         }
-
-        Debug.LogError("[UnityLobby] ✗ CLIENT: Timeout waiting for relay code from HOST (60 seconds)");
+        
+        Debug.LogError("[UnityLobby] ✗ CLIENT: TIMEOUT - No relay code received after 60 seconds");
         OnStatusUpdate?.Invoke("Timeout waiting for relay code");
         OnError?.Invoke("Failed to receive relay code from host (timeout)");
-        await LeaveLobbyAsync();
+        _ = LeaveLobbyAsync();
+    }
+    
+    private async void PollLobbyForRelayCodeOnce(Action<bool, string, string> callback)
+    {
+        try
+        {
+            var lobby = await LobbyService.Instance.GetLobbyAsync(currentLobby.Id);
+            currentLobby = lobby;
+            
+            Debug.Log($"[UnityLobby] CLIENT: Poll result - Lobby data keys: {(lobby.Data != null ? string.Join(", ", lobby.Data.Keys) : "null")}");
+            
+            if (lobby.Data != null && lobby.Data.TryGetValue(KEY_RELAY_CODE, out var relayData))
+            {
+                string code = relayData.Value;
+                Debug.Log($"[UnityLobby] CLIENT: RelayCode from lobby: {(string.IsNullOrEmpty(code) ? "(empty)" : code)}");
+                callback?.Invoke(true, code, null);
+            }
+            else
+            {
+                Debug.Log("[UnityLobby] CLIENT: RelayCode not found in lobby data yet");
+                callback?.Invoke(true, "", null);
+            }
+        }
+        catch (Exception ex)
+        {
+            callback?.Invoke(false, "", ex.Message);
+        }
     }
 
     private void NotifyMatchFound()
