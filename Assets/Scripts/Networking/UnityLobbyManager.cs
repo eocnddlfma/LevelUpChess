@@ -82,7 +82,14 @@ public class UnityLobbyManager : MonoBehaviour
         }
         catch (Exception ex)
         {
-            Debug.LogError($"[UnityLobby] QuickMatch error: {ex}");
+            Debug.LogError($"[UnityLobby] ✗ QUICKMATCH ERROR: {ex.GetType().Name}");
+            Debug.LogError($"[UnityLobby] Message: {ex.Message}");
+            Debug.LogError($"[UnityLobby] Stack: {ex.StackTrace}");
+            if (ex.InnerException != null)
+            {
+                Debug.LogError($"[UnityLobby] InnerException: {ex.InnerException.GetType().Name} - {ex.InnerException.Message}");
+                Debug.LogError($"[UnityLobby] InnerStack: {ex.InnerException.StackTrace}");
+            }
             OnError?.Invoke($"Error: {ex.Message}");
         }
     }
@@ -143,14 +150,16 @@ public class UnityLobbyManager : MonoBehaviour
                 }
             };
 
+            Debug.Log("[UnityLobby] Calling LobbyService.QueryLobbiesAsync...");
             var response = await LobbyService.Instance.QueryLobbiesAsync(options);
-            Debug.Log($"[UnityLobby] Query result: {response.Results.Count} lobbies found");
+            Debug.Log($"[UnityLobby] ✓ Query result: {response.Results.Count} lobbies found");
             
             return response.Results.Count > 0 ? response.Results[0] : null;
         }
         catch (Exception ex)
         {
-            Debug.LogError($"[UnityLobby] FindAvailableLobby error: {ex}");
+            Debug.LogError($"[UnityLobby] ✗ FindAvailableLobby error: {ex.GetType().Name} - {ex.Message}");
+            Debug.LogError($"[UnityLobby] Stack: {ex.StackTrace}");
             return null;
         }
     }
@@ -192,15 +201,24 @@ public class UnityLobbyManager : MonoBehaviour
         }
         catch (LobbyServiceException lobbyEx)
         {
-            Debug.LogError($"[UnityLobby] HOST: LobbyServiceException creating lobby: {lobbyEx.Message}");
+            Debug.LogError($"[UnityLobby] ✗ HOST: LobbyServiceException creating lobby: {lobbyEx.Message}");
             Debug.LogError($"[UnityLobby] HOST: Reason: {lobbyEx.Reason}");
+            Debug.LogError($"[UnityLobby] HOST: Stack: {lobbyEx.StackTrace}");
+            if (lobbyEx.InnerException != null)
+            {
+                Debug.LogError($"[UnityLobby] HOST: InnerException: {lobbyEx.InnerException.GetType().Name} - {lobbyEx.InnerException.Message}");
+            }
             OnError?.Invoke($"Lobby creation failed: {lobbyEx.Message}");
             throw;
         }
         catch (Exception ex)
         {
-            Debug.LogError($"[UnityLobby] HOST: Exception creating lobby: {ex.GetType().Name} - {ex.Message}");
+            Debug.LogError($"[UnityLobby] ✗ HOST: Exception creating lobby: {ex.GetType().Name} - {ex.Message}");
             Debug.LogError($"[UnityLobby] HOST: Stack: {ex.StackTrace}");
+            if (ex.InnerException != null)
+            {
+                Debug.LogError($"[UnityLobby] HOST: InnerException: {ex.InnerException.GetType().Name} - {ex.InnerException.Message}");
+            }
             OnError?.Invoke($"Error: {ex.Message}");
             throw;
         }
@@ -260,7 +278,9 @@ public class UnityLobbyManager : MonoBehaviour
     private async Task WaitForOpponentAsync()
     {
         Debug.Log("[UnityLobby] HOST: Waiting for opponent to join...");
+        Debug.Log($"[UnityLobby] HOST: Current lobby ID: {currentLobby.Id}");
         int maxAttempts = 60;  // 180초 대기 (3초 간격)
+        int errorCount = 0;
         
         for (int i = 0; i < maxAttempts; i++)
         {
@@ -268,10 +288,14 @@ public class UnityLobbyManager : MonoBehaviour
             
             try
             {
+                Debug.Log($"[UnityLobby] HOST: GetLobbyAsync attempt {i+1}/{maxAttempts}...");
                 currentLobby = await LobbyService.Instance.GetLobbyAsync(currentLobby.Id);
                 int playerCount = currentLobby.Players.Count;
                 
-                Debug.Log($"[UnityLobby] HOST: Poll attempt {i+1}/{maxAttempts} - Players: {playerCount}/{maxPlayers}");
+                Debug.Log($"[UnityLobby] ✓ HOST: GetLobbyAsync succeeded - Players: {playerCount}/{maxPlayers}");
+                
+                // 에러 카운트 리셋
+                errorCount = 0;
 
                 if (playerCount >= maxPlayers)
                 {
@@ -286,12 +310,33 @@ public class UnityLobbyManager : MonoBehaviour
             }
             catch (LobbyServiceException lobbyEx)
             {
-                Debug.LogError($"[UnityLobby] HOST: LobbyServiceException during poll (attempt {i+1}): {lobbyEx.Message}");
+                errorCount++;
+                Debug.LogError($"[UnityLobby] HOST: LobbyServiceException (attempt {i+1}, error #{errorCount}): {lobbyEx.Message}");
                 Debug.LogError($"[UnityLobby] HOST: Reason: {lobbyEx.Reason}");
+                Debug.LogError($"[UnityLobby] HOST: Stack: {lobbyEx.StackTrace}");
+                
+                // 3번 이상 에러가 계속되면 즉시 실패
+                if (errorCount >= 3)
+                {
+                    Debug.LogError($"[UnityLobby] HOST: ✗ Too many LobbyServiceExceptions, aborting");
+                    OnError?.Invoke($"Lobby service error: {lobbyEx.Reason}");
+                    await LeaveLobbyAsync();
+                    return;
+                }
             }
             catch (Exception ex)
             {
-                Debug.LogError($"[UnityLobby] HOST: Exception during poll (attempt {i+1}): {ex.GetType().Name} - {ex.Message}");
+                errorCount++;
+                Debug.LogError($"[UnityLobby] HOST: {ex.GetType().Name} (attempt {i+1}, error #{errorCount}): {ex.Message}");
+                Debug.LogError($"[UnityLobby] HOST: Stack: {ex.StackTrace}");
+                
+                if (errorCount >= 3)
+                {
+                    Debug.LogError($"[UnityLobby] HOST: ✗ Too many exceptions, aborting");
+                    OnError?.Invoke($"Error: {ex.Message}");
+                    await LeaveLobbyAsync();
+                    return;
+                }
             }
         }
 
