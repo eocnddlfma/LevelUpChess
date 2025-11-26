@@ -359,8 +359,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_ProtocolType: 1
-  m_UseWebSockets: 0
-  m_UseEncryption: 0
+  m_UseWebSockets: 1
+  m_UseEncryption: 1
   m_MaxPacketQueueSize: 128
   m_MaxPayloadSize: 6144
   m_HeartbeatTimeoutMS: 500
@@ -2243,9 +2243,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 15f3536db2defe643821138fc4fb3c37, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  ShowTopMostFoldoutHeaderGroup: 1
-  messageInputField: {fileID: 78110395}
-  sendButton: {fileID: 992148275}
   messageContainer: {fileID: 1561260741}
   messagePrefab: {fileID: 2605293391494389006, guid: 0a834960193442543ab8101c3ac04330, type: 3}
   scrollRect: {fileID: 778121716}

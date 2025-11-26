@@ -197,7 +197,9 @@ public class UnityLobbyManager : MonoBehaviour
             
             OnStatusUpdate?.Invoke("Waiting for opponent...");
             
+            Debug.Log("[UnityLobby] HOST: About to call WaitForOpponentAsync...");
             await WaitForOpponentAsync();
+            Debug.Log("[UnityLobby] HOST: WaitForOpponentAsync completed");
         }
         catch (LobbyServiceException lobbyEx)
         {
@@ -277,8 +279,10 @@ public class UnityLobbyManager : MonoBehaviour
 
     private async Task WaitForOpponentAsync()
     {
+        Debug.Log("[UnityLobby] HOST: ========== WaitForOpponentAsync START ==========");
         Debug.Log("[UnityLobby] HOST: Waiting for opponent to join...");
-        Debug.Log($"[UnityLobby] HOST: Current lobby ID: {currentLobby.Id}");
+        Debug.Log($"[UnityLobby] HOST: Current lobby ID: {currentLobby?.Id}");
+        Debug.Log($"[UnityLobby] HOST: Current lobby is null? {currentLobby == null}");
         int maxAttempts = 60;  // 180초 대기 (3초 간격)
         int errorCount = 0;
         
@@ -410,30 +414,47 @@ public class UnityLobbyManager : MonoBehaviour
 
     private void NotifyMatchFound()
     {
-        string opponentId = "";
-        string myId = AuthenticationService.Instance.PlayerId;
-
-        foreach (var player in currentLobby.Players)
+        try
         {
-            if (player.Id != myId)
+            Debug.Log("[UnityLobby] NotifyMatchFound: START");
+            string opponentId = "";
+            string myId = AuthenticationService.Instance.PlayerId;
+            Debug.Log($"[UnityLobby] NotifyMatchFound: myId = {myId}");
+
+            foreach (var player in currentLobby.Players)
             {
-                opponentId = player.Id;
-                break;
+                Debug.Log($"[UnityLobby] NotifyMatchFound: Checking player {player.Id}");
+                if (player.Id != myId)
+                {
+                    opponentId = player.Id;
+                    Debug.Log($"[UnityLobby] NotifyMatchFound: Found opponent = {opponentId}");
+                    break;
+                }
             }
+
+            string relayCode = "";
+            currentLobby.Data.TryGetValue(KEY_RELAY_CODE, out var relayData);
+            if (relayData != null)
+                relayCode = relayData.Value;
+            
+            Debug.Log($"[UnityLobby] NotifyMatchFound: relayCode = {relayCode}");
+
+            Debug.Log($"[UnityLobby] NotifyMatchFound: Invoking OnMatchFound event with isHost={isHost}, opponentId={opponentId}");
+            OnMatchFound?.Invoke(new LobbyMatchResult
+            {
+                isHost = isHost,
+                lobbyId = currentLobby.Id,
+                relayJoinCode = relayCode,
+                opponentId = opponentId
+            });
+            Debug.Log("[UnityLobby] NotifyMatchFound: Event invoked successfully");
         }
-
-        string relayCode = "";
-        currentLobby.Data.TryGetValue(KEY_RELAY_CODE, out var relayData);
-        if (relayData != null)
-            relayCode = relayData.Value;
-
-        OnMatchFound?.Invoke(new LobbyMatchResult
+        catch (Exception ex)
         {
-            isHost = isHost,
-            lobbyId = currentLobby.Id,
-            relayJoinCode = relayCode,
-            opponentId = opponentId
-        });
+            Debug.LogError($"[UnityLobby] ✗ NotifyMatchFound error: {ex.GetType().Name} - {ex.Message}");
+            Debug.LogError($"[UnityLobby] Stack: {ex.StackTrace}");
+            throw;
+        }
     }
 
     public async Task UpdateRelayCodeAsync(string joinCode)

@@ -26,10 +26,21 @@
     <script>
       // WebGL 호환성 경고 필터링
       const originalWarn = console.warn;
+      const originalError = console.error;
+      const originalLog = console.log;
+      
       console.warn = function(...args) {
         const message = args.join(' ');
         // WebGL INVALID_ENUM 경고는 무시 (무해함)
         if (message.includes('INVALID_ENUM') && message.includes('getInternalformatParameter')) {
+          return;
+        }
+        // WebGL 관련 무해한 경고들 필터링
+        if (message.includes('WebGL') && (
+          message.includes('INVALID_ENUM') ||
+          message.includes('getInternalformatParameter') ||
+          message.includes('invalid internalformat')
+        )) {
           return;
         }
         originalWarn.apply(console, args);
@@ -62,7 +73,7 @@
         updateBannerVisibility();
       }
 
-      var buildUrl = "Build";
+      var buildUrl = "Build/Build";
       var loaderUrl = buildUrl + "/Build.loader.js";
       var config = {
         arguments: [],
