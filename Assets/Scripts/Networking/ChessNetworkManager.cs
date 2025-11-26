@@ -81,6 +81,29 @@ public class ChessNetworkManager : MonoBehaviour
             lobbyManager.OnError -= OnLobbyError;
             lobbyManager.OnStatusUpdate -= OnLobbyStatusUpdate;
         }
+        
+        // Netcode 이벤트 구독 해제 (메모리 누수 방지)
+        if (NetworkManager.Singleton != null)
+        {
+            NetworkManager.Singleton.OnClientConnectedCallback -= OnClientConnected;
+            NetworkManager.Singleton.OnClientDisconnectCallback -= OnClientDisconnect;
+        }
+    }
+    
+    /// <summary>
+    /// CLIENT 연결 처리
+    /// </summary>
+    private void OnClientConnected(ulong clientId)
+    {
+        Debug.Log($"[ChessNetwork] CLIENT connected with ID: {clientId}");
+    }
+    
+    /// <summary>
+    /// CLIENT 연결 해제 처리
+    /// </summary>
+    private void OnClientDisconnect(ulong clientId)
+    {
+        Debug.LogWarning($"[ChessNetwork] CLIENT disconnected with ID: {clientId}");
     }
 
     /// <summary>
@@ -105,10 +128,15 @@ public class ChessNetworkManager : MonoBehaviour
 
             // 한 컴퓨터에서 여러 빌드를 실행할 때 필수!!!
             // 기존 토큰을 완전히 삭제해야 새로운 Anonymous 계정으로 로그인됨
+            // WebGL에서는 브라우저 세션이 유지되므로 스킵
+#if !UNITY_WEBGL
             Debug.Log("[ChessNetwork] Clearing session token...");
             AuthenticationService.Instance.ClearSessionToken();
+#else
+            Debug.Log("[ChessNetwork] WebGL: Skipping ClearSessionToken to preserve session");
+#endif
 
-            Debug.Log("[ChessNetwork] Signing in as NEW anonymous user...");
+            Debug.Log("[ChessNetwork] Signing in as anonymous user...");
             AuthenticationService.Instance.SignedIn += () =>
             {
                 Debug.Log($"[ChessNetwork] SignedIn event fired - PlayerId: {AuthenticationService.Instance.PlayerId}");
@@ -378,30 +406,31 @@ public class ChessNetworkManager : MonoBehaviour
     private async Task<string> WaitForRelayCode()
     {
         float timeout = 30f;
-        float elapsed = 0f;
+        float startTime = Time.realtimeSinceStartup;  // 실제 경과 시간 추적
         int checkCount = 0;
 
-        while (elapsed < timeout)
+        while (Time.realtimeSinceStartup - startTime < timeout)
         {
             string code = lobbyManager.GetRelayJoinCode();
             checkCount++;
             
             if (!string.IsNullOrEmpty(code))
             {
+                float elapsed = Time.realtimeSinceStartup - startTime;
                 Debug.Log($"[ChessNetwork] Relay code received after {elapsed:F1}s ({checkCount} checks)");
                 AddChatMessage($"[CLIENT] ✓ Relay code received!");
                 return code;
             }
 
-            if (checkCount % 2 == 0)  // 매 폴링마다 체크
+            if (checkCount % 10 == 0)  // 10번마다 로그
             {
+                float elapsed = Time.realtimeSinceStartup - startTime;
                 AddChatMessage($"[CLIENT] Waiting for relay code... ({elapsed:F0}s)");
                 Debug.Log($"[ChessNetwork] Still waiting for relay code... {elapsed:F1}s elapsed");
             }
 
-            // WebGL에서 작동하지 않는 Task.Delay() 제거 - 폴링만 수행
-            // 빠른 폴링으로 relay code 즉시 감지 가능
-            elapsed += 0.1f;  // 시뮬레이션 시간만 증가
+            // 짧은 지연 추가 (CPU 낭비 방지, 약간의 응답성 유지)
+            await Task.Delay(100);
         }
 
         Debug.LogError("[ChessNetwork] Timeout waiting for relay code!");
@@ -495,34 +524,49 @@ public class ChessNetworkManager : MonoBehaviour
     {
         AddChatMessage("[HOST] Waiting for all players to connect...");
         AddChatMessage($"[HOST] Current connections: {NetworkManager.Singleton.ConnectedClients.Count}/{MAX_PLAYERS}");
+        Debug.Log($"[ChessNetwork] HOST: WaitForClientsAndLoadScene() started - Current connections: {NetworkManager.Singleton.ConnectedClients.Count}/{MAX_PLAYERS}");
         
-        float timeout = 10f;
-        float elapsed = 0f;
+        // CLIENT 연결 대기 (타임아웃 60초)
+        float timeout = 60f;
+        float startTime = Time.time;
         
-        while (NetworkManager.Singleton.ConnectedClients.Count < MAX_PLAYERS && elapsed < timeout)
+        while (NetworkManager.Singleton.ConnectedClients.Count < MAX_PLAYERS && Time.time - startTime < timeout)
         {
             yield return new WaitForSeconds(0.5f);
-            elapsed += 0.5f;
             
-            if (elapsed % 2 < 0.1f) // Every 2 seconds
+            int currentConnections = NetworkManager.Singleton.ConnectedClients.Count;
+            float elapsedTime = Time.time - startTime;
+            Debug.Log($"[ChessNetwork] HOST: Waiting - {currentConnections}/{MAX_PLAYERS} players connected ({elapsedTime:F1}s elapsed)");
+            
+            // 매 1초마다 UI에 표시
+            if (Time.frameCount % 30 == 0) // 60FPS 기준 약 0.5초
             {
-                AddChatMessage($"[HOST] Connections: {NetworkManager.Singleton.ConnectedClients.Count}/{MAX_PLAYERS} ({(int)elapsed}s elapsed)");
+                AddChatMessage($"[HOST] Connections: {currentConnections}/{MAX_PLAYERS} - Waiting for all players... ({elapsedTime:F0}s)");
             }
         }
         
+        // 결과 확인
         if (NetworkManager.Singleton.ConnectedClients.Count >= MAX_PLAYERS)
         {
-            AddChatMessage($"[HOST] [OK] All {MAX_PLAYERS} players connected!");
-            AddChatMessage("[HOST] Starting game in 2 seconds...");
-            yield return new WaitForSeconds(2f);
+            // 모든 플레이어 연결 완료
+            AddChatMessage($"[HOST] ✓ All {MAX_PLAYERS} players connected!");
+            Debug.Log($"[ChessNetwork] HOST: All {MAX_PLAYERS} players connected!");
+            
+            AddChatMessage("[HOST] Starting game in 3 seconds...");
+            yield return new WaitForSeconds(3f);
+            
+            Debug.Log($"[ChessNetwork] HOST: Starting game scene now...");
+            AddChatMessage("[HOST] Loading game scene...");
             LoadGameScene();
         }
         else
         {
-            AddChatMessage($"[HOST] Warning: Only {NetworkManager.Singleton.ConnectedClients.Count}/{MAX_PLAYERS} players connected after {timeout}s");
-            AddChatMessage("[HOST] Starting game with available players...");
-            yield return new WaitForSeconds(1f);
-            LoadGameScene();
+            // 타임아웃 - CLIENT 연결 실패
+            int connections = NetworkManager.Singleton.ConnectedClients.Count;
+            string errorMsg = $"Timeout: Only {connections}/{MAX_PLAYERS} players connected after {timeout}s";
+            Debug.LogError($"[ChessNetwork] HOST: {errorMsg}");
+            AddChatMessage($"[HOST] ❌ {errorMsg}");
+            OnError?.Invoke(errorMsg);
         }
     }
     
