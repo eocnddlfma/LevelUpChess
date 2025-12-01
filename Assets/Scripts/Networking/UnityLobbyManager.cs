@@ -333,9 +333,9 @@ namespace LevelUpChess.Networking
                 pollComplete = true;
             });
             
-            // 폴링 완료 대기
+            // 폴링 완료 대기 (WebGL에서 async 호출이 느릴 수 있으므로 충분한 시간 부여)
             float waitTime = 0;
-            while (!pollComplete && waitTime < 10f)
+            while (!pollComplete && waitTime < 20f)
             {
                 yield return null;
                 waitTime += Time.deltaTime;
@@ -343,7 +343,7 @@ namespace LevelUpChess.Networking
             
             if (!pollComplete)
             {
-                Debug.LogWarning($"[UnityLobby] HOST: Poll timeout at attempt {i+1}");
+                Debug.LogWarning($"[UnityLobby] HOST: Poll timeout at attempt {i+1} (waited {waitTime:F1}s)");
                 errorCount++;
             }
             else if (pollSuccess && playerCount >= maxPlayers)
@@ -374,9 +374,12 @@ namespace LevelUpChess.Networking
     
     private async void PollLobbyOnce(Action<bool, int, string> callback)
     {
+        bool callbackInvoked = false;
         try
         {
+            Debug.Log("[UnityLobby] HOST: PollLobbyOnce - Starting API call...");
             var lobby = await LobbyService.Instance.GetLobbyAsync(currentLobby.Id);
+            Debug.Log("[UnityLobby] HOST: PollLobbyOnce - API call completed");
             currentLobby = lobby;
             
             foreach (var player in currentLobby.Players)
@@ -384,11 +387,17 @@ namespace LevelUpChess.Networking
                 Debug.Log($"[UnityLobby] HOST:   - Player: {player.Id}");
             }
             
+            callbackInvoked = true;
             callback?.Invoke(true, currentLobby.Players.Count, null);
         }
         catch (Exception ex)
         {
-            callback?.Invoke(false, 0, ex.Message);
+            Debug.LogError($"[UnityLobby] HOST: PollLobbyOnce error: {ex.Message}");
+            if (!callbackInvoked)
+            {
+                callbackInvoked = true;
+                callback?.Invoke(false, 0, ex.Message);
+            }
         }
     }
 
@@ -455,9 +464,9 @@ namespace LevelUpChess.Networking
                 pollComplete = true;
             });
             
-            // 폴링 완료 대기
+            // 폴링 완료 대기 (WebGL에서 async 호출이 느릴 수 있으므로 충분한 시간 부여)
             float waitTime = 0;
-            while (!pollComplete && waitTime < 10f)
+            while (!pollComplete && waitTime < 20f)
             {
                 yield return null;
                 waitTime += Time.deltaTime;
@@ -465,7 +474,7 @@ namespace LevelUpChess.Networking
             
             if (!pollComplete)
             {
-                Debug.LogWarning($"[UnityLobby] CLIENT: Poll timeout at attempt {i+1}");
+                Debug.LogWarning($"[UnityLobby] CLIENT: Poll timeout at attempt {i+1} (waited {waitTime:F1}s)");
                 errorCount++;
             }
             else if (pollSuccess && !string.IsNullOrEmpty(relayCode))
@@ -493,9 +502,12 @@ namespace LevelUpChess.Networking
     
     private async void PollLobbyForRelayCodeOnce(Action<bool, string, string> callback)
     {
+        bool callbackInvoked = false;
         try
         {
+            Debug.Log("[UnityLobby] CLIENT: PollLobbyForRelayCodeOnce - Starting API call...");
             var lobby = await LobbyService.Instance.GetLobbyAsync(currentLobby.Id);
+            Debug.Log("[UnityLobby] CLIENT: PollLobbyForRelayCodeOnce - API call completed");
             currentLobby = lobby;
             
             Debug.Log($"[UnityLobby] CLIENT: Poll result - Lobby data keys: {(lobby.Data != null ? string.Join(", ", lobby.Data.Keys) : "null")}");
@@ -504,17 +516,24 @@ namespace LevelUpChess.Networking
             {
                 string code = relayData.Value;
                 Debug.Log($"[UnityLobby] CLIENT: RelayCode from lobby: {(string.IsNullOrEmpty(code) ? "(empty)" : code)}");
+                callbackInvoked = true;
                 callback?.Invoke(true, code, null);
             }
             else
             {
                 Debug.Log("[UnityLobby] CLIENT: RelayCode not found in lobby data yet");
+                callbackInvoked = true;
                 callback?.Invoke(true, "", null);
             }
         }
         catch (Exception ex)
         {
-            callback?.Invoke(false, "", ex.Message);
+            Debug.LogError($"[UnityLobby] CLIENT: PollLobbyForRelayCodeOnce error: {ex.Message}");
+            if (!callbackInvoked)
+            {
+                callbackInvoked = true;
+                callback?.Invoke(false, "", ex.Message);
+            }
         }
     }
 

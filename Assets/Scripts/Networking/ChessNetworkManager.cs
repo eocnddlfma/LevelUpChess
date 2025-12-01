@@ -149,10 +149,11 @@ namespace LevelUpChess.Networking
         matchResult = result;
         isHost = result.isHost;
         
-        Debug.Log($"[ChessNetwork] Match found - Host: {isHost}");
+        Debug.Log($"[ChessNetwork] Match Found! IsHost: {isHost}, Opponent: {result.opponentId}");
         NetworkLogUI.Log("[OK] Opponent found!");
         
-        SetupRelayConnection();
+        // Fire and forget - SetupRelayConnection 실행
+        _ = SetupRelayConnection();
     }
 
     private void OnLobbyError(string error)
@@ -167,14 +168,18 @@ namespace LevelUpChess.Networking
         NetworkLogUI.Log(status);
     }
 
-    private void SetupRelayConnection()
+    private async Task SetupRelayConnection()
     {
         try
         {
             if (isHost)
-                SetupAsHostAsync();
+            {
+                await SetupAsHost();
+            }
             else
-                SetupAsClient();
+            {
+                await SetupAsClient();
+            }
         }
         catch (Exception ex)
         {
@@ -185,98 +190,108 @@ namespace LevelUpChess.Networking
         }
     }
 
-    private async void SetupAsHostAsync()
+    private async Task SetupAsHost()
     {
         try
         {
-            NetworkLogUI.Log("[HOST] Setting up...");
+            NetworkLogUI.Log("[HOST] Setting up host...");
 
+            // 1. Relay Allocation 생성
+            NetworkLogUI.Log("[HOST] Creating Relay allocation...");
             allocation = await RelayService.Instance.CreateAllocationAsync(MAX_PLAYERS);
+            NetworkLogUI.Log("[HOST] Relay allocation created");
+            Debug.Log($"[ChessNetwork] Allocation ID: {allocation.AllocationId}");
+
+            NetworkLogUI.Log("[HOST] Generating join code...");
             joinCode = await RelayService.Instance.GetJoinCodeAsync(allocation.AllocationId);
-            
+            Debug.Log($"[ChessNetwork] Relay Join Code: {joinCode}");
             NetworkLogUI.Log($"[HOST] Join code: {joinCode}");
+
+            // 2. Lobby에 Join Code 저장
+            NetworkLogUI.Log("[HOST] Sharing connection info with lobby...");
             await lobbyManager.UpdateRelayCodeAsync(joinCode);
-            NetworkLogUI.Log("[HOST] Connection info shared");
+            NetworkLogUI.Log("[HOST] Connection info shared to lobby");
 
+            // 3. Transport 설정
+            NetworkLogUI.Log("[HOST] Configuring transport...");
             ConfigureTransport(allocation.ToRelayServerData(CONNECTION_TYPE));
-            
-            if (!NetworkManager.Singleton.StartHost())
-            {
-                string error = "Failed to start host";
-                Debug.LogError($"[ChessNetwork] {error}");
-                NetworkLogUI.Log($"[HOST] Error: {error}");
-                OnError?.Invoke(error);
-                isInitializing = false;
-                return;
-            }
+            NetworkLogUI.Log("[HOST] Transport configured");
 
-            NetworkLogUI.Log("[HOST] Network started - Waiting for client...");
+            // 4. Host 시작
+            NetworkLogUI.Log("[HOST] Starting network host...");
+            bool hostStarted = NetworkManager.Singleton.StartHost();
+            if (!hostStarted)
+                throw new Exception("Failed to start host");
+
+            NetworkLogUI.Log("[HOST] Network host started - Waiting for client...");
+            Debug.Log("[ChessNetwork] Host setup completed successfully");
+
+            // 5. 완료 처리
             FinalizeNetworkSetup();
         }
         catch (Exception ex)
         {
             Debug.LogError($"[ChessNetwork] Host setup failed: {ex.Message}");
+            Debug.LogError($"[ChessNetwork] Stack: {ex.StackTrace}");
             NetworkLogUI.Log($"[HOST] Error: {ex.Message}");
-            OnError?.Invoke(ex.Message);
-            isInitializing = false;
+            throw;
         }
     }
 
-    private void SetupAsClient()
-    {
-        NetworkLogUI.Log("[CLIENT] Setting up...");
-
-        string code = matchResult.relayJoinCode;
-        if (string.IsNullOrEmpty(code))
-        {
-            NetworkLogUI.Log("[CLIENT] Waiting for relay code...");
-            StartCoroutine(WaitForRelayCodeCoroutine(OnRelayCodeReceived));
-        }
-        else
-        {
-            OnRelayCodeReceived(code);
-        }
-    }
-    
-    private async void OnRelayCodeReceived(string code)
+    private async Task SetupAsClient()
     {
         try
         {
+            NetworkLogUI.Log("[CLIENT] Setting up client...");
+
+            // 1. Lobby에서 Join Code 가져오기
+            string code = matchResult.relayJoinCode;
+
+            // Join Code가 없으면 다시 로비에서 가져오기
             if (string.IsNullOrEmpty(code))
             {
-                string error = "Failed to get relay code";
-                Debug.LogError($"[ChessNetwork] {error}");
-                NetworkLogUI.Log($"[CLIENT] Error: {error}");
-                OnError?.Invoke(error);
-                isInitializing = false;
-                return;
+                NetworkLogUI.Log("[CLIENT] Waiting for relay code from host...");
+                code = await WaitForRelayCodeAsync();
             }
-
-            NetworkLogUI.Log("[CLIENT] Joining relay...");
-            joinAllocation = await RelayService.Instance.JoinAllocationAsync(code);
-            NetworkLogUI.Log("[CLIENT] Relay joined");
-
-            ConfigureTransport(joinAllocation.ToRelayServerData(CONNECTION_TYPE));
-
-            if (!NetworkManager.Singleton.StartClient())
+            else
             {
-                string error = "Failed to start client";
-                Debug.LogError($"[ChessNetwork] {error}");
-                NetworkLogUI.Log($"[CLIENT] Error: {error}");
-                OnError?.Invoke(error);
-                isInitializing = false;
-                return;
+                NetworkLogUI.Log($"[CLIENT] Relay code received: {code}");
             }
 
-            NetworkLogUI.Log("[CLIENT] Network started...");
+            if (string.IsNullOrEmpty(code))
+                throw new Exception("Failed to get relay join code");
+
+            Debug.Log($"[ChessNetwork] Got Join Code: {code}");
+            NetworkLogUI.Log("[CLIENT] Connection info received");
+
+            // 2. Relay에 참가
+            NetworkLogUI.Log("[CLIENT] Joining Relay server...");
+            joinAllocation = await RelayService.Instance.JoinAllocationAsync(code);
+            NetworkLogUI.Log("[CLIENT] Joined Relay server");
+
+            // 3. Transport 설정
+            NetworkLogUI.Log("[CLIENT] Configuring transport...");
+            ConfigureTransport(joinAllocation.ToRelayServerData(CONNECTION_TYPE));
+            NetworkLogUI.Log("[CLIENT] Transport configured");
+
+            // 4. Client 시작
+            NetworkLogUI.Log("[CLIENT] Starting network client...");
+            bool clientStarted = NetworkManager.Singleton.StartClient();
+            if (!clientStarted)
+                throw new Exception("Failed to start client");
+
+            NetworkLogUI.Log("[CLIENT] Network client started - Connecting to host...");
+            Debug.Log("[ChessNetwork] Client setup completed successfully");
+
+            // 5. 완료 처리
             FinalizeNetworkSetup();
         }
         catch (Exception ex)
         {
             Debug.LogError($"[ChessNetwork] Client setup failed: {ex.Message}");
+            Debug.LogError($"[ChessNetwork] Stack: {ex.StackTrace}");
             NetworkLogUI.Log($"[CLIENT] Error: {ex.Message}");
-            OnError?.Invoke(ex.Message);
-            isInitializing = false;
+            throw;
         }
     }
 
@@ -293,28 +308,48 @@ namespace LevelUpChess.Networking
         transport.SetRelayServerData(relayServerData);
     }
 
-    private string cachedRelayCode;
-    private bool isWaitingForRelayCode;
-    
-    private IEnumerator WaitForRelayCodeCoroutine(Action<string> onComplete)
+    /// <summary>
+    /// Relay Join Code 대기 (코루틴 기반, WebGL 호환)
+    /// TaskCompletionSource를 사용하여 async/await과 코루틴을 연결
+    /// </summary>
+    private Task<string> WaitForRelayCodeAsync()
+    {
+        var tcs = new TaskCompletionSource<string>();
+        StartCoroutine(WaitForRelayCodeCoroutine(tcs));
+        return tcs.Task;
+    }
+
+    private IEnumerator WaitForRelayCodeCoroutine(TaskCompletionSource<string> tcs)
     {
         float startTime = Time.realtimeSinceStartup;
-        
+        int checkCount = 0;
+
         while (Time.realtimeSinceStartup - startTime < RELAY_CODE_TIMEOUT)
         {
             string code = lobbyManager.GetRelayJoinCode();
+            checkCount++;
+
             if (!string.IsNullOrEmpty(code))
             {
-                onComplete?.Invoke(code);
+                float elapsed = Time.realtimeSinceStartup - startTime;
+                Debug.Log($"[ChessNetwork] Relay code received after {elapsed:F1}s ({checkCount} checks)");
+                NetworkLogUI.Log("[CLIENT] Relay code received!");
+                tcs.SetResult(code);
                 yield break;
+            }
+
+            if (checkCount % 10 == 0)
+            {
+                float elapsed = Time.realtimeSinceStartup - startTime;
+                NetworkLogUI.Log($"[CLIENT] Waiting for relay code... ({elapsed:F0}s)");
             }
 
             yield return new WaitForSeconds(0.1f);
         }
 
-        Debug.LogError("[ChessNetwork] Relay code timeout");
-        NetworkLogUI.Log("[CLIENT] ??Timeout - Host may not have shared code");
-        onComplete?.Invoke(null);
+        Debug.LogError("[ChessNetwork] Timeout waiting for relay code!");
+        NetworkLogUI.Log("[CLIENT] Timeout! Host may not have shared relay code");
+        tcs.SetResult(null);
     }
 
     private void FinalizeNetworkSetup()
