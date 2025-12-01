@@ -61,25 +61,12 @@ if os.path.exists(build_folder) and len(os.listdir(build_folder)) == 0:
     os.rmdir(build_folder)
     print("삭제: 빈 Build 폴더")
 
-# TemplateData 폴더 내 파일들도 루트로 이동
-template_folder = os.path.join(build_root, "TemplateData")
-if os.path.exists(template_folder):
-    template_files = os.listdir(template_folder)
-    for filename in template_files:
-        src = os.path.join(template_folder, filename)
-        dst = os.path.join(build_root, filename)
-        if os.path.isfile(src):
-            shutil.move(src, dst)
-            print(f"이동: TemplateData/{filename} → 루트")
-    
-    # 빈 TemplateData 폴더 삭제
-    if len(os.listdir(template_folder)) == 0:
-        os.rmdir(template_folder)
-        print("삭제: 빈 TemplateData 폴더")
+# TemplateData 폴더는 그대로 유지!
+print("TemplateData 폴더는 그대로 유지")
 
-# 3. index.html 경로 수정
+# 3. index.html 경로 수정 (build 폴더 내부용)
 print("\n" + "=" * 50)
-print("3. index.html 경로 수정")
+print("3. build/index.html 경로 수정")
 print("=" * 50)
 
 index_path = os.path.join(build_root, "index.html")
@@ -87,7 +74,7 @@ if os.path.exists(index_path):
     with open(index_path, 'r', encoding='utf-8') as f:
         content = f.read()
     
-    # 경로 수정 - Build/ 와 TemplateData/ 접두사 제거
+    # 경로 수정 - Build/ 접두사만 제거 (TemplateData는 유지!)
     original_content = content
     
     # Build 폴더 경로 수정
@@ -99,18 +86,55 @@ if os.path.exists(index_path):
     content = content.replace('build.framework.js.br', 'build.framework.js')
     content = content.replace('build.wasm.br', 'build.wasm')
     
-    # TemplateData 경로 수정
-    content = content.replace('TemplateData/', '')
+    # TemplateData 경로는 그대로 유지!
     
     with open(index_path, 'w', encoding='utf-8') as f:
         f.write(content)
     
-    print("✓ index.html 경로 수정 완료")
+    print("✓ build/index.html 경로 수정 완료")
     print("  - Build/ → . (루트)")
-    print("  - TemplateData/ → 루트")
+    print("  - TemplateData/ → 그대로 유지")
     print("  - .br 확장자 제거")
 else:
-    print("✗ index.html을 찾을 수 없습니다")
+    print("✗ build/index.html을 찾을 수 없습니다")
+
+# 4. 루트 index.html 경로 수정 (GitHub Pages용)
+print("\n" + "=" * 50)
+print("4. 루트 index.html 경로 수정")
+print("=" * 50)
+
+root_index_path = "index.html"
+if os.path.exists(root_index_path):
+    with open(root_index_path, 'r', encoding='utf-8') as f:
+        content = f.read()
+    
+    # Build/Build → Build 로 수정
+    content = content.replace('var buildUrl = "Build/Build";', 'var buildUrl = "Build";')
+    
+    # 파일명 대소문자 수정 (Build.xxx → build.xxx)
+    content = content.replace('/Build.loader.js', '/build.loader.js')
+    content = content.replace('/Build.data', '/build.data')
+    content = content.replace('/Build.framework.js', '/build.framework.js')
+    content = content.replace('/Build.wasm', '/build.wasm')
+    
+    # .br 확장자 제거
+    content = content.replace('build.data.br', 'build.data')
+    content = content.replace('build.framework.js.br', 'build.framework.js')
+    content = content.replace('build.wasm.br', 'build.wasm')
+    
+    # TemplateData 경로 수정 (Build/TemplateData → TemplateData)
+    content = content.replace('Build/TemplateData/', 'TemplateData/')
+    
+    with open(root_index_path, 'w', encoding='utf-8') as f:
+        f.write(content)
+    
+    print("✓ 루트 index.html 경로 수정 완료")
+    print("  - Build/Build → Build")
+    print("  - Build.xxx → build.xxx (소문자)")
+    print("  - Build/TemplateData/ → TemplateData/")
+    print("  - .br 확장자 제거")
+else:
+    print("✗ 루트 index.html을 찾을 수 없습니다")
 
 print("\n" + "=" * 50)
 print("완료!")
