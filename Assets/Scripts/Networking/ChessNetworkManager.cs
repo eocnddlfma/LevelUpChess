@@ -152,7 +152,7 @@ namespace LevelUpChess.Networking
         Debug.Log($"[ChessNetwork] Match found - Host: {isHost}");
         NetworkLogUI.Log("[OK] Opponent found!");
         
-        _ = SetupRelayConnection();
+        SetupRelayConnection();
     }
 
     private void OnLobbyError(string error)
@@ -167,14 +167,14 @@ namespace LevelUpChess.Networking
         NetworkLogUI.Log(status);
     }
 
-    private async Task SetupRelayConnection()
+    private void SetupRelayConnection()
     {
         try
         {
             if (isHost)
-                await SetupAsHost();
+                SetupAsHostAsync();
             else
-                await SetupAsClient();
+                SetupAsClient();
         }
         catch (Exception ex)
         {
@@ -185,7 +185,7 @@ namespace LevelUpChess.Networking
         }
     }
 
-    private async Task SetupAsHost()
+    private async void SetupAsHostAsync()
     {
         try
         {
@@ -201,7 +201,14 @@ namespace LevelUpChess.Networking
             ConfigureTransport(allocation.ToRelayServerData(CONNECTION_TYPE));
             
             if (!NetworkManager.Singleton.StartHost())
-                throw new Exception("Failed to start host");
+            {
+                string error = "Failed to start host";
+                Debug.LogError($"[ChessNetwork] {error}");
+                NetworkLogUI.Log($"[HOST] Error: {error}");
+                OnError?.Invoke(error);
+                isInitializing = false;
+                return;
+            }
 
             NetworkLogUI.Log("[HOST] Network started - Waiting for client...");
             FinalizeNetworkSetup();
@@ -209,26 +216,41 @@ namespace LevelUpChess.Networking
         catch (Exception ex)
         {
             Debug.LogError($"[ChessNetwork] Host setup failed: {ex.Message}");
-            NetworkLogUI.Log($"[HOST] ??Error: {ex.Message}");
-            throw;
+            NetworkLogUI.Log($"[HOST] Error: {ex.Message}");
+            OnError?.Invoke(ex.Message);
+            isInitializing = false;
         }
     }
 
-    private async Task SetupAsClient()
+    private void SetupAsClient()
+    {
+        NetworkLogUI.Log("[CLIENT] Setting up...");
+
+        string code = matchResult.relayJoinCode;
+        if (string.IsNullOrEmpty(code))
+        {
+            NetworkLogUI.Log("[CLIENT] Waiting for relay code...");
+            StartCoroutine(WaitForRelayCodeCoroutine(OnRelayCodeReceived));
+        }
+        else
+        {
+            OnRelayCodeReceived(code);
+        }
+    }
+    
+    private async void OnRelayCodeReceived(string code)
     {
         try
         {
-            NetworkLogUI.Log("[CLIENT] Setting up...");
-
-            string code = matchResult.relayJoinCode;
             if (string.IsNullOrEmpty(code))
             {
-                NetworkLogUI.Log("[CLIENT] Waiting for relay code...");
-                code = await WaitForRelayCode();
+                string error = "Failed to get relay code";
+                Debug.LogError($"[ChessNetwork] {error}");
+                NetworkLogUI.Log($"[CLIENT] Error: {error}");
+                OnError?.Invoke(error);
+                isInitializing = false;
+                return;
             }
-
-            if (string.IsNullOrEmpty(code))
-                throw new Exception("Failed to get relay code");
 
             NetworkLogUI.Log("[CLIENT] Joining relay...");
             joinAllocation = await RelayService.Instance.JoinAllocationAsync(code);
@@ -237,7 +259,14 @@ namespace LevelUpChess.Networking
             ConfigureTransport(joinAllocation.ToRelayServerData(CONNECTION_TYPE));
 
             if (!NetworkManager.Singleton.StartClient())
-                throw new Exception("Failed to start client");
+            {
+                string error = "Failed to start client";
+                Debug.LogError($"[ChessNetwork] {error}");
+                NetworkLogUI.Log($"[CLIENT] Error: {error}");
+                OnError?.Invoke(error);
+                isInitializing = false;
+                return;
+            }
 
             NetworkLogUI.Log("[CLIENT] Network started...");
             FinalizeNetworkSetup();
@@ -246,7 +275,8 @@ namespace LevelUpChess.Networking
         {
             Debug.LogError($"[ChessNetwork] Client setup failed: {ex.Message}");
             NetworkLogUI.Log($"[CLIENT] Error: {ex.Message}");
-            throw;
+            OnError?.Invoke(ex.Message);
+            isInitializing = false;
         }
     }
 
@@ -263,7 +293,10 @@ namespace LevelUpChess.Networking
         transport.SetRelayServerData(relayServerData);
     }
 
-    private async Task<string> WaitForRelayCode()
+    private string cachedRelayCode;
+    private bool isWaitingForRelayCode;
+    
+    private IEnumerator WaitForRelayCodeCoroutine(Action<string> onComplete)
     {
         float startTime = Time.realtimeSinceStartup;
         
@@ -271,14 +304,17 @@ namespace LevelUpChess.Networking
         {
             string code = lobbyManager.GetRelayJoinCode();
             if (!string.IsNullOrEmpty(code))
-                return code;
+            {
+                onComplete?.Invoke(code);
+                yield break;
+            }
 
-            await Task.Delay(100);
+            yield return new WaitForSeconds(0.1f);
         }
 
         Debug.LogError("[ChessNetwork] Relay code timeout");
         NetworkLogUI.Log("[CLIENT] ??Timeout - Host may not have shared code");
-        return null;
+        onComplete?.Invoke(null);
     }
 
     private void FinalizeNetworkSetup()
