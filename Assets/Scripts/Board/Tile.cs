@@ -1,79 +1,84 @@
 using UnityEngine;
+using LevelUpChess.Pieces;
+using LevelUpChess.Interactables;
 
-[RequireComponent(typeof(Collider2D))]
-public class Tile : MonoBehaviour
+namespace LevelUpChess.Board
 {
-    public Vector2Int coordinate;
-    [SerializeField] private GameObject highlightObject;
-    [SerializeField] private GameObject baseColorObject;
-    [SerializeField] private GameObject moveableIndicator;
-    [SerializeField] private GameObject attackableIndicator;
-    public ChessPiece occupyingPiece;
-
-    public ChessPiece OccupyingPiece
+    [RequireComponent(typeof(Collider2D))]
+    public class Tile : MonoBehaviour, IClickable
     {
-        get { return occupyingPiece; }
-        set { occupyingPiece = value; }
-    }
+        public Vector2Int coordinate;
+        [SerializeField] private GameObject highlightObject;
+        [SerializeField] private GameObject baseColorObject;
+        [SerializeField] private GameObject moveableIndicator;
+        [SerializeField] private GameObject attackableIndicator;
+        public ChessPiece occupyingPiece;
 
-    void Awake()
-    {
-        if (highlightObject != null)
+        public ChessPiece OccupyingPiece
         {
-            highlightObject.SetActive(false);
-        }
-
-        if (moveableIndicator != null)
-        {
-            moveableIndicator.SetActive(false);
+            get => occupyingPiece;
+            set => occupyingPiece = value;
         }
 
-        if (attackableIndicator != null)
+        void Awake()
         {
-            attackableIndicator.SetActive(false);
-        }
-    }
-    public void SetColor(Color color)
-    {
-        if (baseColorObject != null)
-        {
-            baseColorObject.GetComponent<SpriteRenderer>().color = color;
-        }
-    }
+            if (highlightObject != null)
+            {
+                highlightObject.SetActive(false);
+            }
 
-    public void SetHighlight(bool show)
-    {
-        Debug.Log($"[Tile.SetHighlight] Coordinate: {coordinate}, Show: {show}, highlightObject: {highlightObject}");
-        if (highlightObject != null)
-        {
-            highlightObject.SetActive(show);
-        }
-        else
-        {
-            Debug.LogWarning($"[Tile] highlightObject is null on tile {coordinate}");
-        }
-    }
+            if (moveableIndicator != null)
+            {
+                moveableIndicator.SetActive(false);
+            }
 
-    public void SetMoveable(bool show)
-    {
-        if (moveableIndicator != null)
-        {
-            moveableIndicator.SetActive(show);
+            if (attackableIndicator != null)
+            {
+                attackableIndicator.SetActive(false);
+            }
         }
-    }
-
-    public void SetAttackable(bool show)
-    {
-        if (attackableIndicator != null)
+        public void SetColor(Color color)
         {
-            attackableIndicator.SetActive(show);
+            if (baseColorObject != null)
+            {
+                baseColorObject.GetComponent<SpriteRenderer>().color = color;
+            }
         }
-    }
 
-    public void ClearIndicators()
-    {
-        SetHighlight(false);
-        SetMoveable(false);
-        SetAttackable(false);
+        public void SetHighlight(bool show)
+        {
+            Debug.Log($"[Tile.SetHighlight] Coordinate: {coordinate}, Show: {show}, highlightObject: {highlightObject}");
+            if (highlightObject != null)
+            {
+                highlightObject.SetActive(show);
+            }
+            else
+            {
+                Debug.LogWarning($"[Tile] highlightObject is null on tile {coordinate}");
+            }
+        }
+
+        public void SetMoveable(bool show)
+        {
+            if (moveableIndicator != null)
+            {
+                moveableIndicator.SetActive(show);
+            }
+        }
+
+        public void SetAttackable(bool show)
+        {
+            if (attackableIndicator != null)
+            {
+                attackableIndicator.SetActive(show);
+            }
+        }
+
+        public void ClearIndicators()
+        {
+            SetHighlight(false);
+            SetMoveable(false);
+            SetAttackable(false);
+        }
     }
 }

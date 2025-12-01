@@ -1,303 +1,291 @@
 using UnityEngine;
+using LevelUpChess.Core;
+using LevelUpChess.Events;
+using LevelUpChess.Pieces;
 
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
 
-
-
-
-
-public class BoardGenerator : MonoBehaviour
+namespace LevelUpChess.Board
 {
-    public GameObject tilePrefab; 
-    public int width = 8;
-    public int height = 8;
-    public float spacing = 1.1f; 
-    public Color whiteColor = Color.white;
-    public Color greenColor = Color.green;
-
-    private Tile[,] _tiles;
-
-    public void GenerateBoard()
+    /// <summary>
+    /// 보드 생성 전용 클래스
+    /// - 타일 생성 및 초기 기물 배치 담당
+    /// - BoardManager와 직접 참조 없이 이벤트로 통신
+    /// </summary>
+    public class BoardGenerator : MonoBehaviour
     {
-        Debug.Log("[BoardGenerator] Generating board...");
-        
-        // 기존 피스만 제거 (타일은 유지)
-        ClearPieces();
-        
-        // 타일이 없으면 생성
-        if (_tiles == null || _tiles.Length == 0)
+        [Header("Board Configuration")]
+        [SerializeField] private GameObject tilePrefab;
+        [SerializeField] private int width = 8;
+        [SerializeField] private int height = 8;
+        [SerializeField] private float spacing = 1.1f;
+
+        [Header("Visual Settings")]
+        [SerializeField] private Color whiteColor = new Color(0.93f, 0.93f, 0.82f); // 밝은 베이지
+        [SerializeField] private Color darkColor = new Color(0.45f, 0.32f, 0.22f);  // 어두운 갈색
+
+        private Tile[,] _tiles;
+        private bool _isInitialized = false;
+
+        private void OnEnable()
         {
+            Bus<BoardGenerationRequestedEvent>.OnEvent += OnBoardGenerationRequested;
+            Bus<BoardClearRequestedEvent>.OnEvent += OnBoardClearRequested;
+        }
+
+        private void OnDisable()
+        {
+            Bus<BoardGenerationRequestedEvent>.OnEvent -= OnBoardGenerationRequested;
+            Bus<BoardClearRequestedEvent>.OnEvent -= OnBoardClearRequested;
+        }
+
+        private void OnBoardGenerationRequested(BoardGenerationRequestedEvent evt)
+        {
+            GenerateBoard();
+        }
+
+        private void OnBoardClearRequested(BoardClearRequestedEvent evt)
+        {
+            ClearBoard();
+        }
+
+        /// <summary>
+        /// 보드 생성 및 이벤트 발행
+        /// </summary>
+        public void GenerateBoard()
+        {
+            if (_isInitialized)
+            {
+                Debug.LogWarning("[BoardGenerator] Board already initialized. Use ClearBoard() first if you want to regenerate.");
+                return;
+            }
+
+            Debug.Log("[BoardGenerator] ========== Generating Board ==========");
+            
+            if (!ValidateSetup())
+                return;
+
+            ClearPieces();
             _tiles = new Tile[width, height];
+
             GenerateTiles();
-            InitializeBoardManager();
+
+            // 이벤트로 BoardManager에 타일 데이터 전달
+            PublishBoardGeneratedEvent();
+
+            ApplyDefaultSetup();
+
+            _isInitialized = true;
+            Debug.Log("[BoardGenerator] Board generation completed successfully");
         }
-        
-        // 피스 배치
-        ApplyDefaultSetup();
-        
-        Debug.Log("[BoardGenerator] Board generation completed");
-    }
 
-    /// <summary>
-    /// 타일 생성 (별도 메서드로 분리)
-    /// </summary>
-    private void GenerateTiles()
-    {
-        Debug.Log("[BoardGenerator] Generating tiles...");
-        
-        // 부모 오브젝트의 중앙을 기준으로 보드 생성 (오프셋 미리 계산)
-        Vector3 centerOffset = new Vector3((width - 1) * spacing / 2f, (height - 1) * spacing / 2f, 0f);
-
-        // 타일 생성 (중앙 기준)
-        for (int x = 0; x < width; x++)
+        private bool ValidateSetup()
         {
-            for (int y = 0; y < height; y++)
+            if (tilePrefab == null)
             {
-                // 중앙 기준 위치 계산
-                Vector3 localPos = new Vector3(x * spacing, y * spacing, 0f) - centerOffset;
-                
-#if UNITY_EDITOR
-                GameObject go = (GameObject)PrefabUtility.InstantiatePrefab(tilePrefab, transform);
-                go.transform.localPosition = localPos;
-#else
-                GameObject go = Instantiate(tilePrefab, transform);
-                go.transform.localPosition = localPos;
-#endif
-                
-                go.name = "Tile_" + x + "_" + y;
-
-                Tile tile = go.GetComponent<Tile>();
-                if (tile == null)
-                {
-                    Debug.LogWarning("tilePrefab does not contain Tile component");
-                    continue;
-                }
-
-                tile.coordinate = new Vector2Int(x, y);
-
-                bool isWhite = ((x + y) % 2 == 0);
-                tile.SetColor(isWhite ? whiteColor : greenColor);
-
-                _tiles[x, y] = tile;
+                Debug.LogError("[BoardGenerator] tilePrefab is not assigned in inspector!");
+                return false;
             }
-        }
-        
-        Debug.Log("[BoardGenerator] Tiles generated successfully");
-    }
 
-    /// <summary>
-    /// BoardManager 초기화
-    /// </summary>
-    private void InitializeBoardManager()
-    {
-#if UNITY_EDITOR
-        if (!Application.isPlaying)
+            if (tilePrefab.GetComponent<Tile>() == null)
+            {
+                Debug.LogError("[BoardGenerator] tilePrefab does not have Tile component!");
+                return false;
+            }
+
+            if (width <= 0 || height <= 0)
+            {
+                Debug.LogError($"[BoardGenerator] Invalid board dimensions: {width}x{height}");
+                return false;
+            }
+
+            return true;
+        }
+
+        private void GenerateTiles()
         {
+            Debug.Log($"[BoardGenerator] Generating {width}x{height} tiles...");
             
-            BoardManager boardManager = FindFirstObjectByType<BoardManager>();
-            if (boardManager == null)
-            {
-                GameObject managerGO = new GameObject("BoardManager");
-                boardManager = managerGO.AddComponent<BoardManager>();
-                Debug.Log("[BoardGenerator] Created new BoardManager in scene");
-            }
-            
-            boardManager.Initialize(_tiles, width, height);
-            UnityEditor.EditorUtility.SetDirty(boardManager);
-            Debug.Log("[BoardGenerator] Saved tiles to BoardManager (Editor mode)");
-        }
-        else
-#endif
-        {
-            
-            if (BoardManager.Instance != null)
-            {
-                Debug.Log("[BoardGenerator] Initializing BoardManager with tiles");
-                BoardManager.Instance.Initialize(_tiles, width, height);
-            }
-            else
-            {
-                Debug.LogError("[BoardGenerator] BoardManager.Instance is null!");
-            }
-        }
-    }
-    
-    public void ClearBoard()
-    {
-        
-        ChessPiece[] allPieces = FindObjectsByType<ChessPiece>(FindObjectsSortMode.None);
-        
-        foreach (var piece in allPieces)
-        {
-            if (Application.isPlaying)
-            {
-                Destroy(piece.gameObject);
-            }
-            else
-            {
-                DestroyImmediate(piece.gameObject);
-            }
-        }
+            Vector3 centerOffset = new Vector3((width - 1) * spacing / 2f, (height - 1) * spacing / 2f, 0f);
 
-        
-        Tile[] allTiles = FindObjectsByType<Tile>(FindObjectsSortMode.None);
-        
-        foreach (var tile in allTiles)
-        {
-            if (Application.isPlaying)
-            {
-                Destroy(tile.gameObject);
-            }
-            else
-            {
-                DestroyImmediate(tile.gameObject);
-            }
-        }
-
-        Debug.Log($"[BoardGenerator] Cleared {allPieces.Length} pieces and {allTiles.Length} tiles from board");
-    }
-
-    public Tile GetTileAt(int x, int y)
-    {
-        if (x < 0 || y < 0 || x >= width || y >= height) return null;
-        return _tiles[x, y];
-    }
-
-    
-    public void ApplyDefaultSetup()
-    {
-        if (_tiles == null) 
-        {
-            Debug.LogError("_tiles is null in ApplyDefaultSetup!");
-            return;
-        }
-
-        Debug.Log("ApplyDefaultSetup started");
-        ClearPieces();
-
-        
-        for (int x = 0; x < width; x++)
-        {
-            SpawnPieceOnTile(PieceType.Pawn, Team.White, x, 1);
-            SpawnPieceOnTile(PieceType.Pawn, Team.Black, x, 6);
-        }
-
-        
-        SpawnPieceOnTile(PieceType.Rook, Team.White, 0, 0);
-        SpawnPieceOnTile(PieceType.Rook, Team.White, 7, 0);
-        SpawnPieceOnTile(PieceType.Rook, Team.Black, 0, 7);
-        SpawnPieceOnTile(PieceType.Rook, Team.Black, 7, 7);
-
-        
-        SpawnPieceOnTile(PieceType.Knight, Team.White, 1, 0);
-        SpawnPieceOnTile(PieceType.Knight, Team.White, 6, 0);
-        SpawnPieceOnTile(PieceType.Knight, Team.Black, 1, 7);
-        SpawnPieceOnTile(PieceType.Knight, Team.Black, 6, 7);
-
-        
-        SpawnPieceOnTile(PieceType.Bishop, Team.White, 2, 0);
-        SpawnPieceOnTile(PieceType.Bishop, Team.White, 5, 0);
-        SpawnPieceOnTile(PieceType.Bishop, Team.Black, 2, 7);
-        SpawnPieceOnTile(PieceType.Bishop, Team.Black, 5, 7);
-
-        
-        SpawnPieceOnTile(PieceType.Queen, Team.White, 3, 0);
-        SpawnPieceOnTile(PieceType.King, Team.White, 4, 0);
-        SpawnPieceOnTile(PieceType.Queen, Team.Black, 3, 7);
-        SpawnPieceOnTile(PieceType.King, Team.Black, 4, 7);
-
-        Debug.Log("ApplyDefaultSetup finished");
-    }
-
-    void ClearPieces()
-    {
-        // 방법 1: Tile의 참조로 제거
-        if (_tiles != null)
-        {
             for (int x = 0; x < width; x++)
             {
                 for (int y = 0; y < height; y++)
                 {
-                    Tile t = _tiles[x, y];
-                    if (t == null) continue;
-                    if (t.OccupyingPiece != null)
-                    {
-                        if (Application.isPlaying)
-                        {
-                            Destroy(t.OccupyingPiece.gameObject);
-                        }
-                        else
-                        {
-                            DestroyImmediate(t.OccupyingPiece.gameObject);
-                        }
+                    Vector3 localPos = new Vector3(x * spacing, y * spacing, 0f) - centerOffset;
+                    
+#if UNITY_EDITOR
+                    GameObject go = (GameObject)PrefabUtility.InstantiatePrefab(tilePrefab, transform);
+                    go.transform.localPosition = localPos;
+#else
+                    GameObject go = Instantiate(tilePrefab, transform);
+                    go.transform.localPosition = localPos;
+#endif
+                    
+                    go.name = $"Tile_{x}_{y}";
 
-                        t.OccupyingPiece = null;
+                    Tile tile = go.GetComponent<Tile>();
+                    if (tile == null)
+                    {
+                        Debug.LogError($"[BoardGenerator] Tile component missing on tilePrefab at {x},{y}");
+                        return;
+                    }
+
+                    tile.coordinate = new Vector2Int(x, y);
+                    bool isWhite = (x + y) % 2 == 0;
+                    tile.SetColor(isWhite ? whiteColor : darkColor);
+
+                    _tiles[x, y] = tile;
+                }
+            }
+            
+            Debug.Log("[BoardGenerator] Tiles generated successfully");
+        }
+
+        /// <summary>
+        /// 이벤트로 BoardManager에 타일 데이터 전달
+        /// </summary>
+        private void PublishBoardGeneratedEvent()
+        {
+#if UNITY_EDITOR
+            // Editor 모드에서는 직접 BoardManager 찾아서 초기화 (이벤트 시스템이 동작하지 않을 수 있음)
+            if (!Application.isPlaying)
+            {
+                BoardManager editorBoardManager = FindFirstObjectByType<BoardManager>();
+                if (editorBoardManager == null)
+                {
+                    GameObject managerGO = new GameObject("BoardManager");
+                    editorBoardManager = managerGO.AddComponent<BoardManager>();
+                    Debug.Log("[BoardGenerator] Created new BoardManager in scene");
+                }
+                
+                editorBoardManager.InitializeWithTiles(_tiles, width, height);
+                EditorUtility.SetDirty(editorBoardManager);
+                return;
+            }
+#endif
+
+            // 런타임: 이벤트로 전달
+            Bus<BoardGeneratedEvent>.Raise(new BoardGeneratedEvent
+            {
+                Tiles = _tiles,
+                Width = width,
+                Height = height
+            });
+            
+            Debug.Log("[BoardGenerator] BoardGeneratedEvent raised");
+        }
+        
+        /// <summary>
+        /// 보드 전체 초기화 (타일 포함)
+        /// </summary>
+        public void ClearBoard()
+        {
+            Debug.Log("[BoardGenerator] Clearing entire board...");
+            
+            Tile[] allTiles = FindObjectsByType<Tile>(FindObjectsSortMode.None);
+            foreach (var tile in allTiles)
+            {
+                DestroyObject(tile.gameObject);
+            }
+            
+            ClearPieces();
+            
+            _tiles = null;
+            _isInitialized = false;
+            
+            Debug.Log("[BoardGenerator] Board cleared");
+        }
+
+        public Tile GetTileAt(int x, int y)
+        {
+            if (x < 0 || y < 0 || x >= width || y >= height) 
+                return null;
+            return _tiles?[x, y];
+        }
+
+        /// <summary>
+        /// 기본 체스 초기 배치 적용
+        /// </summary>
+        public void ApplyDefaultSetup()
+        {
+            if (_tiles == null) 
+            {
+                Debug.LogError("[BoardGenerator] _tiles is null in ApplyDefaultSetup!");
+                return;
+            }
+
+            Debug.Log("[BoardGenerator] Applying default chess setup...");
+            
+            // 폰 배치
+            for (int x = 0; x < width; x++)
+            {
+                PieceFactory.Create(PieceType.Pawn, Team.White, _tiles[x, 1], transform);
+                PieceFactory.Create(PieceType.Pawn, Team.Black, _tiles[x, 6], transform);
+            }
+
+            // 루크 배치
+            PieceFactory.Create(PieceType.Rook, Team.White, _tiles[0, 0], transform);
+            PieceFactory.Create(PieceType.Rook, Team.White, _tiles[7, 0], transform);
+            PieceFactory.Create(PieceType.Rook, Team.Black, _tiles[0, 7], transform);
+            PieceFactory.Create(PieceType.Rook, Team.Black, _tiles[7, 7], transform);
+
+            // 나이트 배치
+            PieceFactory.Create(PieceType.Knight, Team.White, _tiles[1, 0], transform);
+            PieceFactory.Create(PieceType.Knight, Team.White, _tiles[6, 0], transform);
+            PieceFactory.Create(PieceType.Knight, Team.Black, _tiles[1, 7], transform);
+            PieceFactory.Create(PieceType.Knight, Team.Black, _tiles[6, 7], transform);
+
+            // 비숍 배치
+            PieceFactory.Create(PieceType.Bishop, Team.White, _tiles[2, 0], transform);
+            PieceFactory.Create(PieceType.Bishop, Team.White, _tiles[5, 0], transform);
+            PieceFactory.Create(PieceType.Bishop, Team.Black, _tiles[2, 7], transform);
+            PieceFactory.Create(PieceType.Bishop, Team.Black, _tiles[5, 7], transform);
+
+            // 퀸과 킹 배치
+            PieceFactory.Create(PieceType.Queen, Team.White, _tiles[3, 0], transform);
+            PieceFactory.Create(PieceType.King, Team.White, _tiles[4, 0], transform);
+            PieceFactory.Create(PieceType.Queen, Team.Black, _tiles[3, 7], transform);
+            PieceFactory.Create(PieceType.King, Team.Black, _tiles[4, 7], transform);
+
+            Debug.Log("[BoardGenerator] Default setup completed");
+        }
+
+        private void ClearPieces()
+        {
+            if (_tiles != null)
+            {
+                for (int x = 0; x < width; x++)
+                {
+                    for (int y = 0; y < height; y++)
+                    {
+                        Tile t = _tiles[x, y];
+                        if (t?.OccupyingPiece != null)
+                        {
+                            DestroyObject(t.OccupyingPiece.gameObject);
+                            t.OccupyingPiece = null;
+                        }
                     }
                 }
             }
-        }
 
-        // 방법 2: 씬의 모든 ChessPiece 제거 (이전 로드의 고아 피스도 제거)
-        ChessPiece[] allPieces = FindObjectsByType<ChessPiece>(FindObjectsSortMode.None);
-        Debug.Log($"[BoardGenerator] Found {allPieces.Length} orphaned pieces, clearing them...");
-        
-        foreach (var piece in allPieces)
-        {
-            if (Application.isPlaying)
+            ChessPiece[] allPieces = FindObjectsByType<ChessPiece>(FindObjectsSortMode.None);
+            
+            foreach (var piece in allPieces)
             {
-                Destroy(piece.gameObject);
+                DestroyObject(piece.gameObject);
             }
-            else
+            
+            if (allPieces.Length > 0)
             {
-                DestroyImmediate(piece.gameObject);
+                Debug.Log($"[BoardGenerator] Cleared {allPieces.Length} pieces");
             }
         }
-    }
 
-    void SpawnPieceOnTile(PieceType pieceType, Team team, int x, int y)
-    {
-        Tile tile = GetTileAt(x, y);
-        if (tile == null) 
+        private void DestroyObject(GameObject go)
         {
-            Debug.LogError($"Tile not found at {x}, {y}");
-            return;
-        }
-
-        GameObject prefab = null;
-        
-#if UNITY_EDITOR
-        string editorPrefabPath = $"Assets/Prefabs/Pieces/{team}_{pieceType}.prefab";
-        prefab = AssetDatabase.LoadAssetAtPath<GameObject>(editorPrefabPath);
-        if (prefab == null)
-        {
-            Debug.LogError($"[EDITOR] Cannot load prefab from: {editorPrefabPath}");
-        }
-#else
-        // 빌드본: Resources 폴더에서 로드
-        string resourcePath = $"Prefabs/Pieces/{team}_{pieceType}";
-        prefab = Resources.Load<GameObject>(resourcePath);
-        if (prefab == null)
-        {
-            Debug.LogError($"[RUNTIME] Cannot load prefab from Resources: {resourcePath}");
-            Debug.LogError($"[RUNTIME] Make sure prefabs are in Assets/Resources/Prefabs/Pieces/ folder");
-        }
-#endif
-
-        if (prefab == null)
-        {
-            return;
-        }
-
-        
-        GameObject go = Instantiate(prefab, tile.transform.position, Quaternion.identity, transform);
-        go.name = $"{team}_{pieceType}";
-
-        ChessPiece piece = go.GetComponent<ChessPiece>();
-        if (piece == null)
-        {
-            Debug.LogError($"ChessPiece component missing on {team}_{pieceType}");
             if (Application.isPlaying)
             {
                 Destroy(go);
@@ -306,20 +294,6 @@ public class BoardGenerator : MonoBehaviour
             {
                 DestroyImmediate(go);
             }
-            return;
         }
-
-        
-        Collider2D collider = go.GetComponent<Collider2D>();
-        if (collider == null)
-        {
-            Debug.LogError($"Collider2D missing on {team}_{pieceType}! Adding BoxCollider2D...");
-            collider = go.AddComponent<BoxCollider2D>();
-        }
-        
-        Debug.Log($"✓ Spawned {team} {pieceType} at ({x}, {y}) - Has Collider: {collider != null}");
-
-        
-        piece.PlaceOnTile(tile);
     }
 }

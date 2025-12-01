@@ -1,4 +1,4 @@
-namespace Events
+namespace LevelUpChess.Events
 {
     public static class Bus<T> where T : IEvent
     {

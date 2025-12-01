@@ -8,12 +8,10 @@ using Unity.Services.Authentication;
 using Unity.Services.Lobbies;
 using Unity.Services.Lobbies.Models;
 
-/// <summary>
-/// Unity Lobby를 사용한 자동 매치메이킹
-/// 버튼 한 번으로: 빈 방이 있으면 참가, 없으면 새 방 생성
-/// </summary>
-public class UnityLobbyManager : MonoBehaviour
+namespace LevelUpChess.Networking
 {
+    public class UnityLobbyManager : MonoBehaviour
+    {
     private const string KEY_RELAY_CODE = "RelayCode";
     private const string KEY_GAME_STARTED = "Started";
 
@@ -198,9 +196,9 @@ public class UnityLobbyManager : MonoBehaviour
             
             OnStatusUpdate?.Invoke("Waiting for opponent...");
             
-            Debug.Log("[UnityLobby] HOST: About to call WaitForOpponentAsync...");
-            await WaitForOpponentAsync();
-            Debug.Log("[UnityLobby] HOST: WaitForOpponentAsync completed");
+            Debug.Log("[UnityLobby] HOST: About to call WaitForOpponent...");
+            WaitForOpponent();
+            Debug.Log("[UnityLobby] HOST: WaitForOpponent started (coroutine-based)");
         }
         catch (LobbyServiceException lobbyEx)
         {
@@ -247,7 +245,7 @@ public class UnityLobbyManager : MonoBehaviour
             Debug.Log($"[UnityLobby] CLIENT: Players: {currentLobby.Players.Count}/{maxPlayers}");
             OnStatusUpdate?.Invoke("Waiting for relay code...");
             
-            await WaitForRelayCodeAsync();
+            WaitForRelayCode();
         }
         catch (LobbyServiceException ex) when (ex.Reason == LobbyExceptionReason.LobbyFull)
         {
@@ -260,7 +258,7 @@ public class UnityLobbyManager : MonoBehaviour
             Debug.LogWarning("[UnityLobby] CLIENT: Already a member of this lobby");
             currentLobby = lobby;
             isHost = false;
-            await WaitForRelayCodeAsync();
+            WaitForRelayCode();
         }
         catch (LobbyServiceException lobbyEx)
         {
@@ -278,9 +276,9 @@ public class UnityLobbyManager : MonoBehaviour
         }
     }
 
-    private async Task WaitForOpponentAsync()
+    private void WaitForOpponent()
     {
-        Debug.Log("[UnityLobby] HOST: ========== WaitForOpponentAsync START ==========");
+        Debug.Log("[UnityLobby] HOST: ========== WaitForOpponent START ==========");
         Debug.Log("[UnityLobby] HOST: Waiting for opponent to join...");
         Debug.Log($"[UnityLobby] HOST: Lobby ID = {currentLobby.Id}");
         Debug.Log($"[UnityLobby] HOST: Current player count = {currentLobby.Players.Count}");
@@ -394,9 +392,9 @@ public class UnityLobbyManager : MonoBehaviour
         }
     }
 
-    private async Task WaitForRelayCodeAsync()
+    private void WaitForRelayCode()
     {
-        Debug.Log("[UnityLobby] CLIENT: ========== WaitForRelayCodeAsync START ==========");
+        Debug.Log("[UnityLobby] CLIENT: ========== WaitForRelayCode START ==========");
         Debug.Log("[UnityLobby] CLIENT: Waiting for relay code from HOST...");
         Debug.Log($"[UnityLobby] CLIENT: Lobby ID = {currentLobby.Id}");
         
@@ -652,7 +650,6 @@ public class UnityLobbyManager : MonoBehaviour
             isHost = false;
         }
     }
-
     private async Task SendHeartbeat()
     {
         try
@@ -664,4 +661,5 @@ public class UnityLobbyManager : MonoBehaviour
 
     private void OnDestroy() => _ = LeaveLobbyAsync();
     private void OnApplicationQuit() => _ = LeaveLobbyAsync();
+    }
 }

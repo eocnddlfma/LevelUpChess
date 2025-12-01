@@ -1,66 +1,73 @@
 using System.Collections.Generic;
 using UnityEngine;
+using LevelUpChess.Core;
+using LevelUpChess.Board;
 
-public abstract class PieceMovement : ScriptableObject
+namespace LevelUpChess.Pieces
 {
-    public abstract List<Move> GetAvailableMoves(ChessPiece piece);
-
-    protected List<Move> GetSlidingMoves(ChessPiece piece, Vector2Int[] directions)
+    public abstract class PieceMovement : ScriptableObject
     {
-        var moves = new List<Move>();
-        if (piece.currentTile == null) return moves;
+        public abstract List<Move> GetAvailableMoves(ChessPiece piece);
 
-        Vector2Int pos = piece.currentTile.coordinate;
-
-        foreach (var d in directions)
+        protected List<Move> GetSlidingMoves(ChessPiece piece, Vector2Int[] directions)
         {
-            Vector2Int cur = pos + d;
-            while (true)
+            var moves = new List<Move>();
+            if (piece.CurrentTile == null) return moves;
+
+            Vector2Int pos = piece.CurrentTile.coordinate;
+            var boardManager = ServiceLocator.Get<BoardManager>();
+
+            foreach (var d in directions)
             {
-                var t = BoardManager.Instance.GetTileAt(cur);
-                if (t == null) break;
-                
-                if (t.OccupyingPiece == null)
+                Vector2Int cur = pos + d;
+                while (true)
                 {
-                    moves.Add(new Move(pos, cur));
-                }
-                else
-                {
-                    if (t.OccupyingPiece.team != piece.team)
-                        moves.Add(new Move(pos, cur) { isCapture = true });
-                    break;
-                }
-                cur += d;
-            }
-        }
-
-        return moves;
-    }
-
-    protected List<Move> GetJumpingMoves(ChessPiece piece, Vector2Int[] offsets)
-    {
-        var moves = new List<Move>();
-        if (piece.currentTile == null) return moves;
-
-        Vector2Int pos = piece.currentTile.coordinate;
-
-        foreach (var offset in offsets)
-        {
-            Vector2Int target = pos + offset;
-            var t = BoardManager.Instance.GetTileAt(target);
-            if (t != null)
-            {
-                if (t.OccupyingPiece == null)
-                {
-                    moves.Add(new Move(pos, target));
-                }
-                else if (t.OccupyingPiece.team != piece.team)
-                {
-                    moves.Add(new Move(pos, target) { isCapture = true });
+                    var t = boardManager.GetTileAt(cur);
+                    if (t == null) break;
+                    
+                    if (t.OccupyingPiece == null)
+                    {
+                        moves.Add(new Move(pos, cur));
+                    }
+                    else
+                    {
+                        if (t.OccupyingPiece.Team != piece.Team)
+                            moves.Add(new Move(pos, cur) { isCapture = true });
+                        break;
+                    }
+                    cur += d;
                 }
             }
+
+            return moves;
         }
 
-        return moves;
+        protected List<Move> GetJumpingMoves(ChessPiece piece, Vector2Int[] offsets)
+        {
+            var moves = new List<Move>();
+            if (piece.CurrentTile == null) return moves;
+
+            Vector2Int pos = piece.CurrentTile.coordinate;
+            var boardManager = ServiceLocator.Get<BoardManager>();
+
+            foreach (var offset in offsets)
+            {
+                Vector2Int target = pos + offset;
+                var t = boardManager.GetTileAt(target);
+                if (t != null)
+                {
+                    if (t.OccupyingPiece == null)
+                    {
+                        moves.Add(new Move(pos, target));
+                    }
+                    else if (t.OccupyingPiece.Team != piece.Team)
+                    {
+                        moves.Add(new Move(pos, target) { isCapture = true });
+                    }
+                }
+            }
+
+            return moves;
+        }
     }
 }

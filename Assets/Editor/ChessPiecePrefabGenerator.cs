@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEditor;
+using LevelUpChess.Pieces;
 
 /// <summary>
 /// 체스 피스 프리팹을 자동으로 생성하고 설정합니다
@@ -9,6 +10,7 @@ public class ChessPiecePrefabGenerator : EditorWindow
     private Team selectedTeam = Team.White;
     private PieceType selectedPieceType = PieceType.Pawn;
     private string outputPath = "Assets/Prefabs";
+    private string pieceDataPath = "Assets/ScriptableObject/PieceData";
 
     // Movement Strategy SO들
     private PawnMovement pawnMovement;
@@ -34,6 +36,11 @@ public class ChessPiecePrefabGenerator : EditorWindow
 
         // 기물 선택
         selectedPieceType = (PieceType)EditorGUILayout.EnumPopup("Piece Type", selectedPieceType);
+
+        EditorGUILayout.Space();
+
+        // PieceData 경로
+        pieceDataPath = EditorGUILayout.TextField("PieceData Path", pieceDataPath);
 
         EditorGUILayout.Space();
 
@@ -107,11 +114,30 @@ public class ChessPiecePrefabGenerator : EditorWindow
             // 4. SpriteRenderer 추가
             SpriteRenderer spriteRenderer = go.AddComponent<SpriteRenderer>();
 
-            // 5. Team과 PieceType 설정
-            piece.team = team;
-            piece.pieceType = pieceType;
+            // 5. SerializedObject를 사용하여 private 필드 설정
+            SerializedObject serializedPiece = new SerializedObject(piece);
+            
+            // Team 설정
+            SerializedProperty teamProp = serializedPiece.FindProperty("_team");
+            if (teamProp != null)
+            {
+                teamProp.enumValueIndex = (int)team;
+            }
 
-            // 6. Sprite 로드 및 설정
+            // 6. PieceData 로드 또는 생성
+            PieceDataSO pieceDataSo = LoadOrCreatePieceData(pieceType);
+            if (pieceDataSo != null)
+            {
+                SerializedProperty pieceDataProp = serializedPiece.FindProperty("pieceData");
+                if (pieceDataProp != null)
+                {
+                    pieceDataProp.objectReferenceValue = pieceDataSo;
+                }
+            }
+
+            serializedPiece.ApplyModifiedPropertiesWithoutUndo();
+
+            // 7. Sprite 로드 및 설정
             Sprite sprite = LoadSprite(team, pieceType);
             if (sprite != null)
             {
@@ -120,18 +146,6 @@ public class ChessPiecePrefabGenerator : EditorWindow
             else
             {
                 Debug.Log($"ℹ Sprite not found for {team}_{pieceType}. You can add sprites manually later.");
-            }
-
-            // 7. Movement Strategy 배열 설정
-            PieceMovement[] strategies = GetMovementStrategies(pieceType);
-            if (strategies != null && strategies.Length > 0 && strategies[0] != null)
-            {
-                piece.movementStrategies = strategies;
-            }
-            else
-            {
-                Debug.LogWarning($"Movement strategies not found for {pieceType}. Please assign them in the window.");
-                piece.movementStrategies = new PieceMovement[0];
             }
 
             // 8. 프리팹 저장
@@ -152,6 +166,98 @@ public class ChessPiecePrefabGenerator : EditorWindow
             Debug.LogError($"Failed to create prefab for {team}_{pieceType}: {e.Message}");
             DestroyImmediate(go);
         }
+    }
+
+    private PieceDataSO LoadOrCreatePieceData(PieceType pieceType)
+    {
+        // 기존 PieceData 찾기
+        string dataPath = $"{pieceDataPath}/{pieceType}Data.asset";
+        PieceDataSO existingDataSo = AssetDatabase.LoadAssetAtPath<PieceDataSO>(dataPath);
+        
+        if (existingDataSo != null)
+        {
+            Debug.Log($"✓ Loaded existing PieceData: {dataPath}");
+            return existingDataSo;
+        }
+
+        // PieceData가 없으면 새로 생성
+        string directory = System.IO.Path.GetDirectoryName(dataPath);
+        if (!System.IO.Directory.Exists(directory))
+        {
+            System.IO.Directory.CreateDirectory(directory);
+        }
+
+        PieceDataSO newDataSo = ScriptableObject.CreateInstance<PieceDataSO>();
+        
+        // SerializedObject로 PieceData 필드 설정
+        SerializedObject serializedData = new SerializedObject(newDataSo);
+        
+        SerializedProperty pieceTypeProp = serializedData.FindProperty("pieceType");
+        if (pieceTypeProp != null)
+        {
+            pieceTypeProp.enumValueIndex = (int)pieceType;
+        }
+
+        // Movement Strategies 설정
+        SerializedProperty strategiesProp = serializedData.FindProperty("movementStrategies");
+        if (strategiesProp != null)
+        {
+            PieceMovement[] strategies = GetMovementStrategies(pieceType);
+            strategiesProp.arraySize = strategies.Length;
+            for (int i = 0; i < strategies.Length; i++)
+            {
+                strategiesProp.GetArrayElementAtIndex(i).objectReferenceValue = strategies[i];
+            }
+        }
+
+        // 기본 스탯 설정
+        SerializedProperty maxHealthProp = serializedData.FindProperty("maxHealth");
+        if (maxHealthProp != null)
+        {
+            maxHealthProp.intValue = GetDefaultHealth(pieceType);
+        }
+
+        SerializedProperty attackPowerProp = serializedData.FindProperty("attackPower");
+        if (attackPowerProp != null)
+        {
+            attackPowerProp.intValue = GetDefaultAttackPower(pieceType);
+        }
+
+        serializedData.ApplyModifiedPropertiesWithoutUndo();
+
+        AssetDatabase.CreateAsset(newDataSo, dataPath);
+        AssetDatabase.SaveAssets();
+        
+        Debug.Log($"✓ Created new PieceData: {dataPath}");
+        return newDataSo;
+    }
+
+    private int GetDefaultHealth(PieceType pieceType)
+    {
+        return pieceType switch
+        {
+            PieceType.Pawn => 10,
+            PieceType.Rook => 50,
+            PieceType.Knight => 30,
+            PieceType.Bishop => 30,
+            PieceType.Queen => 90,
+            PieceType.King => 100,
+            _ => 10
+        };
+    }
+
+    private int GetDefaultAttackPower(PieceType pieceType)
+    {
+        return pieceType switch
+        {
+            PieceType.Pawn => 10,
+            PieceType.Rook => 50,
+            PieceType.Knight => 30,
+            PieceType.Bishop => 30,
+            PieceType.Queen => 90,
+            PieceType.King => 100,
+            _ => 10
+        };
     }
 
     private Sprite LoadSprite(Team team, PieceType pieceType)

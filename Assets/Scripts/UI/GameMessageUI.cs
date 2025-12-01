@@ -2,13 +2,15 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using System.Collections;
+using LevelUpChess.Core;
 
-/// <summary>
-/// 게임 내 메시지를 화면에 표시하는 UI 관리자
-/// </summary>
-public class GameMessageUI : MonoBehaviour
+namespace LevelUpChess.UI
 {
-    public static GameMessageUI Instance { get; private set; }
+    /// <summary>
+    /// 게임 내 메시지를 화면에 표시하는 UI 관리자
+    /// </summary>
+    public class GameMessageUI : MonoBehaviour
+    {
     
     [SerializeField] private TextMeshProUGUI messageText;
     [SerializeField] private float defaultDisplayDuration = 2f;
@@ -17,12 +19,26 @@ public class GameMessageUI : MonoBehaviour
     
     private void Awake()
     {
-        if (Instance != null && Instance != this)
+        // 기존에 등록된 서비스가 있으면 제거 (파괴된 객체일 수 있음)
+        var existing = ServiceLocator.Get<GameMessageUI>();
+        if (existing != null && existing != this)
         {
-            Destroy(gameObject);
-            return;
+            // 기존 서비스가 유효한 객체인지 확인 (ReferenceEquals로 null 체크)
+            if (!ReferenceEquals(existing, null) && existing.gameObject != null && existing.gameObject.scene.isLoaded)
+            {
+                Debug.Log("[GameMessageUI] Another valid instance exists, destroying this one.");
+                Destroy(gameObject);
+                return;
+            }
+            else
+            {
+                // 기존 서비스가 파괴된 객체면 제거하고 새로 등록
+                Debug.Log("[GameMessageUI] Existing instance was invalid, replacing...");
+                ServiceLocator.Unregister<GameMessageUI>();
+            }
         }
-        Instance = this;
+        
+        ServiceLocator.Register(this);
         
         // 초기 상태: 텍스트 숨김
         if (messageText != null)
@@ -36,8 +52,8 @@ public class GameMessageUI : MonoBehaviour
     
     private void OnDestroy()
     {
-        if (Instance == this)
-            Instance = null;
+        if (ServiceLocator.Get<GameMessageUI>() == this)
+            ServiceLocator.Unregister<GameMessageUI>();
     }
     
     /// <summary>
@@ -113,5 +129,6 @@ public class GameMessageUI : MonoBehaviour
         messageText.gameObject.SetActive(false);
         
         currentMessageCoroutine = null;
+    }
     }
 }

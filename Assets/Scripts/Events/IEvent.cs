@@ -1,4 +1,4 @@
-namespace Events
+namespace LevelUpChess.Events
 {
-        public interface IEvent { }
+    public interface IEvent { }
 }

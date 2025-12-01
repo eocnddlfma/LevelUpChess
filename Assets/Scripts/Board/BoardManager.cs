@@ -1,80 +1,224 @@
 using UnityEngine;
 using System.Collections.Generic;
+using LevelUpChess.Core;
+using LevelUpChess.Events;
+using LevelUpChess.Pieces;
 
-public class BoardManager : MonoBehaviour
+namespace LevelUpChess.Board
 {
-    public static BoardManager Instance { get; private set; }
-
-    
-    [SerializeField] private Tile[] _serializedTiles;
-    [SerializeField] private int _width;
-    [SerializeField] private int _height;
-
-    private Tile[,] _tiles;
-    
-    
-    private Dictionary<ChessPiece, Vector2Int> _piecePositions = new Dictionary<ChessPiece, Vector2Int>();
-
-    private void Awake()
+    /// <summary>
+    /// 보드 상태 관리
+    /// - 타일과 피스 배치 추적
+    /// - BoardGenerator의 이벤트를 구독하여 타일 데이터 수신
+    /// - 네트워크 코드에서 보드 상태 조회 인터페이스 제공
+    /// </summary>
+    public class BoardManager : MonoBehaviour
     {
-        if (Instance != null && Instance != this)
-        {
-            Destroy(gameObject);
-            return;
-        }
+        [SerializeField] private Tile[] _serializedTiles;
+        [SerializeField] private int _width;
+        [SerializeField] private int _height;
 
-        Instance = this;
-        
-        
-        if (_serializedTiles != null && _serializedTiles.Length > 0)
-        {
-            RestoreTilesFrom1DArray();
-        }
-    }
+        private Tile[,] _tiles;
+        private Dictionary<ChessPiece, Vector2Int> _piecePositions = new Dictionary<ChessPiece, Vector2Int>();
 
-    
-    private void RestoreTilesFrom1DArray()
-    {
-        if (_width <= 0 || _height <= 0)
+        private void Awake()
         {
-            Debug.LogError("[BoardManager] Invalid board dimensions!");
-            return;
-        }
-
-        _tiles = new Tile[_width, _height];
-        
-        for (int i = 0; i < _serializedTiles.Length; i++)
-        {
-            if (_serializedTiles[i] != null)
+            if (ServiceLocator.Has<BoardManager>())
             {
-                int x = i % _width;
-                int y = i / _width;
-                _tiles[x, y] = _serializedTiles[i];
+                Destroy(gameObject);
+                return;
+            }
+
+            ServiceLocator.Register(this);
+            
+            // 직렬화된 타일이 있으면 복원
+            if (_serializedTiles != null && _serializedTiles.Length > 0)
+            {
+                RestoreTilesFrom1DArray();
             }
         }
-        
-        Debug.Log($"[BoardManager] Restored {_serializedTiles.Length} tiles from serialized data ({_width}x{_height})");
-    }
 
-    
-    
-    
-    public void Initialize(Tile[,] tiles, int width, int height)
+        private void OnEnable()
+        {
+            Bus<BoardGeneratedEvent>.OnEvent += OnBoardGenerated;
+        }
+
+        private void OnDisable()
+        {
+            Bus<BoardGeneratedEvent>.OnEvent -= OnBoardGenerated;
+        }
+
+        /// <summary>
+        /// BoardGenerator로부터 보드 생성 완료 이벤트 수신
+        /// </summary>
+        private void OnBoardGenerated(BoardGeneratedEvent evt)
+        {
+            InitializeWithTiles(evt.Tiles, evt.Width, evt.Height);
+        }
+
+        private void RestoreTilesFrom1DArray()
+        {
+            if (_width <= 0 || _height <= 0)
+            {
+                Debug.LogError("[BoardManager] Invalid board dimensions!");
+                return;
+            }
+
+            _tiles = new Tile[_width, _height];
+            
+            for (int i = 0; i < _serializedTiles.Length; i++)
+            {
+                if (_serializedTiles[i] != null)
+                {
+                    int x = i % _width;
+                    int y = i / _width;
+                    _tiles[x, y] = _serializedTiles[i];
+                }
+            }
+            
+            Debug.Log($"[BoardManager] Restored {_serializedTiles.Length} tiles from serialized data ({_width}x{_height})");
+        }
+
+        // ========== 공개 보드 생성 메서드 ==========
+
+        /// <summary>
+        /// 새 보드 생성 요청 (이벤트 발행)
+        /// </summary>
+        public void RequestNewBoard()
+        {
+            Debug.Log("[BoardManager] Requesting new board generation...");
+            Bus<BoardGenerationRequestedEvent>.Raise(new BoardGenerationRequestedEvent());
+        }
+
+        /// <summary>
+        /// 보드 초기화 (이벤트 또는 Editor에서 호출)
+        /// </summary>
+        public void InitializeWithTiles(Tile[,] tiles, int width, int height)
+        {
+            _tiles = tiles;
+            _width = width;
+            _height = height;
+            
+            SaveTilesTo1DArray();
+            
+            Debug.Log($"[BoardManager] Initialized with tiles {width}x{height}");
+        }
+
+    // ========== 공개 쿼리 메서드 ==========
+
+    /// <summary>
+    /// 특정 좌표의 타일 반환
+    /// </summary>
+    public Tile GetTileAt(int x, int y)
     {
-        _tiles = tiles;
-        _width = width;
-        _height = height;
+        if (_tiles == null)
+        {
+            Debug.LogError("[BoardManager] _tiles is null!");
+            return null;
+        }
+
+        if (x < 0 || y < 0 || x >= _width || y >= _height)
+        {
+            Debug.LogWarning($"[BoardManager] Coordinates out of bounds: ({x}, {y}) for size {_width}x{_height}");
+            return null;
+        }
         
-        
-        SaveTilesTo1DArray();
-        
-        Debug.Log($"[BoardManager] Initialized with tiles {width}x{height}");
+        return _tiles[x, y];
     }
 
-    
-    
-    
-    public void SaveTilesTo1DArray()
+    /// <summary>
+    /// 특정 팀의 모든 피스 반환
+    /// </summary>
+    public Tile GetTileAt(Vector2Int coord)
+    {
+        return GetTileAt(coord.x, coord.y);
+    }
+
+    // ========== 공개 상태 관리 메서드 ==========
+
+    /// <summary>
+    /// 피스 위치 등록
+    /// </summary>
+    public void RegisterPiece(ChessPiece piece, Vector2Int position)
+    {
+        _piecePositions[piece] = position;
+    }
+
+    /// <summary>
+    /// 피스 이동
+    /// </summary>
+    public void MovePiece(ChessPiece piece, Vector2Int fromPos, Vector2Int toPos)
+    {
+        if (_piecePositions.ContainsKey(piece))
+        {
+            _piecePositions[piece] = toPos;
+        }
+        else
+        {
+            Debug.LogWarning($"[BoardManager] Piece {piece.name} not found in position tracking");
+            _piecePositions[piece] = toPos;
+        }
+    }
+
+    /// <summary>
+    /// 피스 등록 취소 (제거됨)
+    /// </summary>
+    public void UnregisterPiece(ChessPiece piece)
+    {
+        _piecePositions.Remove(piece);
+    }
+
+    // ========== 공개 위치 조회 메서드 ==========
+
+    /// <summary>
+    /// 피스의 현재 위치 반환
+    /// </summary>
+    public Vector2Int GetPiecePosition(ChessPiece piece)
+    {
+        if (_piecePositions.TryGetValue(piece, out var pos))
+        {
+            return pos;
+        }
+        return Vector2Int.one * -1; // Invalid position
+    }
+
+    /// <summary>
+    /// 특정 좌표의 피스 반환 (없으면 null)
+    /// </summary>
+    public ChessPiece GetPieceAt(Vector2Int coord)
+    {
+        Tile tile = GetTileAt(coord);
+        return tile?.OccupyingPiece;
+    }
+
+    /// <summary>
+    /// 특정 팀의 모든 피스 반환
+    /// </summary>
+    public List<ChessPiece> GetPiecesByTeam(Team team)
+    {
+        List<ChessPiece> pieces = new List<ChessPiece>();
+        foreach (var kvp in _piecePositions)
+        {
+            if (kvp.Key != null && kvp.Key.Team == team)
+            {
+                pieces.Add(kvp.Key);
+            }
+        }
+        return pieces;
+    }
+
+    // ========== 공개 프로퍼티 ==========
+
+    public int Width => _width;
+    public int Height => _height;
+    public Tile[,] Tiles => _tiles;
+
+    // ========== 내부 직렬화 헬퍼 ==========
+
+    /// <summary>
+    /// 2D 배열을 1D 배열로 변환 (Editor 저장용)
+    /// </summary>
+    private void SaveTilesTo1DArray()
     {
         if (_tiles == null) return;
         
@@ -95,84 +239,10 @@ public class BoardManager : MonoBehaviour
         Debug.Log($"[BoardManager] Saved {_serializedTiles.Length} tiles to serialized array");
     }
 
-    
-    
-    
-    public Tile GetTileAt(int x, int y)
+    private void OnDestroy()
     {
-        if (_tiles == null)
-        {
-            Debug.LogError("[BoardManager] _tiles is null!");
-            return null;
-        }
-
-        if (x < 0 || y < 0 || x >= _width || y >= _height)
-        {
-            Debug.LogWarning($"[BoardManager] Coordinates out of bounds: ({x}, {y}) for size {_width}x{_height}");
-            return null;
-        }
-
-        return _tiles[x, y];
+        if (ServiceLocator.Get<BoardManager>() == this)
+            ServiceLocator.Unregister<BoardManager>();
     }
-    
-    public Tile GetTileAt(Vector2Int coord)
-    {
-        return GetTileAt(coord.x, coord.y);
     }
-    
-    public void RegisterPiece(ChessPiece piece, Vector2Int position)
-    {
-        _piecePositions[piece] = position;
-    }
-    
-    public void MovePiece(ChessPiece piece, Vector2Int fromPos, Vector2Int toPos)
-    {
-        if (_piecePositions.ContainsKey(piece))
-        {
-            _piecePositions[piece] = toPos;
-        }
-        else
-        {
-            Debug.LogWarning($"말 {piece.name}이(가) 위치 추적에 없습니다");
-            _piecePositions[piece] = toPos;
-        }
-    }
-    
-    public void UnregisterPiece(ChessPiece piece)
-    {
-        _piecePositions.Remove(piece);
-    }
-    
-    public Vector2Int GetPiecePosition(ChessPiece piece)
-    {
-        if (_piecePositions.TryGetValue(piece, out var pos))
-        {
-            return pos;
-        }
-        return Vector2Int.one * -1; 
-    }
-    
-    public ChessPiece GetPieceAt(Vector2Int coord)
-    {
-        Tile tile = GetTileAt(coord);
-        return tile != null ? tile.OccupyingPiece : null;
-    }
-    
-    public List<ChessPiece> GetPiecesByTeam(Team team)
-    {
-        List<ChessPiece> pieces = new List<ChessPiece>();
-        foreach (var kvp in _piecePositions)
-        {
-            if (kvp.Key != null && kvp.Key.team == team)
-            {
-                pieces.Add(kvp.Key);
-            }
-        }
-        return pieces;
-    }
-    
-    public int Width => _width;
-    public int Height => _height;
-    
-    public Tile[,] Tiles => _tiles;
 }

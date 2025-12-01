@@ -1,33 +1,36 @@
 using UnityEngine;
 using UnityEngine.UI;
+using LevelUpChess.Core;
+using LevelUpChess.Networking;
 
-public class MultiplayerUIManager : MonoBehaviour
+namespace LevelUpChess.UI
 {
-    [SerializeField] private Canvas matchmakingCanvas;
-    [SerializeField] private Canvas gameplayCanvas;
-    
-    [SerializeField] private Button playButton;
-    [SerializeField] private Button cancelButton;
-    [SerializeField] private Text statusText;
-    [SerializeField] private Text playerInfoText;
-    [SerializeField] private Text chatLogText; // 채팅 로그
+    public class MultiplayerUIManager : MonoBehaviour
+    {
+        [SerializeField] private Canvas matchmakingCanvas;
+        [SerializeField] private Canvas gameplayCanvas;
+        
+        [SerializeField] private Button playButton;
+        [SerializeField] private Button cancelButton;
+        [SerializeField] private Text statusText;
+        [SerializeField] private Text playerInfoText;
+        [SerializeField] private Text chatLogText; // 채팅 로그
+        [SerializeField] private ScrollRect chatScrollRect; // 채팅 스크롤뷰
 
-    [SerializeField] private Image whiteColorIndicator;
-    [SerializeField] private Image blackColorIndicator;
+        [SerializeField] private Image whiteColorIndicator;
+        [SerializeField] private Image blackColorIndicator;
 
-    private ChessNetworkManager networkManager;
-    private bool isMatching = false;
-    
-    public static MultiplayerUIManager Instance { get; private set; }
+        private ChessNetworkManager networkManager;
+        private bool isMatching = false;
 
     private void Awake()
     {
-        if (Instance != null && Instance != this)
+        if (ServiceLocator.Has<MultiplayerUIManager>())
         {
             Destroy(gameObject);
             return;
         }
-        Instance = this;
+        ServiceLocator.Register(this);
         DontDestroyOnLoad(gameObject);
     }
     
@@ -151,8 +154,8 @@ public class MultiplayerUIManager : MonoBehaviour
             networkManager.OnError -= OnError;
         }
         
-        if (Instance == this)
-            Instance = null;
+        if (ServiceLocator.Get<MultiplayerUIManager>() == this)
+            ServiceLocator.Unregister<MultiplayerUIManager>();
     }
     
     /// <summary>
@@ -160,20 +163,38 @@ public class MultiplayerUIManager : MonoBehaviour
     /// </summary>
     public void AddChatMessage(string message)
     {
-        if (Instance == null)
+        var instance = ServiceLocator.Get<MultiplayerUIManager>();
+        if (instance == null)
         {
             Debug.LogWarning("[UI] MultiplayerUIManager Instance is null!");
             return;
         }
 
-        if (Instance.chatLogText != null)
+        if (instance.chatLogText != null)
         {
-            Instance.chatLogText.text += $"[{System.DateTime.Now:HH:mm:ss}] {message}\n";
+            instance.chatLogText.text += $"[{System.DateTime.Now:HH:mm:ss}] {message}\n";
             Debug.Log($"[UI] Chat message added: {message}");
+            
+            // 스크롤을 항상 아래로 이동
+            instance.ScrollToBottom();
         }
         else
         {
             Debug.LogError("[UI] Chat log text is NULL! Please assign it in the Inspector.");
         }
+    }
+    
+    /// <summary>
+    /// 채팅 스크롤뷰를 맨 아래로 스크롤
+    /// </summary>
+    private void ScrollToBottom()
+    {
+        if (chatScrollRect != null)
+        {
+            // 레이아웃 재계산 후 스크롤 위치 설정
+            Canvas.ForceUpdateCanvases();
+            chatScrollRect.verticalNormalizedPosition = 0f;
+        }
+    }
     }
 }

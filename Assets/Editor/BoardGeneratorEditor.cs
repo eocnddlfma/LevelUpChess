@@ -1,6 +1,7 @@
 #if UNITY_EDITOR
 using UnityEditor;
 using UnityEngine;
+using LevelUpChess.Board;
 
 [CustomEditor(typeof(BoardGenerator))]
 public class BoardGeneratorEditor : Editor
