@@ -15,9 +15,10 @@ MonoBehaviour:
   pieceType: 3
   displayName: "\uBE44\uC20D"
   maxHealth: 3
-  attackPower: 3
+  attackPower: 6
+  healthPerLevel: 1
+  attackPerLevel: 2
+  pieceValue: 3
   moveDuration: 0.15
   movementStrategies:
   - {fileID: 11400000, guid: 222d4adef485df34cb6bc4aa7df0bc84, type: 2}
-  whiteSprite: {fileID: 0}
-  blackSprite: {fileID: 0}

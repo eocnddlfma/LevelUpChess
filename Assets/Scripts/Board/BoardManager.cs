@@ -6,12 +6,6 @@ using LevelUpChess.Pieces;
 
 namespace LevelUpChess.Board
 {
-    /// <summary>
-    /// 보드 상태 관리
-    /// - 타일과 피스 배치 추적
-    /// - BoardGenerator의 이벤트를 구독하여 타일 데이터 수신
-    /// - 네트워크 코드에서 보드 상태 조회 인터페이스 제공
-    /// </summary>
     public class BoardManager : MonoBehaviour
     {
         [SerializeField] private Tile[] _serializedTiles;
@@ -31,7 +25,6 @@ namespace LevelUpChess.Board
 
             ServiceLocator.Register(this);
             
-            // 직렬화된 타일이 있으면 복원
             if (_serializedTiles != null && _serializedTiles.Length > 0)
             {
                 RestoreTilesFrom1DArray();

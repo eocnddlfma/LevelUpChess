@@ -1,6 +1,8 @@
 using UnityEngine;
 using UnityEditor;
 using LevelUpChess.Pieces;
+using LevelUpChess.UI;
+using Pieces.Movements;
 
 /// <summary>
 /// 체스 피스 프리팹을 자동으로 생성하고 설정합니다
@@ -9,20 +11,187 @@ public class ChessPiecePrefabGenerator : EditorWindow
 {
     private Team selectedTeam = Team.White;
     private PieceType selectedPieceType = PieceType.Pawn;
-    private string outputPath = "Assets/Prefabs";
+    private string outputPath = "Assets/Prefabs/Pieces";
+    private string resourcesOutputPath = "Assets/Resources/Prefabs/Pieces";
     private string pieceDataPath = "Assets/ScriptableObject/PieceData";
+    private string movementPath = "Assets/ScriptableObject/Movements";
+    private string statusUIPrefabPath = "Assets/Prefabs/UI/StatusUI.prefab";
+    private Vector3 statusUIOffset = new Vector3(0, 0.6f, 0);
+    private bool copyToResources = true;
 
-    // Movement Strategy SO들
+    // Movement Strategy SO들 (자동 로드됨)
     private PawnMovement pawnMovement;
     private RookMovement rookMovement;
     private KnightMovement knightMovement;
     private BishopMovement bishopMovement;
     private KingMovement kingMovement;
+    
+    // StatusUI 프리팹
+    private GameObject statusUIPrefab;
 
     [MenuItem("Tools/Chess/Generate Piece Prefabs")]
     public static void ShowWindow()
     {
         GetWindow<ChessPiecePrefabGenerator>("Piece Prefab Generator");
+    }
+    
+    [MenuItem("Tools/Chess/Fix All Piece Prefabs")]
+    public static void FixAllPiecePrefabs()
+    {
+        string[] paths = new[]
+        {
+            "Assets/Prefabs/Pieces",
+            "Assets/Resources/Prefabs/Pieces"
+        };
+        
+        string pieceDataBasePath = "Assets/ScriptableObject/PieceData";
+        int fixedCount = 0;
+        
+        foreach (string basePath in paths)
+        {
+            string[] guids = AssetDatabase.FindAssets("t:Prefab", new[] { basePath });
+            
+            foreach (string guid in guids)
+            {
+                string path = AssetDatabase.GUIDToAssetPath(guid);
+                GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);
+                
+                if (prefab == null) continue;
+                
+                ChessPiece piece = prefab.GetComponent<ChessPiece>();
+                SpriteRenderer sr = prefab.GetComponent<SpriteRenderer>();
+                
+                if (piece == null) continue;
+                
+                bool needsFix = false;
+                
+                // 프리팹 인스턴스 생성
+                string prefabPath = AssetDatabase.GetAssetPath(prefab);
+                GameObject instance = (GameObject)PrefabUtility.InstantiatePrefab(prefab);
+                ChessPiece instancePiece = instance.GetComponent<ChessPiece>();
+                SpriteRenderer instanceSr = instance.GetComponent<SpriteRenderer>();
+                
+                // 1. Sorting Order 수정
+                if (instanceSr != null && instanceSr.sortingOrder != 5)
+                {
+                    instanceSr.sortingOrder = 5;
+                    needsFix = true;
+                    Debug.Log($"  ✓ Fixed sorting order for: {path}");
+                }
+                
+                // 2. 누락된 컴포넌트 추가
+                if (instance.GetComponent<PieceCombat>() == null)
+                {
+                    instance.AddComponent<PieceCombat>();
+                    needsFix = true;
+                    Debug.Log($"  ✓ Added PieceCombat to: {path}");
+                }
+                
+                if (instance.GetComponent<PieceAnimator>() == null)
+                {
+                    instance.AddComponent<PieceAnimator>();
+                    needsFix = true;
+                    Debug.Log($"  ✓ Added PieceAnimator to: {path}");
+                }
+                
+                if (instance.GetComponent<PieceUI>() == null)
+                {
+                    instance.AddComponent<PieceUI>();
+                    needsFix = true;
+                    Debug.Log($"  ✓ Added PieceUI to: {path}");
+                }
+                
+                // 3. PieceDataSO 수정 - 프리팹 이름에서 PieceType 추출
+                SerializedObject serializedPiece = new SerializedObject(instance.GetComponent<ChessPiece>());
+                SerializedProperty pieceDataProp = serializedPiece.FindProperty("pieceDataSo");
+                
+                if (pieceDataProp != null && pieceDataProp.objectReferenceValue == null)
+                {
+                    // 프리팹 이름에서 PieceType 추출 (예: "White_Pawn" -> "Pawn")
+                    string prefabName = prefab.name;
+                    string[] parts = prefabName.Split('_');
+                    if (parts.Length >= 2)
+                    {
+                        string pieceTypeName = parts[1];
+                        string dataPath = $"{pieceDataBasePath}/{pieceTypeName}Data.asset";
+                        PieceDataSO dataSo = AssetDatabase.LoadAssetAtPath<PieceDataSO>(dataPath);
+                        
+                        if (dataSo != null)
+                        {
+                            pieceDataProp.objectReferenceValue = dataSo;
+                            serializedPiece.ApplyModifiedPropertiesWithoutUndo();
+                            needsFix = true;
+                            Debug.Log($"  ✓ Set PieceDataSO for {prefabName}: {dataSo.name}");
+                        }
+                        else
+                        {
+                            Debug.LogWarning($"  ⚠ PieceDataSO not found: {dataPath}");
+                        }
+                    }
+                }
+                
+                // 변경사항 저장
+                if (needsFix)
+                {
+                    PrefabUtility.SaveAsPrefabAsset(instance, prefabPath);
+                    fixedCount++;
+                }
+                
+                Object.DestroyImmediate(instance);
+            }
+        }
+        
+        AssetDatabase.SaveAssets();
+        AssetDatabase.Refresh();
+        
+        Debug.Log($"[FixAllPiecePrefabs] Fixed {fixedCount} prefabs");
+        EditorUtility.DisplayDialog("완료", $"{fixedCount}개의 프리팹을 수정했습니다.\n(SortingOrder, Components, PieceDataSO)", "OK");
+    }
+    
+    private void OnEnable()
+    {
+        // Movement Strategies 자동 로드
+        LoadMovementStrategies();
+        
+        // StatusUI 프리팹 자동 로드
+        statusUIPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(statusUIPrefabPath);
+    }
+    
+    private void LoadMovementStrategies()
+    {
+        // 모든 Movement SO 검색
+        string[] guids = AssetDatabase.FindAssets("t:PieceMovement", new[] { movementPath });
+        
+        foreach (string guid in guids)
+        {
+            string path = AssetDatabase.GUIDToAssetPath(guid);
+            PieceMovement movement = AssetDatabase.LoadAssetAtPath<PieceMovement>(path);
+            
+            if (movement is PawnMovement pawn) pawnMovement = pawn;
+            else if (movement is RookMovement rook) rookMovement = rook;
+            else if (movement is KnightMovement knight) knightMovement = knight;
+            else if (movement is BishopMovement bishop) bishopMovement = bishop;
+            else if (movement is KingMovement king) kingMovement = king;
+        }
+        
+        // 못 찾았으면 전체 프로젝트에서 검색
+        if (pawnMovement == null || rookMovement == null || knightMovement == null || 
+            bishopMovement == null || kingMovement == null)
+        {
+            guids = AssetDatabase.FindAssets("t:PieceMovement");
+            
+            foreach (string guid in guids)
+            {
+                string path = AssetDatabase.GUIDToAssetPath(guid);
+                PieceMovement movement = AssetDatabase.LoadAssetAtPath<PieceMovement>(path);
+                
+                if (movement is PawnMovement pawn && pawnMovement == null) pawnMovement = pawn;
+                else if (movement is RookMovement rook && rookMovement == null) rookMovement = rook;
+                else if (movement is KnightMovement knight && knightMovement == null) knightMovement = knight;
+                else if (movement is BishopMovement bishop && bishopMovement == null) bishopMovement = bishop;
+                else if (movement is KingMovement king && kingMovement == null) kingMovement = king;
+            }
+        }
     }
 
     private void OnGUI()
@@ -41,21 +210,40 @@ public class ChessPiecePrefabGenerator : EditorWindow
 
         // PieceData 경로
         pieceDataPath = EditorGUILayout.TextField("PieceData Path", pieceDataPath);
+        
+        // Movement 경로
+        movementPath = EditorGUILayout.TextField("Movement Path", movementPath);
 
         EditorGUILayout.Space();
 
-        // Movement Strategy SO 선택
-        GUILayout.Label("Movement Strategies", EditorStyles.boldLabel);
-        pawnMovement = (PawnMovement)EditorGUILayout.ObjectField("Pawn Movement", pawnMovement, typeof(PawnMovement), false);
-        rookMovement = (RookMovement)EditorGUILayout.ObjectField("Rook Movement", rookMovement, typeof(RookMovement), false);
-        knightMovement = (KnightMovement)EditorGUILayout.ObjectField("Knight Movement", knightMovement, typeof(KnightMovement), false);
-        bishopMovement = (BishopMovement)EditorGUILayout.ObjectField("Bishop Movement", bishopMovement, typeof(BishopMovement), false);
-        kingMovement = (KingMovement)EditorGUILayout.ObjectField("King Movement", kingMovement, typeof(KingMovement), false);
+        // Movement Strategy SO 표시 (자동 로드됨)
+        GUILayout.Label("Movement Strategies (자동 로드)", EditorStyles.boldLabel);
+        EditorGUI.BeginDisabledGroup(true);
+        EditorGUILayout.ObjectField("Pawn Movement", pawnMovement, typeof(PawnMovement), false);
+        EditorGUILayout.ObjectField("Rook Movement", rookMovement, typeof(RookMovement), false);
+        EditorGUILayout.ObjectField("Knight Movement", knightMovement, typeof(KnightMovement), false);
+        EditorGUILayout.ObjectField("Bishop Movement", bishopMovement, typeof(BishopMovement), false);
+        EditorGUILayout.ObjectField("King Movement", kingMovement, typeof(KingMovement), false);
+        EditorGUI.EndDisabledGroup();
+        
+        if (GUILayout.Button("Movement 다시 검색"))
+        {
+            LoadMovementStrategies();
+        }
+
+        EditorGUILayout.Space();
+        
+        // StatusUI 설정
+        GUILayout.Label("StatusUI 설정", EditorStyles.boldLabel);
+        statusUIPrefab = (GameObject)EditorGUILayout.ObjectField("StatusUI 프리팹", statusUIPrefab, typeof(GameObject), false);
+        statusUIOffset = EditorGUILayout.Vector3Field("StatusUI 오프셋", statusUIOffset);
 
         EditorGUILayout.Space();
 
         // 출력 경로
         outputPath = EditorGUILayout.TextField("Output Path", outputPath);
+        resourcesOutputPath = EditorGUILayout.TextField("Resources Path", resourcesOutputPath);
+        copyToResources = EditorGUILayout.Toggle("Resources에도 복사", copyToResources);
 
         EditorGUILayout.Space();
 
@@ -75,6 +263,8 @@ public class ChessPiecePrefabGenerator : EditorWindow
 
         EditorGUILayout.HelpBox(
             "프리팹 자동 생성 도구입니다.\n" +
+            "- Movement Strategies가 자동으로 검색됩니다.\n" +
+            "- StatusUI가 자동으로 추가됩니다.\n" +
             "- Single Prefab: 선택한 팀/기물만 생성\n" +
             "- All Prefabs: 모든 팀/기물 조합 생성 (White/Black × 6 피스)",
             MessageType.Info
@@ -110,9 +300,19 @@ public class ChessPiecePrefabGenerator : EditorWindow
 
             // 3. ChessPiece 컴포넌트 추가
             ChessPiece piece = go.AddComponent<ChessPiece>();
+            
+            // 3-1. PieceCombat 컴포넌트 추가
+            go.AddComponent<PieceCombat>();
+            
+            // 3-2. PieceAnimator 컴포넌트 추가
+            go.AddComponent<PieceAnimator>();
+            
+            // 3-3. PieceUI 컴포넌트 추가
+            go.AddComponent<PieceUI>();
 
             // 4. SpriteRenderer 추가
             SpriteRenderer spriteRenderer = go.AddComponent<SpriteRenderer>();
+            spriteRenderer.sortingOrder = 5; // 타일 위에 그려지도록 설정
 
             // 5. SerializedObject를 사용하여 private 필드 설정
             SerializedObject serializedPiece = new SerializedObject(piece);
@@ -128,11 +328,20 @@ public class ChessPiecePrefabGenerator : EditorWindow
             PieceDataSO pieceDataSo = LoadOrCreatePieceData(pieceType);
             if (pieceDataSo != null)
             {
-                SerializedProperty pieceDataProp = serializedPiece.FindProperty("pieceData");
+                SerializedProperty pieceDataProp = serializedPiece.FindProperty("pieceDataSo");
                 if (pieceDataProp != null)
                 {
                     pieceDataProp.objectReferenceValue = pieceDataSo;
+                    Debug.Log($"✓ Set PieceDataSO for {team}_{pieceType}: {pieceDataSo.name}");
                 }
+                else
+                {
+                    Debug.LogError($"✗ Cannot find 'pieceDataSo' property on ChessPiece!");
+                }
+            }
+            else
+            {
+                Debug.LogError($"✗ PieceDataSO is null for {pieceType}!");
             }
 
             serializedPiece.ApplyModifiedPropertiesWithoutUndo();
@@ -147,8 +356,22 @@ public class ChessPiecePrefabGenerator : EditorWindow
             {
                 Debug.Log($"ℹ Sprite not found for {team}_{pieceType}. You can add sprites manually later.");
             }
+            
+            // 8. StatusUI 프리팹 추가
+            if (statusUIPrefab != null)
+            {
+                GameObject statusUIInstance = (GameObject)PrefabUtility.InstantiatePrefab(statusUIPrefab, go.transform);
+                statusUIInstance.transform.localPosition = statusUIOffset;
+                statusUIInstance.transform.localRotation = Quaternion.identity;
+                statusUIInstance.transform.localScale = Vector3.one;
+                Debug.Log($"✓ Added StatusUI to {team}_{pieceType}");
+            }
+            else
+            {
+                Debug.LogWarning($"⚠ StatusUI prefab not found. StatusUI will not be added to {team}_{pieceType}");
+            }
 
-            // 8. 프리팹 저장
+            // 9. 프리팹 저장
             string prefabPath = $"{outputPath}/{team}_{pieceType}.prefab";
             string directory = System.IO.Path.GetDirectoryName(prefabPath);
             if (!System.IO.Directory.Exists(directory))
@@ -156,10 +379,24 @@ public class ChessPiecePrefabGenerator : EditorWindow
                 System.IO.Directory.CreateDirectory(directory);
             }
 
-            PrefabUtility.SaveAsPrefabAsset(go, prefabPath);
-            DestroyImmediate(go);
-
+            GameObject savedPrefab = PrefabUtility.SaveAsPrefabAsset(go, prefabPath);
             Debug.Log($"✓ Created prefab: {prefabPath}");
+            
+            // 10. Resources 폴더에도 복사
+            if (copyToResources && savedPrefab != null)
+            {
+                string resourcesPrefabPath = $"{resourcesOutputPath}/{team}_{pieceType}.prefab";
+                string resourcesDirectory = System.IO.Path.GetDirectoryName(resourcesPrefabPath);
+                if (!System.IO.Directory.Exists(resourcesDirectory))
+                {
+                    System.IO.Directory.CreateDirectory(resourcesDirectory);
+                }
+                
+                AssetDatabase.CopyAsset(prefabPath, resourcesPrefabPath);
+                Debug.Log($"✓ Copied to Resources: {resourcesPrefabPath}");
+            }
+            
+            DestroyImmediate(go);
         }
         catch (System.Exception e)
         {

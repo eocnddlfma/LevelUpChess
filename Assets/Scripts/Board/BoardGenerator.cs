@@ -50,24 +50,102 @@ namespace LevelUpChess.Board
         {
             ClearBoard();
         }
+        
+        /// <summary>
+        /// Scene에 이미 배치된 타일과 기물을 BoardManager에 등록 (런타임용)
+        /// </summary>
+        public void InitializeExistingBoard()
+        {
+            if (_isInitialized)
+            {
+                Debug.Log("[BoardGenerator] Board already initialized");
+                return;
+            }
+            
+            Debug.Log("[BoardGenerator] ========== Initializing Existing Board ==========");
+            
+            // Scene에 있는 모든 타일 찾기
+            Tile[] allTiles = FindObjectsByType<Tile>(FindObjectsSortMode.None);
+            if (allTiles.Length == 0)
+            {
+                Debug.LogWarning("[BoardGenerator] No tiles found in scene. Falling back to GenerateBoard()");
+                GenerateBoard();
+                return;
+            }
+            
+            _tiles = new Tile[width, height];
+            
+            // 타일 좌표로 배열에 배치
+            foreach (var tile in allTiles)
+            {
+                int x = tile.coordinate.x;
+                int y = tile.coordinate.y;
+                
+                if (x >= 0 && x < width && y >= 0 && y < height)
+                {
+                    _tiles[x, y] = tile;
+                }
+            }
+            
+            Debug.Log($"[BoardGenerator] Found {allTiles.Length} existing tiles");
+            
+            // BoardManager에 타일 등록
+            PublishBoardGeneratedEvent();
+            
+            // 기존 기물들의 타일 참조 재설정
+            ChessPiece[] allPieces = FindObjectsByType<ChessPiece>(FindObjectsSortMode.None);
+            foreach (var piece in allPieces)
+            {
+                // 가장 가까운 타일 찾기
+                Tile nearestTile = FindNearestTile(piece.transform.position);
+                if (nearestTile != null)
+                {
+                    piece.PlaceOnTile(nearestTile);
+                }
+            }
+            
+            Debug.Log($"[BoardGenerator] Registered {allPieces.Length} existing pieces");
+            
+            _isInitialized = true;
+            Debug.Log("[BoardGenerator] Existing board initialization completed");
+        }
+        
+        private Tile FindNearestTile(Vector3 position)
+        {
+            Tile nearest = null;
+            float minDist = float.MaxValue;
+            
+            for (int x = 0; x < width; x++)
+            {
+                for (int y = 0; y < height; y++)
+                {
+                    if (_tiles[x, y] == null) continue;
+                    
+                    float dist = Vector3.Distance(position, _tiles[x, y].transform.position);
+                    if (dist < minDist)
+                    {
+                        minDist = dist;
+                        nearest = _tiles[x, y];
+                    }
+                }
+            }
+            
+            return nearest;
+        }
 
         /// <summary>
         /// 보드 생성 및 이벤트 발행
         /// </summary>
         public void GenerateBoard()
         {
-            if (_isInitialized)
-            {
-                Debug.LogWarning("[BoardGenerator] Board already initialized. Use ClearBoard() first if you want to regenerate.");
-                return;
-            }
-
             Debug.Log("[BoardGenerator] ========== Generating Board ==========");
             
             if (!ValidateSetup())
                 return;
 
-            ClearPieces();
+            // 기존 보드 완전 정리 (Scene에 있던 것 포함)
+            ClearExistingBoard();
+            
             _tiles = new Tile[width, height];
 
             GenerateTiles();
@@ -79,6 +157,35 @@ namespace LevelUpChess.Board
 
             _isInitialized = true;
             Debug.Log("[BoardGenerator] Board generation completed successfully");
+        }
+        
+        /// <summary>
+        /// Scene에 이미 있는 타일과 기물을 모두 제거
+        /// </summary>
+        private void ClearExistingBoard()
+        {
+            Debug.Log("[BoardGenerator] Clearing existing board objects...");
+            
+            // 모든 기존 기물 제거
+            ChessPiece[] allPieces = FindObjectsByType<ChessPiece>(FindObjectsSortMode.None);
+            foreach (var piece in allPieces)
+            {
+                DestroyObject(piece.gameObject);
+            }
+            if (allPieces.Length > 0)
+                Debug.Log($"[BoardGenerator] Cleared {allPieces.Length} existing pieces");
+            
+            // 모든 기존 타일 제거
+            Tile[] allTiles = FindObjectsByType<Tile>(FindObjectsSortMode.None);
+            foreach (var tile in allTiles)
+            {
+                DestroyObject(tile.gameObject);
+            }
+            if (allTiles.Length > 0)
+                Debug.Log($"[BoardGenerator] Cleared {allTiles.Length} existing tiles");
+            
+            _tiles = null;
+            _isInitialized = false;
         }
 
         private bool ValidateSetup()

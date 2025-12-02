@@ -17,6 +17,14 @@ namespace LevelUpChess.Pieces
         [SerializeField] private int maxHealth = 1;
         [SerializeField] private int attackPower = 1;
         
+        [Header("레벨업 시 증가 스탯")]
+        [SerializeField] private int healthPerLevel = 1;
+        [SerializeField] private int attackPerLevel = 1;
+        
+        [Header("기물 가치 (경험치)")]
+        [Tooltip("이 기물을 처치하면 얻는 경험치 (폰=1, 비숍/나이트=3, 뢩=5, 퀘=9)")]
+        [SerializeField] private int pieceValue = 1;
+        
         [Header("이동")]
         [SerializeField] private float moveDuration = 0.1f;
         [SerializeField] private PieceMovement[] movementStrategies;
@@ -27,6 +35,9 @@ namespace LevelUpChess.Pieces
         public string DisplayName => displayName;
         public int MaxHealth => maxHealth;
         public int AttackPower => attackPower;
+        public int HealthPerLevel => healthPerLevel;
+        public int AttackPerLevel => attackPerLevel;
+        public int PieceValue => pieceValue;
         public float MoveDuration => moveDuration;
         public PieceMovement[] MovementStrategies => movementStrategies;
     }

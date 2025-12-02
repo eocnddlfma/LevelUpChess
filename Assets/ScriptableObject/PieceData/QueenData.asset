@@ -14,11 +14,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   pieceType: 4
   displayName: "\uD038"
-  maxHealth: 9
-  attackPower: 9
+  maxHealth: 2
+  attackPower: 4
+  healthPerLevel: 1
+  attackPerLevel: 2
+  pieceValue: 9
   moveDuration: 0.15
   movementStrategies:
   - {fileID: 11400000, guid: f15f828e9a14b054a80f2b84f82f59c9, type: 2}
   - {fileID: 11400000, guid: 222d4adef485df34cb6bc4aa7df0bc84, type: 2}
-  whiteSprite: {fileID: 0}
-  blackSprite: {fileID: 0}

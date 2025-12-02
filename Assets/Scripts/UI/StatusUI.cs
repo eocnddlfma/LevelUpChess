@@ -5,23 +5,29 @@ using TMPro;
 namespace LevelUpChess.UI
 {
     /// <summary>
-    /// 체력바 UI 컴포넌트
-    /// 기물의 체력을 시각적으로 표시
+    /// 상태 UI 컴포넌트
+    /// 기물의 체력, 공격력, 레벨을 시각적으로 표시
     /// 다이나믹 애니메이션: 
     /// - 피해 시: 빨간색 바가 먼저 줄고, 흰색 트레일이 천천히 따라감
     /// - 회복 시: 흰색 트레일이 먼저 늘고, 빨간색 바가 따라감
     /// </summary>
-    public class HealthBarUI : MonoBehaviour
+    public class StatusUI : MonoBehaviour
     {
-        [Header("UI 요소")]
+        [Header("체력바 UI 요소")]
         [SerializeField] private Image backgroundImage;
         [SerializeField] private Image fillImage;        // 실제 체력 (빨간색/초록색)
         [SerializeField] private Image trailImage;       // 트레일 바 (흰색) - fillImage 뒤에 위치
+        
+        [Header("경험치바 UI 요소")]
+        [SerializeField] private Image expBackgroundImage;  // 경험치 바 배경
+        [SerializeField] private Image expFillImage;        // 경험치 바 채움
+        [SerializeField] private TextMeshProUGUI expText;   // 경험치 수치 표시 (선택)
         
         [Header("수치 표시 UI")]
         [SerializeField] private TextMeshProUGUI healthText;    // 체력 수치 표시
         [SerializeField] private Image attackIcon;              // 공격력 아이콘 이미지
         [SerializeField] private TextMeshProUGUI attackText;    // 공격력 수치 표시
+        [SerializeField] private TextMeshProUGUI levelText;     // 레벨 표시
         
         [Header("색상 설정")]
         [SerializeField] private Color fullHealthColor = Color.green;
@@ -30,6 +36,9 @@ namespace LevelUpChess.UI
         [SerializeField] private Color trailColor = Color.white;
         [SerializeField] private Color healthTextColor = Color.white;
         [SerializeField] private Color attackTextColor = Color.yellow;
+        [SerializeField] private Color levelTextColor = Color.cyan;
+        [SerializeField] private Color expBarColor = new Color(0.3f, 0.7f, 1f, 1f);  // 하늘색
+        [SerializeField] private Color expBackgroundColor = new Color(0.15f, 0.15f, 0.15f, 0.8f);
         
         [Header("애니메이션 설정")]
         [SerializeField] private float trailDelay = 0.3f;        // 트레일 애니메이션 시작 지연
@@ -40,10 +49,21 @@ namespace LevelUpChess.UI
         [SerializeField] private float lowHealthThreshold = 0.3f;
         [SerializeField] private bool showHealthNumbers = true;
         [SerializeField] private bool showAttackPower = true;
+        [SerializeField] private bool showLevel = true;
+        [SerializeField] private bool showExpBar = true;
+        [SerializeField] private bool showExpNumbers = false;  // 경험치 수치 표시 여부
         
         private int maxHealth = 1;
         private int currentHealth = 1;
         private int attackPower = 1;
+        private int level = 1;
+        
+        // 경험치 관련
+        private int currentExp = 0;
+        private int expToNextLevel = 100;
+        private float targetExpFillAmount = 0f;
+        private float currentExpFillAmount = 0f;
+        private bool isExpAnimating = false;
         
         private float targetFillAmount = 1f;
         private float currentFillAmount = 1f;
@@ -67,28 +87,49 @@ namespace LevelUpChess.UI
             if (attackText != null)
                 attackText.color = attackTextColor;
             
+            if (levelText != null)
+                levelText.color = levelTextColor;
+            
+            // 경험치 바 색상 설정
+            if (expBackgroundImage != null)
+                expBackgroundImage.color = expBackgroundColor;
+            
+            if (expFillImage != null)
+                expFillImage.color = expBarColor;
+            
             UpdateHealthBarImmediate();
+            UpdateExpBarImmediate();
         }
         
         private void Update()
         {
-            if (!isAnimating) return;
+            if (isAnimating)
+            {
+                AnimateHealthBar();
+            }
             
-            AnimateHealthBar();
+            if (isExpAnimating)
+            {
+                AnimateExpBar();
+            }
         }
         
         /// <summary>
         /// 체력바 초기화
         /// </summary>
-        public void Initialize(int maxHp, int attack = 1)
+        public void Initialize(int maxHp, int attack = 1, int lvl = 1, int exp = 0, int expToNext = 100)
         {
             maxHealth = Mathf.Max(1, maxHp);
             currentHealth = maxHealth;
             attackPower = attack;
+            level = lvl;
+            currentExp = exp;
+            expToNextLevel = Mathf.Max(1, expToNext);
             targetFillAmount = 1f;
             currentFillAmount = 1f;
             currentTrailAmount = 1f;
             UpdateHealthBarImmediate();
+            UpdateExpBarImmediate();
             UpdateStatsText();
         }
         
@@ -99,6 +140,48 @@ namespace LevelUpChess.UI
         {
             attackPower = attack;
             UpdateStatsText();
+        }
+        
+        /// <summary>
+        /// 레벨 설정
+        /// </summary>
+        public void SetLevel(int lvl)
+        {
+            level = lvl;
+            UpdateStatsText();
+        }
+        
+        /// <summary>
+        /// 경험치 설정
+        /// </summary>
+        public void SetExperience(int current, int toNextLevel)
+        {
+            currentExp = Mathf.Max(0, current);
+            expToNextLevel = Mathf.Max(1, toNextLevel);
+            
+            float newTarget = (float)currentExp / expToNextLevel;
+            targetExpFillAmount = Mathf.Clamp01(newTarget);
+            isExpAnimating = true;
+            
+            UpdateExpText();
+        }
+        
+        /// <summary>
+        /// 레벨업 시 경험치 바 리셋 (애니메이션 포함)
+        /// </summary>
+        public void OnLevelUp(int newLevel, int remainingExp, int newExpToNextLevel)
+        {
+            level = newLevel;
+            currentExp = remainingExp;
+            expToNextLevel = Mathf.Max(1, newExpToNextLevel);
+            
+            // 레벨업 시 바를 꽉 채웠다가 리셋
+            currentExpFillAmount = 0f;
+            targetExpFillAmount = (float)currentExp / expToNextLevel;
+            isExpAnimating = true;
+            
+            UpdateStatsText();
+            UpdateExpText();
         }
         
         /// <summary>
@@ -204,6 +287,59 @@ namespace LevelUpChess.UI
             }
         }
         
+        private void AnimateExpBar()
+        {
+            if (!Mathf.Approximately(currentExpFillAmount, targetExpFillAmount))
+            {
+                currentExpFillAmount = Mathf.MoveTowards(currentExpFillAmount, targetExpFillAmount, trailSpeed * Time.deltaTime);
+                UpdateExpBarVisuals();
+            }
+            else
+            {
+                isExpAnimating = false;
+            }
+        }
+        
+        private void UpdateExpBarVisuals()
+        {
+            if (expFillImage != null)
+            {
+                expFillImage.fillAmount = currentExpFillAmount;
+            }
+        }
+        
+        private void UpdateExpBarImmediate()
+        {
+            targetExpFillAmount = (float)currentExp / expToNextLevel;
+            currentExpFillAmount = targetExpFillAmount;
+            isExpAnimating = false;
+            
+            UpdateExpBarVisuals();
+            UpdateExpText();
+        }
+        
+        private void UpdateExpText()
+        {
+            if (expText != null)
+            {
+                if (showExpNumbers)
+                {
+                    expText.text = $"{currentExp}/{expToNextLevel}";
+                    expText.gameObject.SetActive(true);
+                }
+                else
+                {
+                    expText.gameObject.SetActive(false);
+                }
+            }
+            
+            // 경험치 바 표시/숨김
+            if (expBackgroundImage != null)
+                expBackgroundImage.gameObject.SetActive(showExpBar);
+            if (expFillImage != null)
+                expFillImage.gameObject.SetActive(showExpBar);
+        }
+        
         private void UpdateStatsText()
         {
             if (healthText != null && showHealthNumbers)
@@ -232,6 +368,17 @@ namespace LevelUpChess.UI
                     attackIcon.gameObject.SetActive(false);
                 if (attackText != null)
                     attackText.gameObject.SetActive(false);
+            }
+            
+            // 레벨 표시
+            if (showLevel && levelText != null)
+            {
+                levelText.text = $"Lv.{level}";
+                levelText.gameObject.SetActive(true);
+            }
+            else if (levelText != null)
+            {
+                levelText.gameObject.SetActive(false);
             }
         }
         

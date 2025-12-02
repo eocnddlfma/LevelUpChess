@@ -1,11 +1,9 @@
 using System.Collections.Generic;
+using LevelUpChess.Pieces;
 using UnityEngine;
 
-namespace LevelUpChess.Pieces
+namespace Pieces.Movements
 {
-    /// <summary>
-    /// 비숍의 이동 방식을 정의합니다
-    /// </summary>
     [CreateAssetMenu(fileName = "BishopMovement", menuName = "Chess/Piece Movement/Bishop")]
     public class BishopMovement : PieceMovement
     {
@@ -22,3 +20,4 @@ namespace LevelUpChess.Pieces
         }
     }
 }
+

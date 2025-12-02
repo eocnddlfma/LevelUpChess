@@ -109,23 +109,48 @@ namespace LevelUpChess.Networking
     {
         try
         {
+            Debug.Log("[ChessNetwork] Starting service initialization...");
+            
             if (UnityServices.State != ServicesInitializationState.Initialized)
-                await UnityServices.InitializeAsync();
+            {
+                // WebGL에서 각 탭이 다른 플레이어로 인식되도록 InitializationOptions 사용
+                var options = new InitializationOptions();
+                
+#if UNITY_WEBGL
+                // WebGL: 각 세션마다 고유한 프로필 생성 (같은 브라우저에서 여러 탭 지원)
+                string uniqueProfile = $"Player_{Guid.NewGuid().ToString().Substring(0, 8)}";
+                options.SetProfile(uniqueProfile);
+                Debug.Log($"[ChessNetwork] WebGL: Using unique profile: {uniqueProfile}");
+#endif
+                
+                await UnityServices.InitializeAsync(options);
+                Debug.Log("[ChessNetwork] Unity Services initialized");
+            }
+
+            // 이미 로그인되어 있으면 로그아웃 후 새로 로그인
+            if (AuthenticationService.Instance.IsSignedIn)
+            {
+                Debug.Log("[ChessNetwork] Already signed in, signing out first...");
+                AuthenticationService.Instance.SignOut();
+            }
 
 #if !UNITY_WEBGL
+            // 데스크톱: 세션 토큰 클리어
             AuthenticationService.Instance.ClearSessionToken();
 #endif
 
+            Debug.Log("[ChessNetwork] Signing in anonymously...");
             await AuthenticationService.Instance.SignInAnonymouslyAsync();
             
-            string userId = AuthenticationService.Instance.PlayerId;
-            Debug.Log($"[ChessNetwork] Signed in: {userId.Substring(0, 8)}");
-            NetworkLogUI.Log($"Player: {userId.Substring(0, 8)}");
+            string oderId = AuthenticationService.Instance.PlayerId;
+            Debug.Log($"[ChessNetwork] Signed in as: {oderId}");
+            NetworkLogUI.Log($"Player: {oderId.Substring(0, 8)}");
         }
         catch (Exception ex)
         {
             Debug.LogError($"[ChessNetwork] Service init failed: {ex.Message}");
-            NetworkLogUI.Log($"??Init Error: {ex.Message}");
+            Debug.LogError($"[ChessNetwork] Stack: {ex.StackTrace}");
+            NetworkLogUI.Log($"Init Error: {ex.Message}");
         }
     }
 
@@ -436,8 +461,8 @@ namespace LevelUpChess.Networking
         BoardGenerator boardGenerator = FindFirstObjectByType<BoardGenerator>();
         if (boardGenerator != null)
         {
-            Debug.Log("[ChessNetwork] Generating board...");
-            boardGenerator.GenerateBoard();
+            Debug.Log("[ChessNetwork] Initializing existing board...");
+            boardGenerator.InitializeExistingBoard();
         }
 
         var networkGameManager = ServiceLocator.Get<NetworkGameManager>();

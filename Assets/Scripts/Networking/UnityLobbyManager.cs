@@ -253,6 +253,26 @@ namespace LevelUpChess.Networking
             OnStatusUpdate?.Invoke("Lobby full, retrying...");
             await QuickMatchAsync();
         }
+        catch (LobbyServiceException ex) when (ex.Reason == LobbyExceptionReason.LobbyConflict)
+        {
+            // 409 Conflict - 이미 로비에 참여 중이거나 충돌 발생
+            Debug.LogWarning("[UnityLobby] CLIENT: Lobby conflict (409), trying to leave and rejoin...");
+            OnStatusUpdate?.Invoke("Lobby conflict, retrying...");
+            
+            // 기존 로비에서 나가기 시도
+            try
+            {
+                await LobbyService.Instance.RemovePlayerAsync(lobby.Id, AuthenticationService.Instance.PlayerId);
+                Debug.Log("[UnityLobby] CLIENT: Left conflicting lobby, retrying join...");
+            }
+            catch (Exception leaveEx)
+            {
+                Debug.LogWarning($"[UnityLobby] CLIENT: Could not leave lobby: {leaveEx.Message}");
+            }
+            
+            // 다시 매칭 시도
+            await QuickMatchAsync();
+        }
         catch (LobbyServiceException ex) when (ex.Message.Contains("already a member"))
         {
             Debug.LogWarning("[UnityLobby] CLIENT: Already a member of this lobby");

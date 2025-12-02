@@ -240,17 +240,35 @@ namespace LevelUpChess.Managers
         Vector2Int fromPos = piece.CurrentTile.coordinate;
         Vector2Int toPos = targetTile.coordinate;
 
-        ChessPiece capturedPiece = targetTile.OccupyingPiece;
-        if (capturedPiece != null && capturedPiece.Team != piece.Team)
-            capturedPiece.Die();
+        ChessPiece targetPiece = targetTile.OccupyingPiece;
+        
+        // 적 기물이 있으면 공격
+        if (targetPiece != null && targetPiece.Team != piece.Team)
+        {
+            piece.AttackPiece(targetTile, targetPiece, () =>
+            {
+                // 공격 결과에 따라 이동했는지 확인
+                if (piece.CurrentTile == targetTile)
+                {
+                    // 적을 죽이고 이동함
+                    OnMoveComplete(piece, usedMove, fromPos, toPos);
+                }
+                else
+                {
+                    // 적이 살아남아 제자리
+                    FinishMove(piece, fromPos, fromPos);
+                }
+            });
+            return;
+        }
 
-        Tween moveTween = piece.MoveToTile(targetTile);
-        moveTween.OnComplete(() => OnMoveComplete(piece, usedMove, fromPos, toPos));
+        // 빈 칸이면 바로 이동
+        piece.MoveToTile(targetTile, () => OnMoveComplete(piece, usedMove, fromPos, toPos));
     }
 
     private void OnMoveComplete(ChessPiece piece, Move usedMove, Vector2Int fromPos, Vector2Int toPos)
     {
-        HandleEnPassant(usedMove);
+        HandleEnPassant(usedMove, piece);
 
         if (usedMove.isCastling)
             HandleCastling(usedMove, () => FinishMove(piece, fromPos, toPos));
@@ -269,14 +287,17 @@ namespace LevelUpChess.Managers
             isMoving = false;
         }
 
-        private void HandleEnPassant(Move move)
+        private void HandleEnPassant(Move move, ChessPiece killer)
         {
             if (!move.isEnPassant)
                 return;
 
             ChessPiece enPassantPiece = BoardManager.GetPieceAt(move.enPassantCapturePos);
-            if (enPassantPiece != null)
-                enPassantPiece.Die();
+            if (enPassantPiece != null && enPassantPiece.Combat != null)
+            {
+                // 앙파상은 항상 폰끼리의 공격이므로 공격력으로 대미지 처리
+                enPassantPiece.Combat.TakeDamage(killer.AttackPower, killer);
+            }
         }
 
         private void HandleCastling(Move move, System.Action onComplete)
@@ -292,8 +313,7 @@ namespace LevelUpChess.Managers
 
             if (rook != null && rook.PieceType == PieceType.Rook && rookTargetTile != null)
             {
-                Tween rookTween = rook.MoveToTile(rookTargetTile);
-                rookTween.OnComplete(() => onComplete?.Invoke());
+                rook.MoveToTile(rookTargetTile, onComplete);
             }
             else
             {

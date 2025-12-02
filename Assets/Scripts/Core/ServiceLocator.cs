@@ -7,8 +7,6 @@ namespace LevelUpChess.Core
     public static class ServiceLocator
     {
         private static readonly Dictionary<Type, object> services = new Dictionary<Type, object>();
-        private static readonly Dictionary<Type, object> lazyServices = new Dictionary<Type, object>();
-
         public static void Register<T>(T service) where T : class
         {
             var type = typeof(T);
@@ -35,18 +33,15 @@ namespace LevelUpChess.Core
             var type = typeof(T);
             if (services.TryGetValue(type, out var service))
             {
-                // Unity 객체인 경우 파괴되었는지 확인
                 if (service is UnityEngine.Object unityObj && unityObj == null)
                 {
                     Debug.LogWarning($"[ServiceLocator] Service {type.Name} was destroyed, removing from registry.");
                     services.Remove(type);
-                    // 파괴된 경우 자동으로 다시 찾기 시도
                     return FindAndRegister<T>();
                 }
                 return service as T;
             }
             
-            // 등록되지 않은 경우 씬에서 자동으로 찾기 시도
             return FindAndRegister<T>();
         }
         

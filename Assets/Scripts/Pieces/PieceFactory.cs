@@ -37,7 +37,23 @@ namespace LevelUpChess.Pieces
             if (prefab == null)
                 return null;
 
-            GameObject instance = Object.Instantiate(prefab, tile.transform.position, Quaternion.identity, parent);
+            GameObject instance;
+            
+#if UNITY_EDITOR
+            if (!Application.isPlaying)
+            {
+                // 에디터 모드: PrefabUtility 사용하여 프리팹 연결 유지
+                instance = (GameObject)UnityEditor.PrefabUtility.InstantiatePrefab(prefab, parent);
+                instance.transform.position = tile.transform.position;
+                instance.transform.rotation = Quaternion.identity;
+            }
+            else
+#endif
+            {
+                // 런타임: Instantiate 사용
+                instance = Object.Instantiate(prefab, tile.transform.position, Quaternion.identity, parent);
+            }
+            
             instance.name = $"{team}_{pieceType}";
 
             ChessPiece piece = instance.GetComponent<ChessPiece>();
@@ -85,18 +101,17 @@ namespace LevelUpChess.Pieces
             GameObject prefab = null;
 
 #if UNITY_EDITOR
-            if (!Application.isPlaying)
+            // 에디터에서는 항상 AssetDatabase로 로드 (플레이 모드 포함)
+            string editorPath = string.Format(EDITOR_PREFAB_PATH, team, pieceType);
+            prefab = AssetDatabase.LoadAssetAtPath<GameObject>(editorPath);
+            if (prefab != null)
             {
-                string editorPath = string.Format(EDITOR_PREFAB_PATH, team, pieceType);
-                prefab = AssetDatabase.LoadAssetAtPath<GameObject>(editorPath);
-                if (prefab == null)
-                {
-                    Debug.LogError($"[PieceFactory] Cannot load prefab: {editorPath}");
-                }
                 return prefab;
             }
+            Debug.LogWarning($"[PieceFactory] Prefab not found at editor path: {editorPath}, trying Resources...");
 #endif
 
+            // 빌드된 게임에서는 Resources로 로드
             string resourcePath = string.Format(RUNTIME_PREFAB_PATH, team, pieceType);
             prefab = Resources.Load<GameObject>(resourcePath);
             if (prefab == null)
