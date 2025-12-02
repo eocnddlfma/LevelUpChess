@@ -281,9 +281,9 @@ namespace LevelUpChess.Managers
             Debug.LogError("[NetworkGameManager] No BoardGenerator found");
     }
 
-    public override void OnDestroy()
+    public override void OnNetworkDespawn()
     {
-        base.OnDestroy();
+        base.OnNetworkDespawn();
         if (ServiceLocator.Get<NetworkGameManager>() == this)
             ServiceLocator.Unregister<NetworkGameManager>();
     }

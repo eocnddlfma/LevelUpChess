@@ -1,150 +1,203 @@
-import brotli
 import os
 import shutil
 
+try:
+    import brotli
+    HAS_BROTLI = True
+except ImportError:
+    HAS_BROTLI = False
+    print("⚠️ brotli 모듈이 설치되지 않음. 압축 해제를 건너뜁니다.")
+    print("   설치하려면: pip install brotli")
+
 # 빌드 디렉토리 설정
 build_root = "build"
-build_folder = os.path.join(build_root, "Build")
+build_subfolder = os.path.join(build_root, "Build")  # Unity가 생성하는 Build 하위폴더
 
-# 1. Brotli 압축 해제
 print("=" * 50)
-print("1. Brotli 압축 해제")
+print("Unity WebGL 빌드 후처리 스크립트")
 print("=" * 50)
 
-files_to_decompress = [
-    "build.data.br",
-    "build.framework.js.br", 
-    "build.wasm.br"
-]
-
-for filename in files_to_decompress:
-    input_path = os.path.join(build_folder, filename)
-    output_path = os.path.join(build_folder, filename[:-3])  # .br 제거
+# 1. Build 하위 폴더가 있으면 처리
+if os.path.exists(build_subfolder):
+    print("\n[1단계] Build 하위 폴더 발견 - 파일 이동 중...")
     
-    if os.path.exists(input_path):
-        print(f"압축 해제 중: {filename}")
-        try:
-            with open(input_path, 'rb') as f:
-                compressed_data = f.read()
+    # Brotli 압축 해제 (Build 폴더 내)
+    if HAS_BROTLI:
+        files_to_decompress = [
+            "build.data.br",
+            "build.framework.js.br", 
+            "build.wasm.br"
+        ]
+        
+        for filename in files_to_decompress:
+            input_path = os.path.join(build_subfolder, filename)
+            output_path = os.path.join(build_subfolder, filename[:-3])  # .br 제거
             
-            decompressed_data = brotli.decompress(compressed_data)
+            if os.path.exists(input_path):
+                print(f"  압축 해제: {filename}")
+                try:
+                    with open(input_path, 'rb') as f:
+                        compressed_data = f.read()
+                    
+                    decompressed_data = brotli.decompress(compressed_data)
+                    
+                    with open(output_path, 'wb') as f:
+                        f.write(decompressed_data)
+                    
+                    os.remove(input_path)
+                    print(f"    ✓ 완료")
+                except Exception as e:
+                    print(f"    ✗ 오류: {e}")
+    
+    # Build 폴더 내 파일들을 build 루트로 이동
+    for filename in os.listdir(build_subfolder):
+        src = os.path.join(build_subfolder, filename)
+        dst = os.path.join(build_root, filename)
+        
+        if os.path.isfile(src):
+            if os.path.exists(dst):
+                os.remove(dst)
+            shutil.move(src, dst)
+            print(f"  이동: {filename}")
+        elif os.path.isdir(src):
+            if os.path.exists(dst):
+                shutil.rmtree(dst)
+            shutil.move(src, dst)
+            print(f"  이동: {filename}/")
+    
+    # 빈 Build 폴더 삭제
+    if os.path.exists(build_subfolder) and len(os.listdir(build_subfolder)) == 0:
+        os.rmdir(build_subfolder)
+        print("  삭제: 빈 Build 폴더")
+else:
+    print("\n[1단계] Build 하위 폴더 없음 - 건너뜀")
+    
+    # build 루트에 .br 파일이 있으면 압축 해제
+    if HAS_BROTLI:
+        files_to_decompress = [
+            "build.data.br",
+            "build.framework.js.br", 
+            "build.wasm.br"
+        ]
+        
+        for filename in files_to_decompress:
+            input_path = os.path.join(build_root, filename)
+            output_path = os.path.join(build_root, filename[:-3])
             
-            with open(output_path, 'wb') as f:
-                f.write(decompressed_data)
-            
-            print(f"  ✓ 완료: {filename} → {os.path.basename(output_path)}")
-            
-            # 압축 파일 삭제 (선택사항)
-            os.remove(input_path)
-            print(f"  ✓ 삭제: {filename}")
-        except Exception as e:
-            print(f"  ✗ 오류: {e}")
-    else:
-        print(f"✗ 파일 없음: {input_path}")
+            if os.path.exists(input_path):
+                print(f"  압축 해제: {filename}")
+                try:
+                    with open(input_path, 'rb') as f:
+                        compressed_data = f.read()
+                    
+                    decompressed_data = brotli.decompress(compressed_data)
+                    
+                    with open(output_path, 'wb') as f:
+                        f.write(decompressed_data)
+                    
+                    os.remove(input_path)
+                    print(f"    ✓ 완료")
+                except Exception as e:
+                    print(f"    ✗ 오류: {e}")
 
-# 2. 파일들을 루트로 이동하고 index.html 수정
-print("\n" + "=" * 50)
-print("2. 파일 구조 변경 (루트로 이동)")
-print("=" * 50)
+# 2. build/index.html 수정 (build 폴더 내에서 실행할 때용)
+print("\n[2단계] build/index.html 수정...")
 
-# Build 폴더 내 파일들을 루트로 이동
-build_files = os.listdir(build_folder)
-for filename in build_files:
-    src = os.path.join(build_folder, filename)
-    dst = os.path.join(build_root, filename)
-    if os.path.isfile(src):
-        shutil.move(src, dst)
-        print(f"이동: {filename} → 루트")
-
-# 빈 Build 폴더 삭제
-if os.path.exists(build_folder) and len(os.listdir(build_folder)) == 0:
-    os.rmdir(build_folder)
-    print("삭제: 빈 Build 폴더")
-
-# TemplateData 폴더는 그대로 유지!
-print("TemplateData 폴더는 그대로 유지")
-
-# 3. index.html 경로 수정 (build 폴더 내부용)
-print("\n" + "=" * 50)
-print("3. build/index.html 경로 수정")
-print("=" * 50)
-
-index_path = os.path.join(build_root, "index.html")
-if os.path.exists(index_path):
-    with open(index_path, 'r', encoding='utf-8') as f:
+build_index_path = os.path.join(build_root, "index.html")
+if os.path.exists(build_index_path):
+    with open(build_index_path, 'r', encoding='utf-8') as f:
         content = f.read()
     
-    # 경로 수정 - Build/ 접두사만 제거 (TemplateData는 유지!)
-    original_content = content
+    original = content
     
-    # Build 폴더 경로 수정
+    # buildUrl을 현재 디렉토리로 설정
     content = content.replace('var buildUrl = "Build";', 'var buildUrl = ".";')
-    content = content.replace('buildUrl + "/build.', '"build.')
+    content = content.replace('var buildUrl = "Build/Build";', 'var buildUrl = ".";')
     
-    # .br 확장자를 제거된 파일로 변경
-    content = content.replace('build.data.br', 'build.data')
-    content = content.replace('build.framework.js.br', 'build.framework.js')
-    content = content.replace('build.wasm.br', 'build.wasm')
+    # .br 확장자 제거
+    content = content.replace('.data.br', '.data')
+    content = content.replace('.framework.js.br', '.framework.js')
+    content = content.replace('.wasm.br', '.wasm')
     
-    # TemplateData 경로는 그대로 유지!
+    # 대문자 Build.xxx → 소문자 build.xxx
+    content = content.replace('/Build.loader.js', '/build.loader.js')
+    content = content.replace('/Build.data', '/build.data')
+    content = content.replace('/Build.framework.js', '/build.framework.js')
+    content = content.replace('/Build.wasm', '/build.wasm')
+    content = content.replace('"Build.loader.js', '"build.loader.js')
     
-    with open(index_path, 'w', encoding='utf-8') as f:
-        f.write(content)
-    
-    print("✓ build/index.html 경로 수정 완료")
-    print("  - Build/ → . (루트)")
-    print("  - TemplateData/ → 그대로 유지")
-    print("  - .br 확장자 제거")
+    if content != original:
+        with open(build_index_path, 'w', encoding='utf-8') as f:
+            f.write(content)
+        print("  ✓ build/index.html 수정 완료")
+    else:
+        print("  - 변경 사항 없음")
 else:
-    print("✗ build/index.html을 찾을 수 없습니다")
+    print("  ✗ build/index.html 없음")
 
-# 4. 루트 index.html 경로 수정 (GitHub Pages용)
-print("\n" + "=" * 50)
-print("4. 루트 index.html 경로 수정")
-print("=" * 50)
+# 3. 루트 index.html 수정 (GitHub Pages / 루트에서 실행할 때용)
+print("\n[3단계] 루트 index.html 수정...")
 
 root_index_path = "index.html"
 if os.path.exists(root_index_path):
     with open(root_index_path, 'r', encoding='utf-8') as f:
         content = f.read()
     
-    # Build/Build → Build 로 수정
-    content = content.replace('var buildUrl = "Build/Build";', 'var buildUrl = "Build";')
+    original = content
     
-    # 파일명 대소문자 수정 (Build.xxx → build.xxx)
+    # buildUrl을 build 폴더로 설정
+    content = content.replace('var buildUrl = ".";', 'var buildUrl = "build";')
+    content = content.replace('var buildUrl = "Build";', 'var buildUrl = "build";')
+    content = content.replace('var buildUrl = "Build/Build";', 'var buildUrl = "build";')
+    
+    # .br 확장자 제거
+    content = content.replace('.data.br', '.data')
+    content = content.replace('.framework.js.br', '.framework.js')
+    content = content.replace('.wasm.br', '.wasm')
+    
+    # 대문자 Build.xxx → 소문자 build.xxx  
     content = content.replace('/Build.loader.js', '/build.loader.js')
     content = content.replace('/Build.data', '/build.data')
     content = content.replace('/Build.framework.js', '/build.framework.js')
     content = content.replace('/Build.wasm', '/build.wasm')
+    content = content.replace('"Build.loader.js', '"build.loader.js')
     
-    # .br 확장자 제거
-    content = content.replace('build.data.br', 'build.data')
-    content = content.replace('build.framework.js.br', 'build.framework.js')
-    content = content.replace('build.wasm.br', 'build.wasm')
+    # CSS/favicon 경로를 build 폴더로
+    content = content.replace('href="TemplateData/', 'href="build/')
+    content = content.replace('href="Build/TemplateData/', 'href="build/')
     
-    # TemplateData 경로 수정 (Build/TemplateData → TemplateData)
-    content = content.replace('Build/TemplateData/', 'TemplateData/')
+    # StreamingAssets 경로 수정
+    content = content.replace('streamingAssetsUrl: "StreamingAssets"', 'streamingAssetsUrl: "build/StreamingAssets"')
     
-    with open(root_index_path, 'w', encoding='utf-8') as f:
-        f.write(content)
-    
-    print("✓ 루트 index.html 경로 수정 완료")
-    print("  - Build/Build → Build")
-    print("  - Build.xxx → build.xxx (소문자)")
-    print("  - Build/TemplateData/ → TemplateData/")
-    print("  - .br 확장자 제거")
+    if content != original:
+        with open(root_index_path, 'w', encoding='utf-8') as f:
+            f.write(content)
+        print("  ✓ 루트 index.html 수정 완료")
+    else:
+        print("  - 변경 사항 없음")
 else:
-    print("✗ 루트 index.html을 찾을 수 없습니다")
+    print("  ✗ 루트 index.html 없음")
 
+# 4. 최종 확인
 print("\n" + "=" * 50)
 print("완료!")
 print("=" * 50)
 
-# 최종 파일 목록 출력
-print("\n최종 파일 구조:")
-for item in sorted(os.listdir(build_root)):
-    item_path = os.path.join(build_root, item)
-    if os.path.isdir(item_path):
-        print(f"  📁 {item}/")
-    else:
-        print(f"  📄 {item}")
+print("\n📁 build 폴더 구조:")
+if os.path.exists(build_root):
+    for item in sorted(os.listdir(build_root)):
+        item_path = os.path.join(build_root, item)
+        if os.path.isdir(item_path):
+            print(f"  📁 {item}/")
+        else:
+            size = os.path.getsize(item_path)
+            if size > 1024 * 1024:
+                print(f"  📄 {item} ({size / 1024 / 1024:.1f} MB)")
+            elif size > 1024:
+                print(f"  📄 {item} ({size / 1024:.1f} KB)")
+            else:
+                print(f"  📄 {item} ({size} B)")
+
+print("\n💡 테스트 방법:")
+print("  1. 터미널에서: python -m http.server 8000")
+print("  2. 브라우저에서: http://localhost:8000")
