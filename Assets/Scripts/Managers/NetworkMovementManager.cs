@@ -177,48 +177,57 @@ namespace LevelUpChess.Managers
         if (selectedPiece == null || targetTile == null || isMoving)
             return;
 
-        RequestMoveServerRpc(selectedPiece.CurrentTile.coordinate, targetTile.coordinate);
+        Vector2Int fromPos = selectedPiece.CurrentTile.coordinate;
+        Vector2Int toPos = targetTile.coordinate;
+        
+        // 로컬에서 유효한 이동인지 먼저 확인
+        List<Move> availableMoves = selectedPiece.GetAvailableMoves();
+        Move? foundMove = null;
+        foreach (var move in availableMoves)
+        {
+            if (move.to == toPos)
+            {
+                foundMove = move;
+                break;
+            }
+        }
+        
+        if (foundMove == null)
+        {
+            ClearSelection();
+            return;
+        }
+        
+        Move usedMove = foundMove.Value;
+        ChessPiece piece = selectedPiece;
+        
+        // 서버에 검증 요청 먼저 (Move 정보도 함께 전송)
+        RequestMoveServerRpc(fromPos, toPos, usedMove);
+        
+        // 클라이언트 예측: 로컬에서 애니메이션 실행
+        ExecuteMove(piece, targetTile, usedMove);
+        
         ClearSelection();
     }
 
     [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
-        private void RequestMoveServerRpc(Vector2Int fromPos, Vector2Int toPos, RpcParams rpcParams = default)
+        private void RequestMoveServerRpc(Vector2Int fromPos, Vector2Int toPos, Move usedMove, RpcParams rpcParams = default)
         {
-            ChessPiece piece = BoardManager.GetPieceAt(fromPos);
-            Tile targetTile = BoardManager.GetTileAt(toPos);
-
-            if (piece == null || targetTile == null)
-            {
-                Debug.LogError($"[NetworkMovement] Invalid move: piece={piece}, tile={targetTile}");
-                return;
-            }
-
-            List<Move> availableMoves = piece.GetAvailableMoves();
-            Move usedMove = new Move();
-            bool isValidMove = false;
-
-            foreach (var move in availableMoves)
-            {
-                if (move.to == toPos)
-                {
-                    usedMove = move;
-                    isValidMove = true;
-                    break;
-                }
-            }
-
-            if (!isValidMove)
-            {
-                Debug.LogError($"[NetworkMovement] Invalid move from {fromPos} to {toPos}");
-                return;
-            }
-
-            ExecuteMoveClientRpc(fromPos, toPos, usedMove);
+            ulong senderClientId = rpcParams.Receive.SenderClientId;
+            
+            // 서버에서는 검증만 하고, 다른 클라이언트들에게 실행 명령
+            // (요청자는 이미 로컬에서 실행했으므로 제외)
+            ExecuteMoveForOthersClientRpc(fromPos, toPos, usedMove, senderClientId);
         }
 
+        // 요청자 외의 다른 클라이언트들에게 실행
         [Rpc(SendTo.ClientsAndHost)]
-        private void ExecuteMoveClientRpc(Vector2Int fromPos, Vector2Int toPos, Move usedMove)
+        private void ExecuteMoveForOthersClientRpc(Vector2Int fromPos, Vector2Int toPos, Move usedMove, ulong originalSenderClientId)
         {
+            // 원래 요청을 보낸 클라이언트는 이미 실행했으므로 스킵
+            if (NetworkManager.Singleton.LocalClientId == originalSenderClientId)
+                return;
+            
             ChessPiece piece = BoardManager.GetPieceAt(fromPos);
             Tile targetTile = BoardManager.GetTileAt(toPos);
 

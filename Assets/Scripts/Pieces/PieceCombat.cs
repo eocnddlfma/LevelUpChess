@@ -37,6 +37,13 @@ namespace LevelUpChess.Pieces
         public bool IsAlive => _currentHealth > 0;
         
         /// <summary>
+        /// 총 누적 경험치 (레벨업에 사용된 경험치 + 현재 보유 경험치)
+        /// 레벨 1→2: 1exp, 2→3: 2exp, ... (n-1)→n: (n-1)exp
+        /// 합계: 1+2+...+(level-1) = (level-1)*level/2
+        /// </summary>
+        public int TotalAccumulatedExp => ((_level - 1) * _level / 2) + _currentExp;
+        
+        /// <summary>
         /// 초기화
         /// </summary>
         public void Initialize(ChessPiece ownerPiece, int maxHp, int attackPower)
@@ -147,6 +154,9 @@ namespace LevelUpChess.Pieces
         /// </summary>
         private void Die(ChessPiece killer = null)
         {
+            // 처치자에게 경험치 부여 (사망 전에 계산)
+            int expReward = CalculateExpReward();
+            
             // 사망 이벤트 발생
             Bus<PieceDeathEvent>.Raise(new PieceDeathEvent
             {
@@ -157,10 +167,11 @@ namespace LevelUpChess.Pieces
                 PieceValue = _piece.PieceValue
             });
             
-            // 처치자에게 경험치 부여
+            // 처치자에게 경험치 부여 (기물 점수 + 상대의 누적 경험치)
             if (killer != null && killer.Combat != null)
             {
-                killer.Combat.GainExperience(_piece.PieceValue);
+                killer.Combat.GainExperience(expReward);
+                Debug.Log($"[PieceCombat] {killer.name} gained {expReward} exp from killing {_piece.name} (PieceValue:{_piece.PieceValue} + AccumulatedExp:{TotalAccumulatedExp})");
             }
             
             // 애니메이션 정리
@@ -253,6 +264,15 @@ namespace LevelUpChess.Pieces
         }
         
         // ========== 레벨 시스템 ==========
+        
+        /// <summary>
+        /// 처치 시 획득할 경험치 계산
+        /// 기물 점수 + 상대의 누적 경험치 (레벨업에 사용된 + 현재 보유)
+        /// </summary>
+        private int CalculateExpReward()
+        {
+            return _piece.PieceValue + TotalAccumulatedExp;
+        }
         
         /// <summary>
         /// 경험치 획득

@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   pieceType: 1
   displayName: "\uB8E9"
-  maxHealth: 6
+  maxHealth: 5
   attackPower: 4
   healthPerLevel: 2
   attackPerLevel: 1

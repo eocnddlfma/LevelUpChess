@@ -1233,7 +1233,7 @@ MonoBehaviour:
   m_FallbackScreenDPI: 96
   m_DefaultSpriteDPI: 96
   m_DynamicPixelsPerUnit: 1
-  m_PresetInfoIsWorld: 1
+  m_PresetInfoIsWorld: 0
 --- !u!114 &7320486929811897425
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1260,9 +1260,9 @@ MonoBehaviour:
   lowHealthColor: {r: 1, g: 0, b: 0, a: 1}
   backgroundColor: {r: 0.2, g: 0.2, b: 0.2, a: 0.8}
   trailColor: {r: 1, g: 1, b: 1, a: 1}
-  healthTextColor: {r: 1, g: 1, b: 1, a: 1}
-  attackTextColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
-  levelTextColor: {r: 0, g: 1, b: 1, a: 1}
+  healthTextColor: {r: 0, g: 0, b: 0, a: 1}
+  attackTextColor: {r: 1, g: 0, b: 0, a: 1}
+  levelTextColor: {r: 0, g: 0, b: 0, a: 1}
   expBarColor: {r: 0.3, g: 0.7, b: 1, a: 1}
   expBackgroundColor: {r: 0.15, g: 0.15, b: 0.15, a: 0.8}
   trailDelay: 0.3

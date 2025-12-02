@@ -131,6 +131,9 @@ namespace LevelUpChess.Managers
         
         if (IsServer && NetworkManager.Singleton != null)
             NetworkManager.Singleton.OnClientDisconnectCallback -= OnClientDisconnected;
+        
+        if (ServiceLocator.Get<NetworkGameManager>() == this)
+            ServiceLocator.Unregister<NetworkGameManager>();
     }
     
     private void OnClientDisconnected(ulong clientId)
@@ -279,13 +282,6 @@ namespace LevelUpChess.Managers
             boardGenerator = FindFirstObjectByType<BoardGenerator>();
         if (boardGenerator == null)
             Debug.LogError("[NetworkGameManager] No BoardGenerator found");
-    }
-
-    public override void OnNetworkDespawn()
-    {
-        base.OnNetworkDespawn();
-        if (ServiceLocator.Get<NetworkGameManager>() == this)
-            ServiceLocator.Unregister<NetworkGameManager>();
     }
     }
 }

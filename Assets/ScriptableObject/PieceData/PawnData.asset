@@ -14,10 +14,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   pieceType: 0
   displayName: "\uD3F0"
-  maxHealth: 4
+  maxHealth: 6
   attackPower: 2
-  healthPerLevel: 2
-  attackPerLevel: 2
+  healthPerLevel: 1
+  attackPerLevel: 1
   pieceValue: 1
   moveDuration: 0.15
   movementStrategies:

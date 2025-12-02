@@ -16,8 +16,8 @@ MonoBehaviour:
   displayName: "\uD0B9"
   maxHealth: 1
   attackPower: 9
-  healthPerLevel: 1
-  attackPerLevel: 2
+  healthPerLevel: 3
+  attackPerLevel: 1
   pieceValue: 5
   moveDuration: 0.15
   movementStrategies:
