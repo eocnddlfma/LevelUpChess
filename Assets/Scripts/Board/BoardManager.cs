@@ -34,11 +34,13 @@ namespace LevelUpChess.Board
         private void OnEnable()
         {
             Bus<BoardGeneratedEvent>.OnEvent += OnBoardGenerated;
+            Bus<PieceDeathEvent>.OnEvent += OnPieceDeath;
         }
 
         private void OnDisable()
         {
             Bus<BoardGeneratedEvent>.OnEvent -= OnBoardGenerated;
+            Bus<PieceDeathEvent>.OnEvent -= OnPieceDeath;
         }
 
         /// <summary>
@@ -47,6 +49,17 @@ namespace LevelUpChess.Board
         private void OnBoardGenerated(BoardGeneratedEvent evt)
         {
             InitializeWithTiles(evt.Tiles, evt.Width, evt.Height);
+        }
+        
+        /// <summary>
+        /// 기물 사망 이벤트 수신 - 자동 Unregister
+        /// </summary>
+        private void OnPieceDeath(PieceDeathEvent evt)
+        {
+            if (evt.DeadPiece != null)
+            {
+                UnregisterPiece(evt.DeadPiece);
+            }
         }
 
         private void RestoreTilesFrom1DArray()

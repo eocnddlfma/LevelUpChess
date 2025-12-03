@@ -186,13 +186,6 @@ namespace LevelUpChess.Pieces
                 _piece.CurrentTile.OccupyingPiece = null;
             }
 
-            // BoardManager에서 등록 해제
-            var boardManager = ServiceLocator.Get<BoardManager>();
-            if (boardManager != null)
-            {
-                boardManager.UnregisterPiece(_piece);
-            }
-
             // King 사망 시 게임 오버
             if (_piece.PieceType == PieceType.King)
             {
