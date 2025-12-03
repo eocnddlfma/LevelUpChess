@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using DG.Tweening;
 
 namespace LevelUpChess.UI
 {
@@ -42,8 +43,10 @@ namespace LevelUpChess.UI
         
         [Header("애니메이션 설정")]
         [SerializeField] private float trailDelay = 0.3f;        // 트레일 애니메이션 시작 지연
-        [SerializeField] private float trailSpeed = 2f;          // 트레일 애니메이션 속도
-        [SerializeField] private float instantSpeed = 10f;       // 즉시 변화하는 바의 속도
+        [SerializeField] private float trailDuration = 0.5f;     // 트레일 애니메이션 지속시간
+        [SerializeField] private float fillDuration = 0.15f;     // 즉시 변화하는 바 지속시간
+        [SerializeField] private Ease trailEase = Ease.OutQuad;  // 트레일 이징
+        [SerializeField] private Ease fillEase = Ease.OutQuad;   // 필 이징
         
         [Header("설정")]
         [SerializeField] private float lowHealthThreshold = 0.3f;
@@ -61,17 +64,14 @@ namespace LevelUpChess.UI
         // 경험치 관련
         private int currentExp = 0;
         private int expToNextLevel = 100;
-        private float targetExpFillAmount = 0f;
-        private float currentExpFillAmount = 0f;
-        private bool isExpAnimating = false;
         
-        private float targetFillAmount = 1f;
+        // DOTween 시퀀스
+        private Tweener fillTween;
+        private Tweener trailTween;
+        private Tweener expTween;
+        
         private float currentFillAmount = 1f;
         private float currentTrailAmount = 1f;
-        
-        private float trailDelayTimer = 0f;
-        private bool isAnimating = false;
-        private bool isDamage = false;  // true: 피해, false: 회복
         
         private void Start()
         {
@@ -101,17 +101,12 @@ namespace LevelUpChess.UI
             UpdateExpBarImmediate();
         }
         
-        private void Update()
+        private void OnDestroy()
         {
-            if (isAnimating)
-            {
-                AnimateHealthBar();
-            }
-            
-            if (isExpAnimating)
-            {
-                AnimateExpBar();
-            }
+            // DOTween 정리
+            fillTween?.Kill();
+            trailTween?.Kill();
+            expTween?.Kill();
         }
         
         /// <summary>
@@ -119,13 +114,17 @@ namespace LevelUpChess.UI
         /// </summary>
         public void Initialize(int maxHp, int attack = 1, int lvl = 1, int exp = 0, int expToNext = 100)
         {
+            // 기존 트윈 정리
+            fillTween?.Kill();
+            trailTween?.Kill();
+            expTween?.Kill();
+            
             maxHealth = Mathf.Max(1, maxHp);
             currentHealth = maxHealth;
             attackPower = attack;
             level = lvl;
             currentExp = exp;
             expToNextLevel = Mathf.Max(1, expToNext);
-            targetFillAmount = 1f;
             currentFillAmount = 1f;
             currentTrailAmount = 1f;
             UpdateHealthBarImmediate();
@@ -159,9 +158,8 @@ namespace LevelUpChess.UI
             currentExp = Mathf.Max(0, current);
             expToNextLevel = Mathf.Max(1, toNextLevel);
             
-            float newTarget = (float)currentExp / expToNextLevel;
-            targetExpFillAmount = Mathf.Clamp01(newTarget);
-            isExpAnimating = true;
+            float newTarget = Mathf.Clamp01((float)currentExp / expToNextLevel);
+            AnimateExpTo(newTarget);
             
             UpdateExpText();
         }
@@ -175,10 +173,13 @@ namespace LevelUpChess.UI
             currentExp = remainingExp;
             expToNextLevel = Mathf.Max(1, newExpToNextLevel);
             
-            // 레벨업 시 바를 꽉 채웠다가 리셋
-            currentExpFillAmount = 0f;
-            targetExpFillAmount = (float)currentExp / expToNextLevel;
-            isExpAnimating = true;
+            // 레벨업 시 바를 0에서 시작
+            expTween?.Kill();
+            if (expFillImage != null)
+                expFillImage.fillAmount = 0f;
+            
+            float newTarget = (float)currentExp / expToNextLevel;
+            AnimateExpTo(newTarget);
             
             UpdateStatsText();
             UpdateExpText();
@@ -190,32 +191,46 @@ namespace LevelUpChess.UI
         public void SetHealth(int current, int max)
         {
             maxHealth = Mathf.Max(1, max);
-            int previousHealth = currentHealth;
             currentHealth = Mathf.Clamp(current, 0, maxHealth);
             
             float newTarget = (float)currentHealth / maxHealth;
             
+            // 기존 트윈 정리
+            fillTween?.Kill();
+            trailTween?.Kill();
+            
             // 피해인지 회복인지 판단
-            if (newTarget < targetFillAmount)
+            if (newTarget < currentFillAmount)
             {
                 // 피해: 빨간색 바가 먼저 줄고, 흰색이 천천히 따라감
-                isDamage = true;
-                currentFillAmount = newTarget;  // 빨간색 바 즉시 업데이트
-                // 흰색 트레일은 현재 위치 유지 후 천천히 따라감
+                // Fill 즉시 변경
+                fillTween = DOTween.To(() => currentFillAmount, x => {
+                    currentFillAmount = x;
+                    UpdateFillVisual();
+                }, newTarget, fillDuration).SetEase(fillEase);
+                
+                // Trail은 딜레이 후 따라감
+                trailTween = DOTween.To(() => currentTrailAmount, x => {
+                    currentTrailAmount = x;
+                    UpdateTrailVisual();
+                }, newTarget, trailDuration).SetEase(trailEase).SetDelay(trailDelay);
             }
-            else if (newTarget > targetFillAmount)
+            else if (newTarget > currentFillAmount)
             {
                 // 회복: 흰색 트레일이 먼저 늘고, 빨간색이 따라감
-                isDamage = false;
-                currentTrailAmount = newTarget;  // 흰색 트레일 즉시 업데이트
-                // 빨간색 바는 현재 위치에서 천천히 따라감
+                // Trail 즉시 변경
+                trailTween = DOTween.To(() => currentTrailAmount, x => {
+                    currentTrailAmount = x;
+                    UpdateTrailVisual();
+                }, newTarget, fillDuration).SetEase(fillEase);
+                
+                // Fill은 딜레이 후 따라감
+                fillTween = DOTween.To(() => currentFillAmount, x => {
+                    currentFillAmount = x;
+                    UpdateFillVisual();
+                }, newTarget, trailDuration).SetEase(trailEase).SetDelay(trailDelay);
             }
             
-            targetFillAmount = newTarget;
-            trailDelayTimer = trailDelay;
-            isAnimating = true;
-            
-            UpdateHealthBarVisuals();
             UpdateStatsText();
         }
         
@@ -227,94 +242,47 @@ namespace LevelUpChess.UI
             SetHealth(current, maxHealth);
         }
         
-        private void AnimateHealthBar()
-        {
-            bool animationComplete = true;
-            
-            if (isDamage)
-            {
-                // 피해 모드: 빨간색 바는 이미 목표에 도달, 흰색 트레일이 따라감
-                // 딜레이 후 트레일 애니메이션
-                if (trailDelayTimer > 0)
-                {
-                    trailDelayTimer -= Time.deltaTime;
-                }
-                else if (!Mathf.Approximately(currentTrailAmount, targetFillAmount))
-                {
-                    currentTrailAmount = Mathf.MoveTowards(currentTrailAmount, targetFillAmount, trailSpeed * Time.deltaTime);
-                    animationComplete = false;
-                }
-            }
-            else
-            {
-                // 회복 모드: 흰색 트레일은 이미 목표에 도달, 빨간색 바가 따라감
-                // 딜레이 후 fill 애니메이션
-                if (trailDelayTimer > 0)
-                {
-                    trailDelayTimer -= Time.deltaTime;
-                }
-                else if (!Mathf.Approximately(currentFillAmount, targetFillAmount))
-                {
-                    currentFillAmount = Mathf.MoveTowards(currentFillAmount, targetFillAmount, trailSpeed * Time.deltaTime);
-                    animationComplete = false;
-                }
-            }
-            
-            UpdateHealthBarVisuals();
-            
-            if (animationComplete && trailDelayTimer <= 0)
-            {
-                isAnimating = false;
-            }
-        }
-        
-        private void UpdateHealthBarVisuals()
+        private void UpdateFillVisual()
         {
             if (fillImage != null)
             {
                 fillImage.fillAmount = currentFillAmount;
                 
                 // 체력에 따른 색상 변경
-                float healthPercent = currentFillAmount;
-                fillImage.color = healthPercent <= lowHealthThreshold 
+                fillImage.color = currentFillAmount <= lowHealthThreshold 
                     ? lowHealthColor 
-                    : Color.Lerp(lowHealthColor, fullHealthColor, healthPercent);
+                    : Color.Lerp(lowHealthColor, fullHealthColor, currentFillAmount);
             }
-            
+        }
+        
+        private void UpdateTrailVisual()
+        {
             if (trailImage != null)
             {
                 trailImage.fillAmount = currentTrailAmount;
             }
         }
         
-        private void AnimateExpBar()
+        private void UpdateHealthBarVisuals()
         {
-            if (!Mathf.Approximately(currentExpFillAmount, targetExpFillAmount))
-            {
-                currentExpFillAmount = Mathf.MoveTowards(currentExpFillAmount, targetExpFillAmount, trailSpeed * Time.deltaTime);
-                UpdateExpBarVisuals();
-            }
-            else
-            {
-                isExpAnimating = false;
-            }
+            UpdateFillVisual();
+            UpdateTrailVisual();
         }
         
-        private void UpdateExpBarVisuals()
+        private void AnimateExpTo(float target)
         {
+            expTween?.Kill();
             if (expFillImage != null)
-            {
-                expFillImage.fillAmount = currentExpFillAmount;
-            }
+                expTween = expFillImage.DOFillAmount(target, trailDuration).SetEase(trailEase);
         }
         
         private void UpdateExpBarImmediate()
         {
-            targetExpFillAmount = (float)currentExp / expToNextLevel;
-            currentExpFillAmount = targetExpFillAmount;
-            isExpAnimating = false;
+            expTween?.Kill();
+            float target = (float)currentExp / expToNextLevel;
+            if (expFillImage != null)
+                expFillImage.fillAmount = target;
             
-            UpdateExpBarVisuals();
             UpdateExpText();
         }
         
@@ -384,10 +352,12 @@ namespace LevelUpChess.UI
         
         private void UpdateHealthBarImmediate()
         {
-            targetFillAmount = (float)currentHealth / maxHealth;
-            currentFillAmount = targetFillAmount;
-            currentTrailAmount = targetFillAmount;
-            isAnimating = false;
+            fillTween?.Kill();
+            trailTween?.Kill();
+            
+            float target = (float)currentHealth / maxHealth;
+            currentFillAmount = target;
+            currentTrailAmount = target;
             
             UpdateHealthBarVisuals();
             UpdateStatsText();

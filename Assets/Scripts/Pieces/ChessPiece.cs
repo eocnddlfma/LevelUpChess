@@ -274,9 +274,6 @@ namespace LevelUpChess.Pieces
             }
         }
         
-        /// <summary>
-        /// 스탯 초기화 (리매치용)
-        /// </summary>
         public void ResetStats()
         {
             _hasMoved = false;

@@ -41,4 +41,18 @@ namespace LevelUpChess.Events
         public int AttackIncrease;
         public int HealthIncrease;
     }
+    
+    /// <summary>
+    /// UI 메시지 표시 요청
+    /// </summary>
+    public struct ShowMessageEvent : IEvent
+    {
+        public string Message;
+        public float Duration; // 0이면 지속 표시, -1이면 기본값 사용
+    }
+    
+    /// <summary>
+    /// UI 메시지 숨기기 요청
+    /// </summary>
+    public struct HideMessageEvent : IEvent { }
 }
