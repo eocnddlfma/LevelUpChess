@@ -42,9 +42,9 @@ namespace LevelUpChess.UI
         [SerializeField] private Color expBackgroundColor = new Color(0.15f, 0.15f, 0.15f, 0.8f);
         
         [Header("애니메이션 설정")]
-        [SerializeField] private float trailDelay = 0.3f;        // 트레일 애니메이션 시작 지연
-        [SerializeField] private float trailDuration = 0.5f;     // 트레일 애니메이션 지속시간
-        [SerializeField] private float fillDuration = 0.15f;     // 즉시 변화하는 바 지속시간
+        [SerializeField] private float trailDelay = 0.05f;        // 트레일 애니메이션 시작 지연
+        [SerializeField] private float trailDuration = 0.2f;     // 트레일 애니메이션 지속시간
+        [SerializeField] private float fillDuration = 0.05f;     // 즉시 변화하는 바 지속시간
         [SerializeField] private Ease trailEase = Ease.OutQuad;  // 트레일 이징
         [SerializeField] private Ease fillEase = Ease.OutQuad;   // 필 이징
         

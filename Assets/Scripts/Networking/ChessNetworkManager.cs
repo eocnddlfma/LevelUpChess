@@ -69,6 +69,12 @@ namespace LevelUpChess.Networking
             lobbyManager.OnMatchFound += OnLobbyMatchFound;
             lobbyManager.OnError += OnLobbyError;
             lobbyManager.OnStatusUpdate += OnLobbyStatusUpdate;
+            // NetworkManager callbacks may not be available at Start; guard against null
+            if (NetworkManager.Singleton != null)
+            {
+                NetworkManager.Singleton.OnClientConnectedCallback += OnClientConnected;
+                NetworkManager.Singleton.OnClientDisconnectCallback += OnClientDisconnect;
+            }
         }
 
         private void UnsubscribeFromEvents()

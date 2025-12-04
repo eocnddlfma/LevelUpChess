@@ -12,13 +12,13 @@ namespace LevelUpChess.Pieces
     public class PieceAnimator : MonoBehaviour
     {
         [Header("이동 애니메이션 설정")]
-        [SerializeField] private float moveDuration = 0.1f;
+        [SerializeField] private float moveDuration = 0.2f;
         [SerializeField] private Ease moveEase = Ease.InOutQuad;
         
         [Header("공격 애니메이션 설정")]
-        [SerializeField] private float attackLungeDuration = 0.08f;   // 찌르기 전진 시간
-        [SerializeField] private float attackReturnDuration = 0.06f;  // 찌르기 복귀 시간
-        [SerializeField] private float lungeDistance = 0.3f;          // 찌르기 거리 (0~1, 대상까지의 비율)
+        [SerializeField] private float attackLungeDuration = 0.12f;   // 찌르기 전진 시간
+        [SerializeField] private float attackReturnDuration = 0.19f;  // 찌르기 복귀 시간
+        [SerializeField] private float lungeDistance = 0.8f;          // 찌르기 거리 (0~1, 대상까지의 비율)
         [SerializeField] private Ease attackMoveEase = Ease.OutQuad;
         [SerializeField] private Ease attackReturnEase = Ease.OutQuad;
         

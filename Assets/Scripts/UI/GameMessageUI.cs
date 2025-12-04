@@ -3,7 +3,6 @@ using UnityEngine.UI;
 using TMPro;
 using System.Collections;
 using LevelUpChess.Core;
-using LevelUpChess.Events;
 
 namespace LevelUpChess.UI
 {
@@ -41,10 +40,6 @@ namespace LevelUpChess.UI
         
         ServiceLocator.Register(this);
         
-        // 이벤트 구독
-        Bus<ShowMessageEvent>.OnEvent += OnShowMessage;
-        Bus<HideMessageEvent>.OnEvent += OnHideMessage;
-        
         // 초기 상태: 텍스트 숨김
         if (messageText != null)
         {
@@ -57,22 +52,8 @@ namespace LevelUpChess.UI
     
     private void OnDestroy()
     {
-        // 이벤트 구독 해제
-        Bus<ShowMessageEvent>.OnEvent -= OnShowMessage;
-        Bus<HideMessageEvent>.OnEvent -= OnHideMessage;
-        
         if (ServiceLocator.Get<GameMessageUI>() == this)
             ServiceLocator.Unregister<GameMessageUI>();
-    }
-    
-    private void OnShowMessage(ShowMessageEvent evt)
-    {
-        ShowMessage(evt.Message, evt.Duration);
-    }
-    
-    private void OnHideMessage(HideMessageEvent evt)
-    {
-        HideMessage();
     }
     
     /// <summary>

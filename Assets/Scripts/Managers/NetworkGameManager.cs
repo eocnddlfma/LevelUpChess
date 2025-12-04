@@ -4,6 +4,7 @@ using LevelUpChess.Events;
 using LevelUpChess.Core;
 using LevelUpChess.Board;
 using LevelUpChess.Pieces;
+using LevelUpChess.UI;
 
 namespace LevelUpChess.Managers
 {
@@ -11,6 +12,7 @@ namespace LevelUpChess.Managers
     {
 
     [SerializeField] private BoardGenerator boardGenerator;
+    [SerializeField] private GameMessageUI gameMessageUI;
     
     private bool hasRotatedCameraForBlack = false;
     
@@ -152,8 +154,11 @@ namespace LevelUpChess.Managers
             clientWantsRematch.Value = false;
         }
         
-        Bus<HideMessageEvent>.Raise(new HideMessageEvent());
-        Bus<ShowMessageEvent>.Raise(new ShowMessageEvent { Message = "Opponent disconnected", Duration = 3f });
+        if (gameMessageUI != null)
+        {
+            gameMessageUI.HideMessage();
+            gameMessageUI.ShowMessage("Opponent disconnected", 3f);
+        }
     }
 
     private void OnTurnChanged(Team oldTeam, Team newTeam)
@@ -215,13 +220,12 @@ namespace LevelUpChess.Managers
     [Rpc(SendTo.ClientsAndHost)]
     private void NotifyWaitingForOpponentClientRpc(ulong votedClientId)
     {
-        if (NetworkManager.Singleton.LocalClientId == votedClientId)
+        if (gameMessageUI != null)
         {
-            Bus<ShowMessageEvent>.Raise(new ShowMessageEvent { Message = "Waiting for opponent...", Duration = 0f });
-        }
-        else
-        {
-            Bus<ShowMessageEvent>.Raise(new ShowMessageEvent { Message = "Opponent wants rematch! Press Replay", Duration = 0f });
+            if (NetworkManager.Singleton.LocalClientId == votedClientId)
+                gameMessageUI.ShowMessage("Waiting for opponent...", 0f);
+            else
+                gameMessageUI.ShowMessage("Opponent wants rematch! Press Replay", 0f);
         }
     }
     
@@ -242,8 +246,11 @@ namespace LevelUpChess.Managers
         
         Bus<GameOverEvent>.Raise(new GameOverEvent { WinnerTeam = Team.White, IsRematch = true });
         
-        Bus<HideMessageEvent>.Raise(new HideMessageEvent());
-        Bus<ShowMessageEvent>.Raise(new ShowMessageEvent { Message = "Starting new game!", Duration = 2f });
+        if (gameMessageUI != null)
+        {
+            gameMessageUI.HideMessage();
+            gameMessageUI.ShowMessage("Starting new game!", 2f);
+        }
         
         if (boardGenerator != null)
         {

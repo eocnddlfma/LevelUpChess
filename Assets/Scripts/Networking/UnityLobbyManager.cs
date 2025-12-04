@@ -3,7 +3,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Unity.Services.Core;
 using Unity.Services.Authentication;
 using Unity.Services.Lobbies;
 using Unity.Services.Lobbies.Models;
@@ -62,7 +61,7 @@ namespace LevelUpChess.Networking
         try
         {
             Debug.Log("[UnityLobby] QuickMatchAsync started");
-            await InitializeAsync();
+            await AuthManager.InitializeAndAuthenticateAsync();
             Debug.Log("[UnityLobby] Initialization complete");
             
             OnStatusUpdate?.Invoke("Searching for available lobbies...");
@@ -96,37 +95,6 @@ namespace LevelUpChess.Networking
     public void CancelMatchmaking()
     {
         _ = LeaveLobbyAsync();
-    }
-
-    private async Task InitializeAsync()
-    {
-        try
-        {
-            Debug.Log("[UnityLobby] Initializing services...");
-            
-            if (UnityServices.State != ServicesInitializationState.Initialized)
-            {
-                Debug.Log("[UnityLobby] UnityServices not initialized, initializing...");
-                await UnityServices.InitializeAsync();
-                Debug.Log("[UnityLobby] UnityServices initialized");
-            }
-
-            if (!AuthenticationService.Instance.IsSignedIn)
-            {
-                Debug.Log("[UnityLobby] Not signed in, signing in anonymously...");
-                await AuthenticationService.Instance.SignInAnonymouslyAsync();
-                Debug.Log($"[UnityLobby] Signed in as: {AuthenticationService.Instance.PlayerId}");
-            }
-            else
-            {
-                Debug.Log($"[UnityLobby] Already signed in as: {AuthenticationService.Instance.PlayerId}");
-            }
-        }
-        catch (Exception ex)
-        {
-            Debug.LogError($"[UnityLobby] Initialize error: {ex}");
-            throw;
-        }
     }
 
     private async Task<Lobby> FindAvailableLobby()

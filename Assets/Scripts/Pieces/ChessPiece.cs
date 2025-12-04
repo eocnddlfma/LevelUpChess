@@ -130,12 +130,6 @@ namespace LevelUpChess.Pieces
                 tile.OccupyingPiece = this;
                 Vector3 target = tile.transform.position;
                 transform.position = new Vector3(target.x, target.y, target.z);
-
-                var boardManager = ServiceLocator.Get<BoardManager>();
-                if (boardManager != null)
-                {
-                    boardManager.RegisterPiece(this, tile.coordinate);
-                }
             }
 
             if (previous != null && tile != null && previous != tile)
@@ -176,12 +170,6 @@ namespace LevelUpChess.Pieces
             if (newTile != null)
             {
                 newTile.OccupyingPiece = this;
-                
-                var boardManager = ServiceLocator.Get<BoardManager>();
-                if (boardManager != null)
-                {
-                    boardManager.RegisterPiece(this, newTile.coordinate);
-                }
             }
             
             // 이동 플래그 업데이트
@@ -246,7 +234,6 @@ namespace LevelUpChess.Pieces
                 return allMoves;
             }
             
-            Debug.Log($"[ChessPiece.GetAvailableMoves] {name} - Strategies count: {strategies.Length}");
 
             foreach (var strategy in strategies)
             {

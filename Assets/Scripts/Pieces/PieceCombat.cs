@@ -1,4 +1,5 @@
 using UnityEngine;
+using DG.Tweening;
 using LevelUpChess.Core;
 using LevelUpChess.Board;
 using LevelUpChess.Events;
@@ -103,12 +104,15 @@ namespace LevelUpChess.Pieces
                 {
                     if (targetDied)
                     {
-                        // 적이 죽었으면 해당 위치로 이동
+                        // 적이 죽었으면 잠시 대기 후 해당 위치로 이동
                         Debug.Log($"[PieceCombat] Moving to killed enemy's position");
-                        _animator.AnimateMoveToTarget(attackPos, () =>
+                        DOVirtual.DelayedCall(0.15f, () =>
                         {
-                            _piece.UpdateTileInfo(targetTile);
-                            onComplete?.Invoke();
+                            _animator.AnimateMoveToTarget(attackPos, () =>
+                            {
+                                _piece.UpdateTileInfo(targetTile);
+                                onComplete?.Invoke();
+                            });
                         });
                     }
                     else

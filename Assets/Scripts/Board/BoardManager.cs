@@ -13,7 +13,6 @@ namespace LevelUpChess.Board
         [SerializeField] private int _height;
 
         private Tile[,] _tiles;
-        private Dictionary<ChessPiece, Vector2Int> _piecePositions = new Dictionary<ChessPiece, Vector2Int>();
 
         private void Awake()
         {
@@ -34,13 +33,11 @@ namespace LevelUpChess.Board
         private void OnEnable()
         {
             Bus<BoardGeneratedEvent>.OnEvent += OnBoardGenerated;
-            Bus<PieceDeathEvent>.OnEvent += OnPieceDeath;
         }
 
         private void OnDisable()
         {
             Bus<BoardGeneratedEvent>.OnEvent -= OnBoardGenerated;
-            Bus<PieceDeathEvent>.OnEvent -= OnPieceDeath;
         }
 
         /// <summary>
@@ -49,17 +46,6 @@ namespace LevelUpChess.Board
         private void OnBoardGenerated(BoardGeneratedEvent evt)
         {
             InitializeWithTiles(evt.Tiles, evt.Width, evt.Height);
-        }
-        
-        /// <summary>
-        /// 기물 사망 이벤트 수신 - 자동 Unregister
-        /// </summary>
-        private void OnPieceDeath(PieceDeathEvent evt)
-        {
-            if (evt.DeadPiece != null)
-            {
-                UnregisterPiece(evt.DeadPiece);
-            }
         }
 
         private void RestoreTilesFrom1DArray()
@@ -140,53 +126,7 @@ namespace LevelUpChess.Board
         return GetTileAt(coord.x, coord.y);
     }
 
-    // ========== 공개 상태 관리 메서드 ==========
-
-    /// <summary>
-    /// 피스 위치 등록
-    /// </summary>
-    public void RegisterPiece(ChessPiece piece, Vector2Int position)
-    {
-        _piecePositions[piece] = position;
-    }
-
-    /// <summary>
-    /// 피스 이동
-    /// </summary>
-    public void MovePiece(ChessPiece piece, Vector2Int fromPos, Vector2Int toPos)
-    {
-        if (_piecePositions.ContainsKey(piece))
-        {
-            _piecePositions[piece] = toPos;
-        }
-        else
-        {
-            Debug.LogWarning($"[BoardManager] Piece {piece.name} not found in position tracking");
-            _piecePositions[piece] = toPos;
-        }
-    }
-
-    /// <summary>
-    /// 피스 등록 취소 (제거됨)
-    /// </summary>
-    public void UnregisterPiece(ChessPiece piece)
-    {
-        _piecePositions.Remove(piece);
-    }
-
     // ========== 공개 위치 조회 메서드 ==========
-
-    /// <summary>
-    /// 피스의 현재 위치 반환
-    /// </summary>
-    public Vector2Int GetPiecePosition(ChessPiece piece)
-    {
-        if (_piecePositions.TryGetValue(piece, out var pos))
-        {
-            return pos;
-        }
-        return Vector2Int.one * -1; // Invalid position
-    }
 
     /// <summary>
     /// 특정 좌표의 피스 반환 (없으면 null)
@@ -203,13 +143,19 @@ namespace LevelUpChess.Board
     public List<ChessPiece> GetPiecesByTeam(Team team)
     {
         List<ChessPiece> pieces = new List<ChessPiece>();
-        foreach (var kvp in _piecePositions)
+        
+        for (int x = 0; x < _width; x++)
         {
-            if (kvp.Key != null && kvp.Key.Team == team)
+            for (int y = 0; y < _height; y++)
             {
-                pieces.Add(kvp.Key);
+                var piece = _tiles[x, y]?.OccupyingPiece;
+                if (piece != null && piece.Team == team)
+                {
+                    pieces.Add(piece);
+                }
             }
         }
+        
         return pieces;
     }
 
