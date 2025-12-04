@@ -10,64 +10,56 @@ using LevelUpChess.UI;
 
 namespace LevelUpChess.Networking
 {
-    /// <summary>
-    /// Relay Host 설정 담당
-    /// </summary>
-    public class RelayHostManager
+    public class RelayHostManager : MonoBehaviour
     {
-        private Allocation _allocation;
-        
         public string JoinCode { get; private set; }
-
-#if UNITY_WEBGL
-        private const string CONNECTION_TYPE = "wss";
-#else
-        private const string CONNECTION_TYPE = "dtls";
-#endif
 
         public async Task<bool> SetupHostAsync(int maxPlayers)
         {
             try
             {
-                // 1. Relay Allocation 생성
-                NetworkLogUI.Log("[HOST] Creating Relay allocation...");
-                _allocation = await RelayService.Instance.CreateAllocationAsync(maxPlayers);
-                Debug.Log($"[RelayHost] Allocation ID: {_allocation.AllocationId}");
+                var allocation = await RelayService.Instance.CreateAllocationAsync(maxPlayers);
+                JoinCode = await RelayService.Instance.GetJoinCodeAsync(allocation.AllocationId);
+                NetworkLogUI.Log($"[HOST] Code: {JoinCode}");
 
-                // 2. Join Code 생성
-                NetworkLogUI.Log("[HOST] Generating join code...");
-                JoinCode = await RelayService.Instance.GetJoinCodeAsync(_allocation.AllocationId);
-                Debug.Log($"[RelayHost] Join Code: {JoinCode}");
-                NetworkLogUI.Log($"[HOST] Join code: {JoinCode}");
+                ConfigureTransport(allocation);
 
-                // 3. Transport 설정
-                NetworkLogUI.Log("[HOST] Configuring transport...");
-                var transport = NetworkManager.Singleton.GetComponent<UnityTransport>();
-                if (transport == null)
-                    throw new Exception("UnityTransport not found");
-
-#if UNITY_WEBGL
-                transport.UseWebSockets = true;
-#endif
-                transport.SetRelayServerData(_allocation.ToRelayServerData(CONNECTION_TYPE));
-
-                // 4. Host 시작
-                NetworkLogUI.Log("[HOST] Starting network host...");
-                bool started = NetworkManager.Singleton.StartHost();
-                
-                if (!started)
+                if (!NetworkManager.Singleton.StartHost())
                     throw new Exception("Failed to start host");
 
-                NetworkLogUI.Log("[HOST] Network host started");
-                Debug.Log("[RelayHost] Host setup completed");
                 return true;
             }
             catch (Exception ex)
             {
-                Debug.LogError($"[RelayHost] Setup failed: {ex.Message}");
-                NetworkLogUI.Log($"[HOST] Error: {ex.Message}");
+                Debug.LogError($"[RelayHost] {ex.Message}");
                 throw;
             }
         }
+
+        private void ConfigureTransport(Allocation allocation)
+        {
+            var transport = NetworkManager.Singleton.GetComponent<UnityTransport>();
+            if (transport == null)
+                throw new Exception("UnityTransport not found");
+
+#if UNITY_WEBGL
+            ConfigureForWebGL(transport, allocation);
+#else
+            ConfigureForDesktop(transport, allocation);
+#endif
+        }
+
+#if UNITY_WEBGL
+        private void ConfigureForWebGL(UnityTransport transport, Allocation allocation)
+        {
+            transport.UseWebSockets = true;
+            transport.SetRelayServerData(allocation.ToRelayServerData("wss"));
+        }
+#else
+        private void ConfigureForDesktop(UnityTransport transport, Allocation allocation)
+        {
+            transport.SetRelayServerData(allocation.ToRelayServerData("dtls"));
+        }
+#endif
     }
 }

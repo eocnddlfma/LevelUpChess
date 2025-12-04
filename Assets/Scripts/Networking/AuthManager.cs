@@ -7,9 +7,6 @@ using LevelUpChess.UI;
 
 namespace LevelUpChess.Networking
 {
-    /// <summary>
-    /// Unity Services 초기화 및 인증 관리
-    /// </summary>
     public static class AuthManager
     {
         public static bool IsAuthenticated => AuthenticationService.Instance.IsSignedIn;
@@ -36,17 +33,26 @@ namespace LevelUpChess.Networking
             if (UnityServices.State == ServicesInitializationState.Initialized)
                 return;
 
-            var options = new InitializationOptions();
+#if UNITY_WEBGL
+            await InitializeForWebGL();
+#else
+            await InitializeForDesktop();
+#endif
+        }
 
 #if UNITY_WEBGL
-            string uniqueProfile = $"Player_{Guid.NewGuid().ToString().Substring(0, 8)}";
-            options.SetProfile(uniqueProfile);
-            Debug.Log($"[Auth] WebGL profile: {uniqueProfile}");
-#endif
-
+        private static async Task InitializeForWebGL()
+        {
+            var options = new InitializationOptions();
+            options.SetProfile($"Player_{Guid.NewGuid().ToString().Substring(0, 8)}");
             await UnityServices.InitializeAsync(options);
-            Debug.Log("[Auth] Unity Services initialized");
         }
+#else
+        private static async Task InitializeForDesktop()
+        {
+            await UnityServices.InitializeAsync();
+        }
+#endif
 
         private static async Task SignInAsync()
         {
@@ -55,13 +61,26 @@ namespace LevelUpChess.Networking
                 AuthenticationService.Instance.SignOut();
             }
 
-#if !UNITY_WEBGL
-            AuthenticationService.Instance.ClearSessionToken();
+#if UNITY_WEBGL
+            await SignInForWebGL();
+#else
+            await SignInForDesktop();
 #endif
+        }
 
+#if UNITY_WEBGL
+        private static async Task SignInForWebGL()
+        {
             await AuthenticationService.Instance.SignInAnonymouslyAsync();
-            Debug.Log($"[Auth] Signed in: {PlayerId}");
             NetworkLogUI.Log($"Player: {PlayerId.Substring(0, 8)}");
         }
+#else
+        private static async Task SignInForDesktop()
+        {
+            AuthenticationService.Instance.ClearSessionToken();
+            await AuthenticationService.Instance.SignInAnonymouslyAsync();
+            NetworkLogUI.Log($"Player: {PlayerId.Substring(0, 8)}");
+        }
+#endif
     }
 }

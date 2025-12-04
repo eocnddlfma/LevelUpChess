@@ -7,10 +7,6 @@ using LevelUpChess.UI;
 
 namespace LevelUpChess.Networking
 {
-    /// <summary>
-    /// 네트워크 게임 흐름 조율자 (Orchestrator)
-    /// - 인증, Relay, 로비, 씬 관리를 조율
-    /// </summary>
     public class ChessNetworkManager : MonoBehaviour
     {
         private const int MAX_PLAYERS = 2;
@@ -18,12 +14,9 @@ namespace LevelUpChess.Networking
         private const float CLIENT_CONNECTION_TIMEOUT = 60f;
 
         [SerializeField] private UnityLobbyManager lobbyManager;
-        [SerializeField] private string gameSceneName = "ChessScene";
-
-        // Managers
-        private RelayHostManager _hostManager;
-        private RelayClientManager _clientManager;
-        private NetworkSceneHandler _sceneHandler;
+        [SerializeField] private RelayHostManager hostManager;
+        [SerializeField] private RelayClientManager clientManager;
+        [SerializeField] private NetworkSceneHandler sceneHandler;
 
         // State
         private UnityLobbyManager.LobbyMatchResult _matchResult;
@@ -54,10 +47,12 @@ namespace LevelUpChess.Networking
         {
             if (lobbyManager == null)
                 lobbyManager = GetComponent<UnityLobbyManager>() ?? gameObject.AddComponent<UnityLobbyManager>();
-
-            _hostManager = new RelayHostManager();
-            _clientManager = new RelayClientManager();
-            _sceneHandler = new NetworkSceneHandler(this, gameSceneName);
+            if (hostManager == null)
+                hostManager = GetComponent<RelayHostManager>() ?? gameObject.AddComponent<RelayHostManager>();
+            if (clientManager == null)
+                clientManager = GetComponent<RelayClientManager>() ?? gameObject.AddComponent<RelayClientManager>();
+            if (sceneHandler == null)
+                sceneHandler = GetComponent<NetworkSceneHandler>() ?? gameObject.AddComponent<NetworkSceneHandler>();
         }
 
         #endregion
@@ -92,7 +87,7 @@ namespace LevelUpChess.Networking
                 NetworkManager.Singleton.OnClientDisconnectCallback -= OnClientDisconnect;
             }
 
-            _sceneHandler?.UnsubscribeFromSceneEvents();
+            sceneHandler?.UnsubscribeFromSceneEvents();
         }
 
         #endregion
@@ -122,15 +117,12 @@ namespace LevelUpChess.Networking
             _matchResult = result;
             _isHost = result.isHost;
 
-            Debug.Log($"[ChessNetwork] Match Found! IsHost: {_isHost}");
-            NetworkLogUI.Log("[OK] Opponent found!");
-
+            NetworkLogUI.Log($"Matched! ({(_isHost ? "Host" : "Client")})");
             _ = SetupRelayConnection();
         }
 
         private void OnLobbyError(string error)
         {
-            NetworkLogUI.Log($"Error: {error}");
             OnError?.Invoke(error);
             _isInitializing = false;
         }
@@ -144,15 +136,9 @@ namespace LevelUpChess.Networking
 
         #region Network Callbacks
 
-        private void OnClientConnected(ulong clientId)
-        {
-            Debug.Log($"[ChessNetwork] Client {clientId} connected");
-        }
+        private void OnClientConnected(ulong clientId) { }
 
-        private void OnClientDisconnect(ulong clientId)
-        {
-            Debug.LogWarning($"[ChessNetwork] Client {clientId} disconnected");
-        }
+        private void OnClientDisconnect(ulong clientId) { }
 
         #endregion
 
@@ -169,8 +155,7 @@ namespace LevelUpChess.Networking
             }
             catch (Exception ex)
             {
-                Debug.LogError($"[ChessNetwork] Relay setup failed: {ex.Message}");
-                NetworkLogUI.Log($"Connection error: {ex.Message}");
+                Debug.LogError($"[ChessNetwork] {ex.Message}");
                 OnError?.Invoke(ex.Message);
                 _isInitializing = false;
             }
@@ -178,13 +163,8 @@ namespace LevelUpChess.Networking
 
         private async Task SetupAsHost()
         {
-            await _hostManager.SetupHostAsync(MAX_PLAYERS);
-
-            // Lobby에 Join Code 공유
-            NetworkLogUI.Log("[HOST] Sharing connection info...");
-            await lobbyManager.UpdateRelayCodeAsync(_hostManager.JoinCode);
-            NetworkLogUI.Log("[HOST] Connection info shared");
-
+            await hostManager.SetupHostAsync(MAX_PLAYERS);
+            await lobbyManager.UpdateRelayCodeAsync(hostManager.JoinCode);
             FinalizeNetworkSetup();
         }
 
@@ -193,15 +173,12 @@ namespace LevelUpChess.Networking
             string code = _matchResult.relayJoinCode;
 
             if (string.IsNullOrEmpty(code))
-            {
-                NetworkLogUI.Log("[CLIENT] Waiting for relay code...");
                 code = await WaitForRelayCodeAsync();
-            }
 
             if (string.IsNullOrEmpty(code))
                 throw new Exception("Failed to get relay join code");
 
-            await _clientManager.SetupClientAsync(code);
+            await clientManager.SetupClientAsync(code);
             FinalizeNetworkSetup();
         }
 
@@ -215,30 +192,18 @@ namespace LevelUpChess.Networking
         private IEnumerator WaitForRelayCodeCoroutine(TaskCompletionSource<string> tcs)
         {
             float startTime = Time.realtimeSinceStartup;
-            int checkCount = 0;
 
             while (Time.realtimeSinceStartup - startTime < RELAY_CODE_TIMEOUT)
             {
                 string code = lobbyManager.GetRelayJoinCode();
-                checkCount++;
-
                 if (!string.IsNullOrEmpty(code))
                 {
-                    NetworkLogUI.Log("[CLIENT] Relay code received!");
                     tcs.SetResult(code);
                     yield break;
                 }
-
-                if (checkCount % 10 == 0)
-                {
-                    float elapsed = Time.realtimeSinceStartup - startTime;
-                    NetworkLogUI.Log($"[CLIENT] Waiting... ({elapsed:F0}s)");
-                }
-
                 yield return new WaitForSeconds(0.1f);
             }
 
-            NetworkLogUI.Log("[CLIENT] Timeout waiting for relay code");
             tcs.SetResult(null);
         }
 
@@ -248,15 +213,12 @@ namespace LevelUpChess.Networking
 
         private void FinalizeNetworkSetup()
         {
-            NetworkLogUI.Log("========================================");
-            NetworkLogUI.Log("[OK] Network ready!");
-            NetworkLogUI.Log($"Role: {(_isHost ? "Host (White)" : "Client (Black)")}");
-            NetworkLogUI.Log("========================================");
+            NetworkLogUI.Log($"Ready! ({(_isHost ? "White" : "Black")})");
 
             OnGameReady?.Invoke(_isHost, _matchResult?.opponentId ?? "Unknown", _isHost ? "white" : "black");
 
-            _sceneHandler.SubscribeToSceneEvents();
-            _sceneHandler.StartWaitingForClientsAndLoad(MAX_PLAYERS, CLIENT_CONNECTION_TIMEOUT, _isHost);
+            sceneHandler.SubscribeToSceneEvents();
+            sceneHandler.StartWaitingForClientsAndLoad(MAX_PLAYERS, CLIENT_CONNECTION_TIMEOUT, _isHost);
 
             _isInitializing = false;
         }
@@ -264,4 +226,3 @@ namespace LevelUpChess.Networking
         #endregion
     }
 }
-
