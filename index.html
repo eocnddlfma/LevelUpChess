@@ -4,8 +4,8 @@
     <meta charset="utf-8">
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <title>Unity Web Player | LevelUpChess</title>
-    <link rel="shortcut icon" href="./Build/favicon.ico">
-    <link rel="stylesheet" href="./Build/style.css">
+    <link rel="shortcut icon" href="TemplateData/favicon.ico">
+    <link rel="stylesheet" href="TemplateData/style.css">
   </head>
   <body>
     <div id="unity-container" class="unity-desktop">
@@ -51,14 +51,14 @@
         updateBannerVisibility();
       }
 
-      var buildUrl = "./Build";
-      var loaderUrl = buildUrl + "/build.loader.js";
+      var buildUrl = "Build/Build";
+      var loaderUrl = buildUrl + "/Build.loader.js";
       var config = {
         arguments: [],
-        dataUrl: buildUrl + "/build.data",
-        frameworkUrl: buildUrl + "/build.framework.js",
-        codeUrl: buildUrl + "/build.wasm",
-        streamingAssetsUrl: buildUrl + "/StreamingAssets",
+        dataUrl: buildUrl + "/Build.data",
+        frameworkUrl: buildUrl + "/Build.framework.js",
+        codeUrl: buildUrl + "/Build.wasm",
+        streamingAssetsUrl: "Build/StreamingAssets",
         companyName: "DefaultCompany",
         productName: "LevelUpChess",
         productVersion: "1.0",
