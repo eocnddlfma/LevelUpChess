@@ -15,8 +15,12 @@ MonoBehaviour:
   pieceType: 1
   displayName: "\uB8E9"
   maxHealth: 5
-  attackPower: 4
-  healthPerLevel: 2
+  attackPower: 7
+  defense: 0
+  shield: 0
+  healthRegeneration: 0
+  lifeSteal: 0
+  healthPerLevel: 1
   attackPerLevel: 1
   pieceValue: 5
   moveDuration: 0.15

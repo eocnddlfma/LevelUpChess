@@ -9,6 +9,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8d3e0fbc4a2c96b4691d18aba6070bd4, type: 3}
+  m_Script: {fileID: 11500000, guid: a4b060a766ab62a43a4d74dec1b06c35, type: 3}
   m_Name: KingMovement
   m_EditorClassIdentifier: 
+  moveType: 0

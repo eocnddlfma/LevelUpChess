@@ -330,7 +330,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   lobbyManager: {fileID: 243761440}
-  gameSceneName: ChessScene
+  hostManager: {fileID: 0}
+  clientManager: {fileID: 0}
+  sceneHandler: {fileID: 0}
 --- !u!4 &243761437
 Transform:
   m_ObjectHideFlags: 0
@@ -2265,8 +2267,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: <#ff0000>Level <#00ff00>Up <#9999ff>Chess
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
-  m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: f77d036e9b0d2d949b1be42897055c5c, type: 2}
+  m_sharedMaterial: {fileID: 8795388024373000204, guid: f77d036e9b0d2d949b1be42897055c5c, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []

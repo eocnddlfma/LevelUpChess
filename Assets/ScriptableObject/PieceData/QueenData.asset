@@ -14,12 +14,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   pieceType: 4
   displayName: "\uD038"
-  maxHealth: 4
-  attackPower: 4
-  healthPerLevel: 2
-  attackPerLevel: 2
+  maxHealth: 6
+  attackPower: 8
+  defense: 0
+  shield: 0
+  healthRegeneration: 0
+  lifeSteal: 0
+  healthPerLevel: 1
+  attackPerLevel: 1
   pieceValue: 9
   moveDuration: 0.15
   movementStrategies:
-  - {fileID: 11400000, guid: f15f828e9a14b054a80f2b84f82f59c9, type: 2}
   - {fileID: 11400000, guid: 222d4adef485df34cb6bc4aa7df0bc84, type: 2}
+  - {fileID: 11400000, guid: f15f828e9a14b054a80f2b84f82f59c9, type: 2}

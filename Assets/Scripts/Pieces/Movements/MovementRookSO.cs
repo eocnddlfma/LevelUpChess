@@ -3,9 +3,14 @@ using UnityEngine;
 
 namespace LevelUpChess.Pieces
 {
-    [CreateAssetMenu(fileName = "RookMovement", menuName = "Chess/Piece Movement/Rook")]
-    public class RookMovement : PieceMovement
+    [CreateAssetMenu(fileName = "MovementRookSO", menuName = "Chess/Piece Movement/Rook")]
+    public class MovementRookSO : PieceMovementSO
     {
+        private void OnEnable()
+        {
+            moveType = MoveType.Normal;
+        }
+
         private static readonly Vector2Int[] Directions = { 
             Vector2Int.up, Vector2Int.down, Vector2Int.left, Vector2Int.right 
         };

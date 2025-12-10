@@ -113,11 +113,11 @@ namespace LevelUpChess.Editor
             for (int i = 0; i < movementNames.Length; i++)
             {
                 string movementPath = $"{MOVEMENT_FOLDER}/{movementNames[i]}.asset";
-                PieceMovement movement = AssetDatabase.LoadAssetAtPath<PieceMovement>(movementPath);
+                PieceMovementSO movementSo = AssetDatabase.LoadAssetAtPath<PieceMovementSO>(movementPath);
                 
-                if (movement != null)
+                if (movementSo != null)
                 {
-                    strategiesProperty.GetArrayElementAtIndex(i).objectReferenceValue = movement;
+                    strategiesProperty.GetArrayElementAtIndex(i).objectReferenceValue = movementSo;
                     Debug.Log($"[PieceDataSetup] Linked {movementNames[i]} to {pieceType}");
                 }
                 else

@@ -5,9 +5,14 @@ using LevelUpChess.Board;
 
 namespace LevelUpChess.Pieces
 {
-    [CreateAssetMenu(fileName = "KingMovement", menuName = "Chess/Piece Movement/King")]
-    public class KingMovement : PieceMovement
+    [CreateAssetMenu(fileName = "MovementKingSO", menuName = "Chess/Piece Movement/King")]
+    public class MovementKingSO : PieceMovementSO
     {
+        private void OnEnable()
+        {
+            moveType = MoveType.Normal;
+        }
+
         private static readonly Vector2Int[] OneSquareOffsets = {
             Vector2Int.up, Vector2Int.down, Vector2Int.left, Vector2Int.right,
             Vector2Int.one, 

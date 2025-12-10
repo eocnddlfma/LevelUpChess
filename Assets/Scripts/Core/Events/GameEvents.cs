@@ -55,4 +55,24 @@ namespace LevelUpChess.Events
     /// UI 메시지 숨기기 요청
     /// </summary>
     public struct HideMessageEvent : IEvent { }
+    
+    /// <summary>
+    /// 플레이어 경험치 변경 시 발생
+    /// </summary>
+    public struct PlayerExpChangedEvent : IEvent
+    {
+        public Team Team;
+        public int Level;
+        public int CurrentExp;
+        public int ExpToNextLevel;
+    }
+    
+    /// <summary>
+    /// 플레이어 레벨업 시 발생
+    /// </summary>
+    public struct PlayerLevelUpEvent : IEvent
+    {
+        public Team Team;
+        public int NewLevel;
+    }
 }

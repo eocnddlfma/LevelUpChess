@@ -23,6 +23,10 @@ namespace LevelUpChess.Pieces
         private int _currentHealth;
         private int _maxHealth;
         private int _attackPower;
+        private int _defense = 0;
+        private int _shield = 0;
+        private int _healthRegeneration = 0;
+        private float _lifeSteal = 0f;
         
         // 레벨 시스템
         private int _level = 1;
@@ -32,6 +36,10 @@ namespace LevelUpChess.Pieces
         public int CurrentHealth => _currentHealth;
         public int MaxHealth => _maxHealth;
         public int AttackPower => _attackPower;
+        public int Defense => _defense;
+        public int Shield => _shield;
+        public int HealthRegeneration => _healthRegeneration;
+        public float LifeSteal => _lifeSteal;
         public int Level => _level;
         public int CurrentExp => _currentExp;
         public int ExpToNextLevel => _level; // 레벨만큼 경험치 필요
@@ -47,7 +55,7 @@ namespace LevelUpChess.Pieces
         /// <summary>
         /// 초기화
         /// </summary>
-        public void Initialize(ChessPiece ownerPiece, int maxHp, int attackPower)
+        public void Initialize(ChessPiece ownerPiece, int maxHp, int attackPower, int defense = 0, int shield = 0, int healthRegen = 0, float lifeSteal = 0f)
         {
             _piece = ownerPiece;
             _animator = GetComponent<PieceAnimator>();
@@ -56,6 +64,10 @@ namespace LevelUpChess.Pieces
             _maxHealth = maxHp;
             _currentHealth = maxHp;
             _attackPower = attackPower;
+            _defense = defense;
+            _shield = shield;
+            _healthRegeneration = healthRegen;
+            _lifeSteal = lifeSteal;
             _level = 1;
             _currentExp = 0;
             
@@ -64,6 +76,40 @@ namespace LevelUpChess.Pieces
             {
                 _ui.Initialize(ownerPiece);
                 _ui.InitializeStatusUI(_maxHealth, _attackPower, _level, _currentExp, ExpToNextLevel);
+            }
+        }
+        
+        private void OnEnable()
+        {
+            Bus<TurnChangedEvent>.OnEvent += OnTurnChanged;
+        }
+        
+        private void OnDisable()
+        {
+            Bus<TurnChangedEvent>.OnEvent -= OnTurnChanged;
+        }
+        
+        /// <summary>
+        /// 턴 변경 시 호출 - 내 턴이 끝났을 때 체력 재생
+        /// </summary>
+        private void OnTurnChanged(TurnChangedEvent eventData)
+        {
+            // 상대 팀으로 턴이 넣어갔다는 것은 내 턴이 끝났다는 의미
+            if (_piece != null && eventData.NewTeam != _piece.Team)
+            {
+                ApplyHealthRegeneration();
+            }
+        }
+        
+        /// <summary>
+        /// 체력 재생 적용
+        /// </summary>
+        private void ApplyHealthRegeneration()
+        {
+            if (_healthRegeneration > 0 && _currentHealth < _maxHealth)
+            {
+                Heal(_healthRegeneration);
+                Debug.Log($"[PieceCombat] {_piece.name} regenerated {_healthRegeneration} HP at turn end");
             }
         }
         
@@ -99,6 +145,17 @@ namespace LevelUpChess.Pieces
                     // 대미지 처리
                     targetDied = target.Combat.TakeDamage(_attackPower, _piece);
                     Debug.Log($"[PieceCombat] Attack hit! {target.name} {(targetDied ? "died" : $"survived with {target.Combat.CurrentHealth} HP")}");
+                    
+                    // 흡혈 처리
+                    if (_lifeSteal > 0 && !targetDied)
+                    {
+                        int healAmount = Mathf.CeilToInt(_attackPower * _lifeSteal);
+                        if (healAmount > 0)
+                        {
+                            Heal(healAmount);
+                            Debug.Log($"[PieceCombat] Life steal: healed {healAmount} HP");
+                        }
+                    }
                 },
                 onComplete: () =>
                 {
@@ -128,11 +185,33 @@ namespace LevelUpChess.Pieces
         /// </summary>
         public bool TakeDamage(int amount, ChessPiece attacker = null)
         {
-            _currentHealth -= amount;
+            // 1. 방어력 적용
+            int actualDamage = Mathf.Max(1, amount - _defense); // 최소 1 대미지
+            
+            // 2. 보호막 먼저 소모
+            if (_shield > 0)
+            {
+                if (_shield >= actualDamage)
+                {
+                    _shield -= actualDamage;
+                    Debug.Log($"[PieceCombat] Shield absorbed {actualDamage} damage. Shield remaining: {_shield}");
+                    _ui?.ShowDamageEffect(actualDamage);
+                    return false;
+                }
+                else
+                {
+                    actualDamage -= _shield;
+                    Debug.Log($"[PieceCombat] Shield absorbed {_shield} damage. {actualDamage} damage to health.");
+                    _shield = 0;
+                }
+            }
+            
+            // 3. 체력 감소
+            _currentHealth -= actualDamage;
             _currentHealth = Mathf.Max(0, _currentHealth);
             
             _ui?.UpdateHealth(_currentHealth, _maxHealth);
-            _ui?.ShowDamageEffect(amount);
+            _ui?.ShowDamageEffect(actualDamage);
             
             if (_currentHealth <= 0)
             {
@@ -344,6 +423,10 @@ namespace LevelUpChess.Pieces
                 _maxHealth = dataSo.MaxHealth;
                 _currentHealth = dataSo.MaxHealth;
                 _attackPower = dataSo.AttackPower;
+                _defense = 0;
+                _shield = 0;
+                _healthRegeneration = 0;
+                _lifeSteal = 0f;
                 _level = 1;
                 _currentExp = 0;
                 _ui?.InitializeStatusUI(_maxHealth, _attackPower, _level, _currentExp, ExpToNextLevel);

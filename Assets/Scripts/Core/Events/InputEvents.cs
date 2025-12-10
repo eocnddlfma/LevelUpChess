@@ -1,3 +1,4 @@
+using UnityEngine;
 using LevelUpChess.Interactables;
 
 namespace LevelUpChess.Events
@@ -24,5 +25,21 @@ namespace LevelUpChess.Events
     public struct InteractableDragEndedEvent : IEvent
     {
         public Interactable Draggable;
+    }
+
+    /// <summary>
+    /// 마우스 호버 시작 시 발생
+    /// </summary>
+    public struct MouseHoverBeganEvent : IEvent
+    {
+        public GameObject Target;
+    }
+
+    /// <summary>
+    /// 마우스 호버 종료 시 발생
+    /// </summary>
+    public struct MouseHoverEndedEvent : IEvent
+    {
+        public GameObject Target;
     }
 }

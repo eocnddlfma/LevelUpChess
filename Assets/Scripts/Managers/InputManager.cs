@@ -9,6 +9,7 @@ namespace LevelUpChess.Managers
     public class InputManager : MonoBehaviour
     {
         private Camera _camera;
+        private GameObject _currentHoverTarget;
 
         private void Awake()
         {
@@ -30,6 +31,8 @@ namespace LevelUpChess.Managers
         {
             if (Input.GetMouseButtonDown(0))
                 HandleMouseClick();
+            
+            HandleMouseHover();
         }
 
         private void HandleMouseClick()
@@ -77,6 +80,50 @@ namespace LevelUpChess.Managers
                     Bus<ClickableSelectedEvent>.Raise(new ClickableSelectedEvent { Clickable = tile });
                     return;
                 }
+            }
+        }
+
+        private void HandleMouseHover()
+        {
+            if (_camera == null)
+            {
+                _camera = Camera.main;
+                if (_camera == null) return;
+            }
+
+            Vector3 mousePos = Input.mousePosition;
+            Vector3 worldPos = _camera.ScreenToWorldPoint(mousePos);
+            worldPos.z = 0f;
+
+            // 타일을 먼저 찾고, 타일 위의 기물 정보를 표시
+            RaycastHit2D[] hits = Physics2D.RaycastAll(worldPos, Vector2.zero);
+            GameObject newHoverTarget = null;
+            
+            // Tile을 먼저 찾기
+            foreach (var hit in hits)
+            {
+                if (hit.collider.GetComponent<Tile>() != null)
+                {
+                    newHoverTarget = hit.collider.gameObject;
+                    break;
+                }
+            }
+
+            if (newHoverTarget != _currentHoverTarget)
+            {
+                // 이전 대상에서 벗어남
+                if (_currentHoverTarget != null)
+                {
+                    Bus<MouseHoverEndedEvent>.Raise(new MouseHoverEndedEvent { Target = _currentHoverTarget });
+                }
+
+                // 새로운 대상에 진입
+                if (newHoverTarget != null)
+                {
+                    Bus<MouseHoverBeganEvent>.Raise(new MouseHoverBeganEvent { Target = newHoverTarget });
+                }
+
+                _currentHoverTarget = newHoverTarget;
             }
         }
     }

@@ -14,10 +14,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   pieceType: 3
   displayName: "\uBE44\uC20D"
-  maxHealth: 3
-  attackPower: 6
+  maxHealth: 4
+  attackPower: 7
+  defense: 0
+  shield: 0
+  healthRegeneration: 0
+  lifeSteal: 0
   healthPerLevel: 1
-  attackPerLevel: 2
+  attackPerLevel: 1
   pieceValue: 3
   moveDuration: 0.15
   movementStrategies:

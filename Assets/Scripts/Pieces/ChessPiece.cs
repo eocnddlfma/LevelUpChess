@@ -1,10 +1,12 @@
 using System.Collections.Generic;
+using System.Text;
 using UnityEngine;
 using LevelUpChess.Events;
 using LevelUpChess.Core;
 using LevelUpChess.Board;
 using LevelUpChess.Managers;
 using LevelUpChess.Interactables;
+using LevelUpChess.UI;
 
 namespace LevelUpChess.Pieces
 {
@@ -32,7 +34,7 @@ namespace LevelUpChess.Pieces
     /// - 이 클래스는 기물의 기본 상태와 이동을 담당
     /// </summary>
     [RequireComponent(typeof(Collider2D))]
-    public class ChessPiece : Interactable, IClickable
+    public class ChessPiece : Interactable, IClickable, ITooltipProvider
     {
         [Header("기물 설정")]
         [SerializeField] private PieceDataSO pieceDataSo;
@@ -54,7 +56,7 @@ namespace LevelUpChess.Pieces
         public PieceType PieceType => pieceDataSo?.PieceType ?? PieceType.Pawn;
         public int PieceValue => pieceDataSo?.PieceValue ?? 1;
         public float MoveDuration => pieceDataSo?.MoveDuration ?? 0.1f;
-        public PieceMovement[] MovementStrategies => pieceDataSo?.MovementStrategies ?? new PieceMovement[0];
+        public PieceMovementSO[] MovementStrategies => pieceDataSo?.MovementStrategies ?? new PieceMovementSO[0];
         public bool HasMoved { get => _hasMoved; set => _hasMoved = value; }
         public Tile CurrentTile => _currentTile;
         public bool IsMoved => _hasMoved;
@@ -105,7 +107,15 @@ namespace LevelUpChess.Pieces
         {
             if (pieceDataSo != null && _combat != null)
             {
-                _combat.Initialize(this, pieceDataSo.MaxHealth, pieceDataSo.AttackPower);
+                _combat.Initialize(
+                    this, 
+                    pieceDataSo.MaxHealth, 
+                    pieceDataSo.AttackPower,
+                    pieceDataSo.Defense,
+                    pieceDataSo.Shield,
+                    pieceDataSo.HealthRegeneration,
+                    pieceDataSo.LifeSteal
+                );
             }
             else if (_combat != null)
             {
@@ -257,7 +267,15 @@ namespace LevelUpChess.Pieces
             
             if (_combat != null)
             {
-                _combat.Initialize(this, dataSo.MaxHealth, dataSo.AttackPower);
+                _combat.Initialize(
+                    this, 
+                    dataSo.MaxHealth, 
+                    dataSo.AttackPower,
+                    dataSo.Defense,
+                    dataSo.Shield,
+                    dataSo.HealthRegeneration,
+                    dataSo.LifeSteal
+                );
             }
         }
         
@@ -267,6 +285,87 @@ namespace LevelUpChess.Pieces
             if (_combat != null)
             {
                 _combat.ResetStats();
+            }
+        }
+
+        // ========== ITooltipProvider 구현 ==========
+        
+        public string GetTooltipContent()
+        {
+            StringBuilder sb = new StringBuilder();
+            
+            AppendTitle(sb);
+            AppendBasicInfo(sb);
+            AppendCombatStats(sb);
+            AppendMovementInfo(sb);
+            
+            return sb.ToString();
+        }
+        
+        public Team? GetTooltipTeam()
+        {
+            return _team;
+        }
+        
+        private void AppendTitle(StringBuilder sb)
+        {
+            string pieceName = pieceDataSo != null ? pieceDataSo.DisplayName : PieceType.ToString();
+            sb.AppendLine($"<size=18><b>{_team} {pieceName}</b></size>");
+            sb.AppendLine();
+        }
+        
+        private void AppendBasicInfo(StringBuilder sb)
+        {
+            if (_combat != null)
+            {
+                sb.AppendLine($"<b>레벨:</b> {_combat.Level}");
+                sb.AppendLine($"<b>경험치:</b> {_combat.CurrentExp}/{_combat.ExpToNextLevel}");
+                sb.AppendLine();
+            }
+        }
+        
+        private void AppendCombatStats(StringBuilder sb)
+        {
+            if (_combat != null)
+            {
+                sb.AppendLine($"<b>체력:</b> {_combat.CurrentHealth}/{_combat.MaxHealth}");
+                sb.AppendLine($"<b>공격력:</b> {_combat.AttackPower}");
+                
+                if (_combat.Defense > 0)
+                    sb.AppendLine($"<b>방어력:</b> {_combat.Defense}");
+                
+                if (_combat.Shield > 0)
+                    sb.AppendLine($"<b>보호막:</b> {_combat.Shield}");
+                
+                if (_combat.HealthRegeneration > 0)
+                    sb.AppendLine($"<b>체력 재생:</b> {_combat.HealthRegeneration}/턴");
+                
+                if (_combat.LifeSteal > 0)
+                    sb.AppendLine($"<b>흡혈:</b> {(_combat.LifeSteal * 100):F0}%");
+                
+                sb.AppendLine();
+            }
+        }
+        
+        private void AppendMovementInfo(StringBuilder sb)
+        {
+            if (MovementStrategies == null || MovementStrategies.Length == 0)
+                return;
+            
+            sb.AppendLine("<b>이동 패턴:</b>");
+            foreach (var movement in MovementStrategies)
+            {
+                if (movement == null) continue;
+                
+                string moveTypeName = movement.MoveType switch
+                {
+                    MoveType.Normal => "[이동/공격]",
+                    MoveType.MoveOnly => "[이동]",
+                    MoveType.AttackOnly => "[공격]",
+                    _ => ""
+                };
+                
+                sb.AppendLine($"  {moveTypeName} <i>{movement.name}</i>");
             }
         }
     }

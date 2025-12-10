@@ -73,7 +73,6 @@ namespace LevelUpChess.Pieces
 
             piece.PlaceOnTile(tile);
             
-            Debug.Log($"[PieceFactory] ✓ Created {team} {pieceType} at {tile.coordinate}");
             return piece;
         }
 

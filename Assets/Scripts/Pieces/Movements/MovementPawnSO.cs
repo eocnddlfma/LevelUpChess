@@ -6,9 +6,14 @@ using LevelUpChess.Managers;
 
 namespace LevelUpChess.Pieces
 {
-    [CreateAssetMenu(fileName = "PawnMovement", menuName = "Chess/Piece Movement/Pawn")]
-    public class PawnMovement : PieceMovement
+    [CreateAssetMenu(fileName = "MovementPawnSO", menuName = "Chess/Piece Movement/Pawn")]
+    public class MovementPawnSO : PieceMovementSO
     {
+        private void OnEnable()
+        {
+            moveType = MoveType.Normal;
+        }
+
         public override List<Move> GetAvailableMoves(ChessPiece piece)
         {
             var moves = new List<Move>();

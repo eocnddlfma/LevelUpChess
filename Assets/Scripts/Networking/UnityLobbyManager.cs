@@ -165,7 +165,7 @@ namespace LevelUpChess.Networking
                 var options = new CreateLobbyOptions
                 {
                     IsPrivate = false,
-                    Player = new Player { Data = new Dictionary<string, PlayerDataObject>() },
+                    Player = new Unity.Services.Lobbies.Models.Player { Data = new Dictionary<string, PlayerDataObject>() },
                     Data = new Dictionary<string, DataObject>
                     {
                         { KEY_RELAY_CODE, new DataObject(DataObject.VisibilityOptions.Member, "") },
@@ -196,7 +196,7 @@ namespace LevelUpChess.Networking
 
                 var options = new JoinLobbyByIdOptions
                 {
-                    Player = new Player { Data = new Dictionary<string, PlayerDataObject>() }
+                    Player = new Unity.Services.Lobbies.Models.Player { Data = new Dictionary<string, PlayerDataObject>() }
                 };
 
                 currentLobby = await LobbyService.Instance.JoinLobbyByIdAsync(lobby.Id, options);

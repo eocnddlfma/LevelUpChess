@@ -14,9 +14,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   pieceType: 5
   displayName: "\uD0B9"
-  maxHealth: 1
-  attackPower: 9
-  healthPerLevel: 3
+  maxHealth: 5
+  attackPower: 10
+  defense: 0
+  shield: 0
+  healthRegeneration: 0
+  lifeSteal: 0
+  healthPerLevel: 1
   attackPerLevel: 1
   pieceValue: 5
   moveDuration: 0.15

@@ -20,11 +20,11 @@ public class ChessPiecePrefabGenerator : EditorWindow
     private bool copyToResources = true;
 
     // Movement Strategy SO들 (자동 로드됨)
-    private PawnMovement pawnMovement;
-    private RookMovement rookMovement;
-    private KnightMovement knightMovement;
-    private BishopMovement bishopMovement;
-    private KingMovement kingMovement;
+    private MovementPawnSO _soPawnMovementSo;
+    private MovementRookSO _soRookMovementSo;
+    private MovementKnightSO _soKnightMovementSo;
+    private MovementBishopSO _soBishopMovementSo;
+    private MovementKingSO _soKingMovementSo;
     
     // StatusUI 프리팹
     private GameObject statusUIPrefab;
@@ -165,31 +165,31 @@ public class ChessPiecePrefabGenerator : EditorWindow
         foreach (string guid in guids)
         {
             string path = AssetDatabase.GUIDToAssetPath(guid);
-            PieceMovement movement = AssetDatabase.LoadAssetAtPath<PieceMovement>(path);
+            PieceMovementSO movementSo = AssetDatabase.LoadAssetAtPath<PieceMovementSO>(path);
             
-            if (movement is PawnMovement pawn) pawnMovement = pawn;
-            else if (movement is RookMovement rook) rookMovement = rook;
-            else if (movement is KnightMovement knight) knightMovement = knight;
-            else if (movement is BishopMovement bishop) bishopMovement = bishop;
-            else if (movement is KingMovement king) kingMovement = king;
+            if (movementSo is MovementPawnSO pawn) _soPawnMovementSo = pawn;
+            else if (movementSo is MovementRookSO rook) _soRookMovementSo = rook;
+            else if (movementSo is MovementKnightSO knight) _soKnightMovementSo = knight;
+            else if (movementSo is MovementBishopSO bishop) _soBishopMovementSo = bishop;
+            else if (movementSo is MovementKingSO king) _soKingMovementSo = king;
         }
         
         // 못 찾았으면 전체 프로젝트에서 검색
-        if (pawnMovement == null || rookMovement == null || knightMovement == null || 
-            bishopMovement == null || kingMovement == null)
+        if (_soPawnMovementSo == null || _soRookMovementSo == null || _soKnightMovementSo == null || 
+            _soBishopMovementSo == null || _soKingMovementSo == null)
         {
             guids = AssetDatabase.FindAssets("t:PieceMovement");
             
             foreach (string guid in guids)
             {
                 string path = AssetDatabase.GUIDToAssetPath(guid);
-                PieceMovement movement = AssetDatabase.LoadAssetAtPath<PieceMovement>(path);
+                PieceMovementSO movementSo = AssetDatabase.LoadAssetAtPath<PieceMovementSO>(path);
                 
-                if (movement is PawnMovement pawn && pawnMovement == null) pawnMovement = pawn;
-                else if (movement is RookMovement rook && rookMovement == null) rookMovement = rook;
-                else if (movement is KnightMovement knight && knightMovement == null) knightMovement = knight;
-                else if (movement is BishopMovement bishop && bishopMovement == null) bishopMovement = bishop;
-                else if (movement is KingMovement king && kingMovement == null) kingMovement = king;
+                if (movementSo is MovementPawnSO pawn && _soPawnMovementSo == null) _soPawnMovementSo = pawn;
+                else if (movementSo is MovementRookSO rook && _soRookMovementSo == null) _soRookMovementSo = rook;
+                else if (movementSo is MovementKnightSO knight && _soKnightMovementSo == null) _soKnightMovementSo = knight;
+                else if (movementSo is MovementBishopSO bishop && _soBishopMovementSo == null) _soBishopMovementSo = bishop;
+                else if (movementSo is MovementKingSO king && _soKingMovementSo == null) _soKingMovementSo = king;
             }
         }
     }
@@ -219,11 +219,11 @@ public class ChessPiecePrefabGenerator : EditorWindow
         // Movement Strategy SO 표시 (자동 로드됨)
         GUILayout.Label("Movement Strategies (자동 로드)", EditorStyles.boldLabel);
         EditorGUI.BeginDisabledGroup(true);
-        EditorGUILayout.ObjectField("Pawn Movement", pawnMovement, typeof(PawnMovement), false);
-        EditorGUILayout.ObjectField("Rook Movement", rookMovement, typeof(RookMovement), false);
-        EditorGUILayout.ObjectField("Knight Movement", knightMovement, typeof(KnightMovement), false);
-        EditorGUILayout.ObjectField("Bishop Movement", bishopMovement, typeof(BishopMovement), false);
-        EditorGUILayout.ObjectField("King Movement", kingMovement, typeof(KingMovement), false);
+        EditorGUILayout.ObjectField("Pawn Movement", _soPawnMovementSo, typeof(MovementPawnSO), false);
+        EditorGUILayout.ObjectField("Rook Movement", _soRookMovementSo, typeof(MovementRookSO), false);
+        EditorGUILayout.ObjectField("Knight Movement", _soKnightMovementSo, typeof(MovementKnightSO), false);
+        EditorGUILayout.ObjectField("Bishop Movement", _soBishopMovementSo, typeof(MovementBishopSO), false);
+        EditorGUILayout.ObjectField("King Movement", _soKingMovementSo, typeof(MovementKingSO), false);
         EditorGUI.EndDisabledGroup();
         
         if (GUILayout.Button("Movement 다시 검색"))
@@ -439,7 +439,7 @@ public class ChessPiecePrefabGenerator : EditorWindow
         SerializedProperty strategiesProp = serializedData.FindProperty("movementStrategies");
         if (strategiesProp != null)
         {
-            PieceMovement[] strategies = GetMovementStrategies(pieceType);
+            PieceMovementSO[] strategies = GetMovementStrategies(pieceType);
             strategiesProp.arraySize = strategies.Length;
             for (int i = 0; i < strategies.Length; i++)
             {
@@ -556,19 +556,19 @@ public class ChessPiecePrefabGenerator : EditorWindow
         return null;
     }
 
-    private PieceMovement[] GetMovementStrategies(PieceType pieceType)
+    private PieceMovementSO[] GetMovementStrategies(PieceType pieceType)
     {
         return pieceType switch
         {
-            PieceType.Pawn => pawnMovement != null ? new PieceMovement[] { pawnMovement } : new PieceMovement[0],
-            PieceType.Rook => rookMovement != null ? new PieceMovement[] { rookMovement } : new PieceMovement[0],
-            PieceType.Knight => knightMovement != null ? new PieceMovement[] { knightMovement } : new PieceMovement[0],
-            PieceType.Bishop => bishopMovement != null ? new PieceMovement[] { bishopMovement } : new PieceMovement[0],
-            PieceType.Queen => (rookMovement != null && bishopMovement != null) 
-                ? new PieceMovement[] { rookMovement, bishopMovement } 
-                : new PieceMovement[0],
-            PieceType.King => kingMovement != null ? new PieceMovement[] { kingMovement } : new PieceMovement[0],
-            _ => new PieceMovement[0]
+            PieceType.Pawn => _soPawnMovementSo != null ? new PieceMovementSO[] { _soPawnMovementSo } : new PieceMovementSO[0],
+            PieceType.Rook => _soRookMovementSo != null ? new PieceMovementSO[] { _soRookMovementSo } : new PieceMovementSO[0],
+            PieceType.Knight => _soKnightMovementSo != null ? new PieceMovementSO[] { _soKnightMovementSo } : new PieceMovementSO[0],
+            PieceType.Bishop => _soBishopMovementSo != null ? new PieceMovementSO[] { _soBishopMovementSo } : new PieceMovementSO[0],
+            PieceType.Queen => (_soRookMovementSo != null && _soBishopMovementSo != null) 
+                ? new PieceMovementSO[] { _soRookMovementSo, _soBishopMovementSo } 
+                : new PieceMovementSO[0],
+            PieceType.King => _soKingMovementSo != null ? new PieceMovementSO[] { _soKingMovementSo } : new PieceMovementSO[0],
+            _ => new PieceMovementSO[0]
         };
     }
 }

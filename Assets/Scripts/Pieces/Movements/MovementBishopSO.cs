@@ -4,9 +4,14 @@ using UnityEngine;
 
 namespace Pieces.Movements
 {
-    [CreateAssetMenu(fileName = "BishopMovement", menuName = "Chess/Piece Movement/Bishop")]
-    public class BishopMovement : PieceMovement
+    [CreateAssetMenu(fileName = "MovementBishopSO", menuName = "Chess/Piece Movement/Bishop")]
+    public class MovementBishopSO : PieceMovementSO
     {
+        private void OnEnable()
+        {
+            moveType = MoveType.Normal;
+        }
+
         private static readonly Vector2Int[] DiagonalDirections = {
             Vector2Int.one, 
             new Vector2Int(1, -1), 

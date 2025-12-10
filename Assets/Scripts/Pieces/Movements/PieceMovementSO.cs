@@ -5,9 +5,50 @@ using LevelUpChess.Board;
 
 namespace LevelUpChess.Pieces
 {
-    public abstract class PieceMovement : ScriptableObject
+    /// <summary>
+    /// 이동 타입
+    /// </summary>
+    public enum MoveType : byte
     {
+        Normal = 0,      // 이동 + 공격 가능
+        MoveOnly = 1,    // 이동만 가능
+        AttackOnly = 2   // 공격만 가능
+    }
+
+    public abstract class PieceMovementSO : ScriptableObject
+    {
+        [Header("Movement Type")]
+        [SerializeField] protected MoveType moveType = MoveType.Normal;
+        
+        public MoveType MoveType => moveType;
+        
         public abstract List<Move> GetAvailableMoves(ChessPiece piece);
+
+        /// <summary>
+        /// MoveType에 따라 이동/공격 필터링
+        /// </summary>
+        protected List<Move> FilterByMoveType(List<Move> allMoves)
+        {
+            switch (moveType)
+            {
+                case Pieces.MoveType.MoveOnly:
+                    // 이동만 가능 (공격 제거)
+                    allMoves.RemoveAll(m => m.isCapture);
+                    break;
+                    
+                case Pieces.MoveType.AttackOnly:
+                    // 공격만 가능 (이동 제거)
+                    allMoves.RemoveAll(m => !m.isCapture);
+                    break;
+                    
+                case Pieces.MoveType.Normal:
+                default:
+                    // 이동 + 공격 모두 가능
+                    break;
+            }
+            
+            return allMoves;
+        }
 
         protected List<Move> GetSlidingMoves(ChessPiece piece, Vector2Int[] directions)
         {
@@ -39,7 +80,7 @@ namespace LevelUpChess.Pieces
                 }
             }
 
-            return moves;
+            return FilterByMoveType(moves);
         }
 
         protected List<Move> GetJumpingMoves(ChessPiece piece, Vector2Int[] offsets)
@@ -67,7 +108,7 @@ namespace LevelUpChess.Pieces
                 }
             }
 
-            return moves;
+            return FilterByMoveType(moves);
         }
     }
 }

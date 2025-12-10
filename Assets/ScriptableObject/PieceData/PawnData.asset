@@ -14,8 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   pieceType: 0
   displayName: "\uD3F0"
-  maxHealth: 6
-  attackPower: 2
+  maxHealth: 4
+  attackPower: 6
   healthPerLevel: 1
   attackPerLevel: 1
   pieceValue: 1

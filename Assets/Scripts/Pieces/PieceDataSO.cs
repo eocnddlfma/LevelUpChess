@@ -13,9 +13,13 @@ namespace LevelUpChess.Pieces
         [SerializeField] private PieceType pieceType;
         [SerializeField] private string displayName;
         
-        [Header("스탯")]
+        [Header("기본 스탯")]
         [SerializeField] private int maxHealth = 1;
         [SerializeField] private int attackPower = 1;
+        [SerializeField] private int defense = 0;
+        [SerializeField] private int shield = 0;
+        [SerializeField] private int healthRegeneration = 0;
+        [SerializeField] [Range(0f, 1f)] private float lifeSteal = 0f;
         
         [Header("레벨업 시 증가 스탯")]
         [SerializeField] private int healthPerLevel = 1;
@@ -27,7 +31,7 @@ namespace LevelUpChess.Pieces
         
         [Header("이동")]
         [SerializeField] private float moveDuration = 0.1f;
-        [SerializeField] private PieceMovement[] movementStrategies;
+        [SerializeField] private PieceMovementSO[] movementStrategies;
         
         
         // 읽기 전용 프로퍼티
@@ -35,10 +39,14 @@ namespace LevelUpChess.Pieces
         public string DisplayName => displayName;
         public int MaxHealth => maxHealth;
         public int AttackPower => attackPower;
+        public int Defense => defense;
+        public int Shield => shield;
+        public int HealthRegeneration => healthRegeneration;
+        public float LifeSteal => lifeSteal;
         public int HealthPerLevel => healthPerLevel;
         public int AttackPerLevel => attackPerLevel;
         public int PieceValue => pieceValue;
         public float MoveDuration => moveDuration;
-        public PieceMovement[] MovementStrategies => movementStrategies;
+        public PieceMovementSO[] MovementStrategies => movementStrategies;
     }
 }
