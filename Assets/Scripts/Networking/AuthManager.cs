@@ -17,7 +17,15 @@ namespace LevelUpChess.Networking
             try
             {
                 await InitializeServicesAsync();
+                
+                if (AuthenticationService.Instance.IsSignedIn)
+                {
+                    Debug.Log($"[Auth] Already authenticated as {PlayerId}");
+                    return true;
+                }
+                
                 await SignInAsync();
+                Debug.Log($"[Auth] Successfully authenticated as {PlayerId}");
                 return true;
             }
             catch (Exception ex)
@@ -56,9 +64,11 @@ namespace LevelUpChess.Networking
 
         private static async Task SignInAsync()
         {
+            // 이미 로그인되어 있으면 재로그인하지 않음
             if (AuthenticationService.Instance.IsSignedIn)
             {
-                AuthenticationService.Instance.SignOut();
+                Debug.Log("[Auth] Already signed in, skipping sign in");
+                return;
             }
 
 #if UNITY_WEBGL
@@ -77,7 +87,8 @@ namespace LevelUpChess.Networking
 #else
         private static async Task SignInForDesktop()
         {
-            AuthenticationService.Instance.ClearSessionToken();
+            // SessionToken을 유지하여 동일한 PlayerId 사용
+            // AuthenticationService.Instance.ClearSessionToken();
             await AuthenticationService.Instance.SignInAnonymouslyAsync();
             NetworkLogUI.Log($"Player: {PlayerId.Substring(0, 8)}");
         }

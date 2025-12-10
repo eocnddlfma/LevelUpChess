@@ -35,6 +35,7 @@ namespace LevelUpChess.Networking
             
             InitializeManagers();
             SubscribeToEvents();
+            // 시작 시 인증 진행 (await 없이 백그라운드에서)
             _ = AuthManager.InitializeAndAuthenticateAsync();
         }
 
@@ -99,6 +100,17 @@ namespace LevelUpChess.Networking
             if (_isInitializing) return;
             
             _isInitializing = true;
+            
+            // 인증 완료 대기
+            NetworkLogUI.Log("Authenticating...");
+            bool authenticated = await AuthManager.InitializeAndAuthenticateAsync();
+            if (!authenticated)
+            {
+                OnError?.Invoke("Authentication failed");
+                _isInitializing = false;
+                return;
+            }
+            
             await lobbyManager.QuickMatchAsync();
         }
 
@@ -163,8 +175,11 @@ namespace LevelUpChess.Networking
 
         private async Task SetupAsHost()
         {
+            Debug.Log("[ChessNetwork] Setting up as Host...");
             await hostManager.SetupHostAsync(MAX_PLAYERS);
+            Debug.Log($"[ChessNetwork] Host relay created. JoinCode: {hostManager.JoinCode}");
             await lobbyManager.UpdateRelayCodeAsync(hostManager.JoinCode);
+            Debug.Log("[ChessNetwork] Relay code updated in lobby");
             FinalizeNetworkSetup();
         }
 

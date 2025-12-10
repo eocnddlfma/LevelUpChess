@@ -21,6 +21,8 @@ namespace LevelUpChess.Networking
         private Lobby currentLobby;
         private float heartbeatTimer;
         private bool isHost;
+        private Coroutine pollOpponentCoroutine;
+        private Coroutine pollRelayCodeCoroutine;
 
         public event Action<LobbyMatchResult> OnMatchFound;
         public event Action<string> OnError;
@@ -58,7 +60,7 @@ namespace LevelUpChess.Networking
         {
             try
             {
-                await AuthManager.InitializeAndAuthenticateAsync();
+                // 인증은 ChessNetworkManager에서 이미 완료됨
                 OnStatusUpdate?.Invoke("Searching for lobbies...");
 
                 var availableLobby = await FindAvailableLobby();
@@ -147,7 +149,14 @@ namespace LevelUpChess.Networking
                 };
 
                 var response = await LobbyService.Instance.QueryLobbiesAsync(options);
-                return response.Results.Count > 0 ? response.Results[0] : null;
+                Debug.Log($"[Lobby] Found {response.Results.Count} available lobbies");
+                if (response.Results.Count > 0)
+                {
+                    var lobby = response.Results[0];
+                    Debug.Log($"[Lobby] Selected lobby {lobby.Id} with {lobby.Players.Count}/{lobby.MaxPlayers} players");
+                    return lobby;
+                }
+                return null;
             }
             catch (Exception ex)
             {
@@ -177,8 +186,12 @@ namespace LevelUpChess.Networking
                 isHost = true;
                 heartbeatTimer = heartbeatInterval;
 
+                Debug.Log($"[Lobby] Created lobby {currentLobby.Id} as Host");
                 OnStatusUpdate?.Invoke("Waiting for opponent...");
-                StartCoroutine(PollForOpponentCoroutine());
+                
+                if (pollOpponentCoroutine != null)
+                    StopCoroutine(pollOpponentCoroutine);
+                pollOpponentCoroutine = StartCoroutine(PollForOpponentCoroutine());
             }
             catch (LobbyServiceException ex)
             {
@@ -202,8 +215,12 @@ namespace LevelUpChess.Networking
                 currentLobby = await LobbyService.Instance.JoinLobbyByIdAsync(lobby.Id, options);
                 isHost = false;
 
+                Debug.Log($"[Lobby] Joined lobby {currentLobby.Id} as Client. Players: {currentLobby.Players.Count}");
                 OnStatusUpdate?.Invoke("Waiting for relay code...");
-                StartCoroutine(PollForRelayCodeCoroutine());
+                
+                if (pollRelayCodeCoroutine != null)
+                    StopCoroutine(pollRelayCodeCoroutine);
+                pollRelayCodeCoroutine = StartCoroutine(PollForRelayCodeCoroutine());
             }
             catch (LobbyServiceException ex) when (ex.Reason == LobbyExceptionReason.LobbyFull ||
                                                     ex.Reason == LobbyExceptionReason.LobbyConflict)
@@ -251,20 +268,35 @@ namespace LevelUpChess.Networking
                 bool pollComplete = false;
                 bool pollSuccess = false;
                 int playerCount = 0;
+                bool shouldBreak = false;
 
                 PollLobbyOnce((success, count, error) =>
                 {
                     pollSuccess = success;
                     playerCount = count;
                     errorCount = success ? 0 : errorCount + 1;
+                    
+                    if (success)
+                        Debug.Log($"[Lobby] Poll #{i}: {count}/{maxPlayers} players");
+                    else
+                        Debug.LogWarning($"[Lobby] Poll #{i} failed: {error}");
+                    
+                    // 콜백 내부에서 즉시 체크
+                    if (success && count >= maxPlayers)
+                    {
+                        Debug.Log($"[Lobby] Opponent found! Starting relay setup...");
+                        shouldBreak = true;
+                    }
+                    
                     pollComplete = true;
                 });
 
-                yield return new WaitUntil(() => pollComplete || Time.time > 20f);
+                yield return new WaitUntil(() => pollComplete);
 
-                if (pollSuccess && playerCount >= maxPlayers)
+                if (shouldBreak)
                 {
                     OnStatusUpdate?.Invoke("Opponent found!");
+                    pollOpponentCoroutine = null;
                     NotifyMatchFound();
                     yield break;
                 }
@@ -272,6 +304,7 @@ namespace LevelUpChess.Networking
                 if (errorCount >= 3)
                 {
                     OnError?.Invoke("Too many lobby errors");
+                    pollOpponentCoroutine = null;
                     _ = LeaveLobbyAsync();
                     yield break;
                 }
@@ -281,6 +314,7 @@ namespace LevelUpChess.Networking
             }
 
             OnError?.Invoke("Timeout waiting for opponent");
+            pollOpponentCoroutine = null;
             _ = LeaveLobbyAsync();
         }
 
@@ -296,20 +330,35 @@ namespace LevelUpChess.Networking
                 bool pollComplete = false;
                 bool pollSuccess = false;
                 string relayCode = "";
+                bool shouldBreak = false;
 
                 PollLobbyForRelayCodeOnce((success, code, error) =>
                 {
                     pollSuccess = success;
                     relayCode = code;
                     errorCount = success ? 0 : errorCount + 1;
+                    
+                    if (success)
+                        Debug.Log($"[Lobby] Poll #{i}: RelayCode={(string.IsNullOrEmpty(code) ? "empty" : "received")}");
+                    else
+                        Debug.LogWarning($"[Lobby] Poll #{i} failed: {error}");
+                    
+                    // 콜백 내부에서 즉시 체크
+                    if (success && !string.IsNullOrEmpty(code))
+                    {
+                        Debug.Log($"[Lobby] Relay code received! Connecting...");
+                        shouldBreak = true;
+                    }
+                    
                     pollComplete = true;
                 });
 
-                yield return new WaitUntil(() => pollComplete || Time.time > 20f);
+                yield return new WaitUntil(() => pollComplete);
 
-                if (pollSuccess && !string.IsNullOrEmpty(relayCode))
+                if (shouldBreak)
                 {
                     OnStatusUpdate?.Invoke("Relay code received!");
+                    pollRelayCodeCoroutine = null;
                     NotifyMatchFound();
                     yield break;
                 }
@@ -317,12 +366,14 @@ namespace LevelUpChess.Networking
                 if (errorCount >= 3)
                 {
                     OnError?.Invoke("Too many lobby errors");
+                    pollRelayCodeCoroutine = null;
                     _ = LeaveLobbyAsync();
                     yield break;
                 }
             }
 
             OnError?.Invoke("Timeout waiting for relay code");
+            pollRelayCodeCoroutine = null;
             _ = LeaveLobbyAsync();
         }
 
