@@ -14,8 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   pieceType: 5
   displayName: "\uD0B9"
-  maxHealth: 5
-  attackPower: 10
+  maxHealth: 1
+  attackPower: 1
   defense: 0
   shield: 0
   healthRegeneration: 0

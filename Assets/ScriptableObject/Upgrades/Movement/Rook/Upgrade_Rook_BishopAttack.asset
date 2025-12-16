@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 52bee6a01e438be47b6bbae01605e5b9, type: 3}
+  m_Name: Upgrade_Rook_BishopAttack
+  m_EditorClassIdentifier: 
+  upgradeId: RookBishopAttackUpgradeSO
+  upgradeName: "\uBE44\uC20D \uC5B4\uD0DD"
+  description: "\uB300\uAC01\uC120 \uACF5\uACA9"
+  icon: {fileID: 0}
+  upgradeType: 0
+  target: 0
+  pieceFilter: 2
+  rarity: 3
+  movementToAdd: {fileID: 11400000, guid: f15f828e9a14b054a80f2b84f82f59c9, type: 2}
+  replaceExisting: 0

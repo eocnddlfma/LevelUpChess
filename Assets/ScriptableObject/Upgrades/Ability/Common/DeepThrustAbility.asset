@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 847f490bcf20b894faf18d17fc660b65, type: 3}
+  m_Name: DeepThrustAbility
+  m_EditorClassIdentifier: 
+  upgradeId: DeepThrustAbilitySO
+  upgradeName: "\uAE4A\uC740 \uCC0C\uB974\uAE30"
+  description: "\uB8E9\uC774 \uACF5\uACA9\uD560 \uB54C \uACF5\uACA9\uB825 +2"
+  icon: {fileID: 0}
+  upgradeType: 2
+  target: 0
+  pieceFilter: 2
+  rarity: 1
+  trigger: 1
+  stackable: 0
+  maxStacks: 1
+  damageRatio: 0.5
+  maxPierceCount: 1

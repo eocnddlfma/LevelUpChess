@@ -72,7 +72,15 @@ namespace LevelUpChess.Pieces
                     }
                     else
                     {
-                        if (t.OccupyingPiece.Team != piece.Team)
+                        // 폰 뛰어넘기 체크 (Bishop 능력)
+                        if (piece.CanJumpOverPawns && t.OccupyingPiece.PieceType == PieceType.Pawn)
+                        {
+                            // 폰을 뛰어넘고 계속 진행
+                            cur += d;
+                            continue;
+                        }
+                        
+                        if (t.OccupyingPiece.Team != piece.Team || piece.CanAttackAllies)
                             moves.Add(new Move(pos, cur) { isCapture = true });
                         break;
                     }

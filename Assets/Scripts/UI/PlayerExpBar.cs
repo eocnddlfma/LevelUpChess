@@ -4,6 +4,8 @@ using TMPro;
 using LevelUpChess.Events;
 using LevelUpChess.Core;
 using LevelUpChess.Pieces;
+using LevelUpChess.Managers;
+using LevelUpChess.Upgrades;
 
 namespace LevelUpChess.UI
 {
@@ -106,6 +108,84 @@ namespace LevelUpChess.UI
             _level++;
             
             Debug.Log($"[PlayerExpBar] {targetTeam} player LevelUp! Used {expNeeded} exp, remaining: {_currentExp}, next level needs: {ExpToNextLevel}");
+            
+            // 플레이어 레벨업 시 팀의 살아있는 기물들 스탯 증가
+            BoostTeamPieces();
+            
+            // 글로벌 업그레이드 선택 표시
+            ShowGlobalUpgradeSelection();
+        }
+        
+        /// <summary>
+        /// 글로벌 업그레이드 선택 UI 표시
+        /// </summary>
+        private void ShowGlobalUpgradeSelection()
+        {
+            var upgradeManager = UpgradeManager.Instance;
+            if (upgradeManager == null) return;
+            
+            // 사용 가능한 글로벌 업그레이드 가져오기
+            var availableGlobalUpgrades = upgradeManager.GetAvailableGlobalUpgrades(targetTeam);
+            if (availableGlobalUpgrades == null || availableGlobalUpgrades.Count == 0)
+            {
+                Debug.Log($"[PlayerExpBar] No available global upgrades for {targetTeam}");
+                return;
+            }
+            
+            // 3개 또는 가능한 만큼 선택
+            int selectionCount = Mathf.Min(3, availableGlobalUpgrades.Count);
+            var selectedUpgrades = new System.Collections.Generic.List<GlobalUpgradeSO>();
+            
+            // 랜덤으로 선택
+            var shuffled = new System.Collections.Generic.List<GlobalUpgradeSO>(availableGlobalUpgrades);
+            for (int i = 0; i < shuffled.Count; i++)
+            {
+                int randomIndex = Random.Range(i, shuffled.Count);
+                (shuffled[i], shuffled[randomIndex]) = (shuffled[randomIndex], shuffled[i]);
+            }
+            
+            for (int i = 0; i < selectionCount; i++)
+            {
+                selectedUpgrades.Add(shuffled[i]);
+            }
+            
+            // UI 표시
+            var upgradePanel = LevelUpChess.Upgrades.UI.UpgradeSelectionPanelUI.Instance;
+            if (upgradePanel != null)
+            {
+                upgradePanel.ShowGlobalSelection(selectedUpgrades, targetTeam);
+                Debug.Log($"[PlayerExpBar] Showing {selectionCount} global upgrade options for {targetTeam} player level up");
+            }
+        }
+        
+        /// <summary>
+        /// 팀의 살아있는 기물들 스탯 증가
+        /// </summary>
+        private void BoostTeamPieces()
+        {
+            var gameManager = ServiceLocator.Get<NetworkGameManager>();
+            if (gameManager == null) return;
+            
+            var teamPieces = gameManager.GetPiecesOfTeam(targetTeam);
+            int boostedCount = 0;
+            
+            foreach (var piece in teamPieces)
+            {
+                if (piece.IsAlive)
+                {
+                    // 공격력 +1, 체력 +1
+                    piece.Stats.AddModifier(StatType.Attack, 1);
+                    piece.Stats.AddModifier(StatType.Health, 1);
+                    boostedCount++;
+                    
+                    Debug.Log($"[PlayerExpBar] {piece.name} boosted: +1 Attack, +1 Health");
+                }
+            }
+            
+            if (boostedCount > 0)
+            {
+                Debug.Log($"[PlayerExpBar] {targetTeam} player level up boosted {boostedCount} pieces");
+            }
         }
         
         /// <summary>

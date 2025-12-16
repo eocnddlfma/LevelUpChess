@@ -25,6 +25,11 @@ namespace LevelUpChess.Managers
         NetworkVariableWritePermission.Server
     );
 
+    private NetworkVariable<int> turnCount = new(1, 
+        NetworkVariableReadPermission.Everyone, 
+        NetworkVariableWritePermission.Server
+    );
+
     private NetworkVariable<bool> isGameOverNetwork = new(false,
         NetworkVariableReadPermission.Everyone,
         NetworkVariableWritePermission.Server
@@ -43,6 +48,7 @@ namespace LevelUpChess.Managers
     public Team LocalPlayerTeam { get; private set; }
     public Team OpponentTeam => LocalPlayerTeam == Team.White ? Team.Black : Team.White;
     public Team CurrentTurn => currentTurnTeam.Value;
+    public int TurnCount => turnCount.Value;
     public bool IsMyTurn => CurrentTurn == LocalPlayerTeam;
     public bool IsGameOver => isGameOverNetwork.Value;
 
@@ -179,6 +185,7 @@ namespace LevelUpChess.Managers
             return;
 
         currentTurnTeam.Value = currentTurnTeam.Value == Team.White ? Team.Black : Team.White;
+        turnCount.Value++;
     }
 
     [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
@@ -268,6 +275,12 @@ namespace LevelUpChess.Managers
         LastMovedPiece = piece;
         LastMoveFrom = from;
         LastMoveTo = to;
+    }
+    
+    public ChessPiece[] GetPiecesOfTeam(Team team)
+    {
+        var allPieces = FindObjectsByType<ChessPiece>(FindObjectsSortMode.None);
+        return System.Array.FindAll(allPieces, piece => piece.Team == team);
     }
     
     private void ValidateComponents()

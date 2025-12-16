@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1a9ce789139750a49939e4c43fc5756b, type: 3}
+  m_Name: BerserkerAbility
+  m_EditorClassIdentifier: 
+  upgradeId: BerserkerAbilitySO
+  upgradeName: "\uAD11\uC804\uC0AC"
+  description: "\uCCB4\uB825\uC774 50% \uC774\uD558\uC77C \uB54C, \uC783\uC740 \uCCB4\uB825
+    1%\uB2F9 \uACF5\uACA9\uB825\uC774 2% \uC99D\uAC00\uD569\uB2C8\uB2E4. (\uCD5C\uB300
+    2\uBC30)"
+  icon: {fileID: 0}
+  upgradeType: 2
+  target: 0
+  pieceFilter: 0
+  rarity: 1
+  trigger: 12
+  stackable: 0
+  maxStacks: 1
+  activationHealthThreshold: 0.5
+  attackBonusPerMissingPercent: 0.02
+  maxAttackMultiplier: 2

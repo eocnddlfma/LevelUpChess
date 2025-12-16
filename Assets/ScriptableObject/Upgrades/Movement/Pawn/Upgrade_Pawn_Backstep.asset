@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fff02ed34c694c04e84b3fe5dde8335a, type: 3}
+  m_Name: Upgrade_Pawn_Backstep
+  m_EditorClassIdentifier: 
+  upgradeId: PawnBackstepUpgradeSO
+  upgradeName: "\uBC31\uC2A4\uD0ED"
+  description: "\uB4A4 \uC774\uB3D9"
+  icon: {fileID: 0}
+  upgradeType: 0
+  target: 0
+  pieceFilter: 1
+  rarity: 1
+  movementToAdd: {fileID: 11400000, guid: 415cbcde44b1ba54ca79e905976ae425, type: 2}
+  replaceExisting: 0

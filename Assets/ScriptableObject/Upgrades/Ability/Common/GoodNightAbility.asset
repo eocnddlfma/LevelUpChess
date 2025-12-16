@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1440d8820bb6ccc4c81cfe33a9007edb, type: 3}
+  m_Name: GoodNightAbility
+  m_EditorClassIdentifier: 
+  upgradeId: GoodNightAbilitySO
+  upgradeName: "\uAD7F\uB098\uC787"
+  description: "\uB098\uC774\uD2B8\uAC00 \uACF5\uACA9\uD560 \uB54C \uB3C5 \uB370\uBBF8\uC9C0"
+  icon: {fileID: 0}
+  upgradeType: 2
+  target: 0
+  pieceFilter: 3
+  rarity: 1
+  trigger: 1
+  stackable: 0
+  maxStacks: 1
+  attackReduction: 0.5
+  debuffDuration: 5

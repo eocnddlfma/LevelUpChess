@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7931111281010484fa5e8b50fa75f0f4, type: 3}
+  m_Name: Upgrade_Bishop_ReflectAttack
+  m_EditorClassIdentifier: 
+  upgradeId: BishopReflectAttackUpgradeSO
+  upgradeName: "\uB9AC\uD50C\uB809\uD2B8 \uC5B4\uD0DD"
+  description: "\uACF5\uACA9 \uBC18\uC0AC \uC5B4\uD0DD"
+  icon: {fileID: 0}
+  upgradeType: 0
+  target: 0
+  pieceFilter: 4
+  rarity: 4
+  movementToAdd: {fileID: 11400000, guid: 6882fc951df17b54caf9b037511360bf, type: 2}
+  replaceExisting: 0

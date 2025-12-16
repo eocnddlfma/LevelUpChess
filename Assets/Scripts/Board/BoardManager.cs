@@ -6,6 +6,27 @@ using LevelUpChess.Pieces;
 
 namespace LevelUpChess.Board
 {
+    /// <summary>
+    /// 장판 효과 데이터
+    /// </summary>
+    public class GroundEffect
+    {
+        public Vector2Int Position;
+        public int DamagePerTick;
+        public int RemainingTurns;
+        public Team OwnerTeam;
+        public GameObject VisualEffect;
+
+        public GroundEffect(Vector2Int position, int damage, int turns, Team team, GameObject effect = null)
+        {
+            Position = position;
+            DamagePerTick = damage;
+            RemainingTurns = turns;
+            OwnerTeam = team;
+            VisualEffect = effect;
+        }
+    }
+
     public class BoardManager : MonoBehaviour
     {
         [SerializeField] private Tile[] _serializedTiles;
@@ -13,6 +34,7 @@ namespace LevelUpChess.Board
         [SerializeField] private int _height;
 
         private Tile[,] _tiles;
+        private List<GroundEffect> _groundEffects = new List<GroundEffect>();
 
         private void Awake()
         {
@@ -33,11 +55,13 @@ namespace LevelUpChess.Board
         private void OnEnable()
         {
             Bus<BoardGeneratedEvent>.OnEvent += OnBoardGenerated;
+            Bus<TurnChangedEvent>.OnEvent += OnTurnChanged;
         }
 
         private void OnDisable()
         {
             Bus<BoardGeneratedEvent>.OnEvent -= OnBoardGenerated;
+            Bus<TurnChangedEvent>.OnEvent -= OnTurnChanged;
         }
 
         /// <summary>
@@ -46,6 +70,41 @@ namespace LevelUpChess.Board
         private void OnBoardGenerated(BoardGeneratedEvent evt)
         {
             InitializeWithTiles(evt.Tiles, evt.Width, evt.Height);
+        }
+
+        /// <summary>
+        /// 턴 변경 시 장판 효과 처리
+        /// </summary>
+        private void OnTurnChanged(TurnChangedEvent evt)
+        {
+            // 턴 시작 시 장판 피해 적용
+            if (evt.NewTeam != Team.White && evt.NewTeam != Team.Black) return; // 유효한 팀만
+
+            for (int i = _groundEffects.Count - 1; i >= 0; i--)
+            {
+                var effect = _groundEffects[i];
+                effect.RemainingTurns--;
+
+                if (effect.RemainingTurns <= 0)
+                {
+                    // 장판 제거
+                    if (effect.VisualEffect != null)
+                    {
+                        Destroy(effect.VisualEffect);
+                    }
+                    _groundEffects.RemoveAt(i);
+                    Debug.Log($"[BoardManager] Ground effect expired at {effect.Position}");
+                    continue;
+                }
+
+                // 장판 위 피스에게 피해
+                var tile = GetTileAt(effect.Position);
+                if (tile != null && tile.OccupyingPiece != null && tile.OccupyingPiece.Team != effect.OwnerTeam)
+                {
+                    tile.OccupyingPiece.Stats.TakeDamage(effect.DamagePerTick);
+                    Debug.Log($"[BoardManager] Ground effect damage: {tile.OccupyingPiece.name} takes {effect.DamagePerTick} damage at {effect.Position}");
+                }
+            }
         }
 
         private void RestoreTilesFrom1DArray()
@@ -158,6 +217,42 @@ namespace LevelUpChess.Board
         
         return pieces;
     }
+
+    // ========== 공개 효과 생성 메서드 ==========
+
+    /// <summary>
+    /// 지정된 타일에 그라운드 이펙트 생성
+    /// </summary>
+        public void CreateGroundEffect(Tile tile, GameObject effectPrefab, float duration = 3f)
+        {
+            if (tile == null || effectPrefab == null) return;
+            
+            var effect = Instantiate(effectPrefab, tile.transform.position, Quaternion.identity);
+            Destroy(effect, duration);
+            
+            Debug.Log($"[BoardManager] Ground effect created at {tile.coordinate}");
+        }
+
+        public void CreateGroundEffect(Vector2Int coordinate, int damagePerTick, int durationTurns, Team ownerTeam, GameObject effectPrefab = null)
+        {
+            var tile = GetTileAt(coordinate);
+            if (tile == null)
+            {
+                Debug.LogWarning($"[BoardManager] Cannot create ground effect: tile not found at {coordinate}");
+                return;
+            }
+
+            GameObject visualEffect = null;
+            if (effectPrefab != null)
+            {
+                visualEffect = Instantiate(effectPrefab, tile.transform.position, Quaternion.identity);
+            }
+
+            var groundEffect = new GroundEffect(coordinate, damagePerTick, durationTurns, ownerTeam, visualEffect);
+            _groundEffects.Add(groundEffect);
+
+            Debug.Log($"[BoardManager] Ground effect created at {coordinate} (damage: {damagePerTick}, duration: {durationTurns}, owner: {ownerTeam})");
+        }
 
     // ========== 공개 프로퍼티 ==========
 

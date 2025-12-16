@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c676b2951035d4943a6653addf54632b, type: 3}
+  m_Name: PowerTransferAbility
+  m_EditorClassIdentifier: 
+  upgradeId: PowerTransferAbilitySO
+  upgradeName: "\uD798\uC758 \uC804\uC1A1"
+  description: "\uD038\uC774 \uACF5\uACA9\uD560 \uB54C \uC8FC\uBCC0 \uC801\uC5D0\uAC8C
+    1 \uB370\uBBF8\uC9C0"
+  icon: {fileID: 0}
+  upgradeType: 2
+  target: 0
+  pieceFilter: 5
+  rarity: 1
+  trigger: 12
+  stackable: 0
+  maxStacks: 1
+  healthBonus: 6
+  attackBonus: 3

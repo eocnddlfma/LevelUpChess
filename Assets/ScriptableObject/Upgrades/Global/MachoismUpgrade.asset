@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe9fd9120372c3940a3055893d67ca5b, type: 3}
+  m_Name: MachoismUpgrade
+  m_EditorClassIdentifier: 
+  upgradeId: MachoismUpgradeSO
+  upgradeName: "\uB9C8\uCD08\uC774\uC998"
+  description: "\uBAA8\uB4E0 \uC544\uAD70 \uBC29\uC5B4\uB825 +1"
+  icon: {fileID: 0}
+  upgradeType: 3
+  target: 0
+  pieceFilter: 0
+  rarity: 1
+  targetTeam: 0
+  attackMultiplier: 2
+  flatAttackBonus: 0
+  defenseBonus: 2
+  healthBonus: 5

@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 57dc4831502a1c642b2e19a54ad7128a, type: 3}
+  m_Name: RainbowReflectUpgrade
+  m_EditorClassIdentifier: 
+  upgradeId: RainbowReflectUpgradeSO
+  upgradeName: "\uBB34\uC9C0\uAC1C \uBC18\uC0AC"
+  description: "\uBAA8\uB4E0 \uC544\uAD70 \uBC18\uC0AC \uB370\uBBF8\uC9C0"
+  icon: {fileID: 0}
+  upgradeType: 3
+  target: 0
+  pieceFilter: 0
+  rarity: 1
+  targetTeam: 0
+  reflectPercent: 0.5

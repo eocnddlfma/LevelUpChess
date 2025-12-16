@@ -48,6 +48,13 @@ namespace LevelUpChess.Managers
             }
             
             Vector3 mousePos = Input.mousePosition;
+            // Ignore clicks that start over UI elements
+            if (UnityEngine.EventSystems.EventSystem.current != null && UnityEngine.EventSystems.EventSystem.current.IsPointerOverGameObject())
+            {
+                Debug.Log("[InputManager] Click ignored: over UI");
+                return;
+            }
+
             Vector3 worldPos = _camera.ScreenToWorldPoint(mousePos);
             worldPos.z = 0f; // 2D에서는 z=0 설정 필요
             

@@ -1,0 +1,168 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6b7f145d0a3cf0045af0ca3aed7a2918, type: 3}
+  m_Name: MainUpgradePool
+  m_EditorClassIdentifier: 
+  commonMovementUpgrades: []
+  commonStatUpgrades:
+  - {fileID: 11400000, guid: bdb6219c63e603943a98ff596d861383, type: 2}
+  - {fileID: 11400000, guid: 245dbf6a064fc5a4cabe88918928d1bc, type: 2}
+  - {fileID: 11400000, guid: 9e8bdfb61f437394eaac0981664129e5, type: 2}
+  - {fileID: 11400000, guid: aeaa71ed9a563f649ab63188713e45da, type: 2}
+  - {fileID: 11400000, guid: fc2208d4940e0ca46b6f80b03581720e, type: 2}
+  commonAbilityUpgrades:
+  - {fileID: 11400000, guid: f32216afa2cd11f4c8e3837c68362ff6, type: 2}
+  - {fileID: 11400000, guid: a34a62e101e7b4545b19547ed711c9ca, type: 2}
+  - {fileID: 11400000, guid: d90fbd90325edcb41a06e7562b481286, type: 2}
+  - {fileID: 11400000, guid: bb5e1fe55b6fa8a46abea049ed0181aa, type: 2}
+  - {fileID: 11400000, guid: 07074b5bf405fc54189df3458197c9b2, type: 2}
+  - {fileID: 11400000, guid: 2632e9f5a51337249aca58d1cfe3701e, type: 2}
+  - {fileID: 11400000, guid: 6f7c823e48380884f81ee185478d9b1c, type: 2}
+  - {fileID: 11400000, guid: de4e26352528ad9478e6709964c1b940, type: 2}
+  - {fileID: 11400000, guid: 1aea215df32f835448eaac0d432a4155, type: 2}
+  - {fileID: 11400000, guid: 474a346a35fbf1247991a611c0680520, type: 2}
+  - {fileID: 11400000, guid: a909ea1462c1b244187ae8b9cafc22b5, type: 2}
+  - {fileID: 11400000, guid: 46c431ba3dea5cd4c91b5b0579b6d0a5, type: 2}
+  globalUpgrades:
+  - {fileID: 11400000, guid: 57d4426e8749f1845912dd84c5e3e5a9, type: 2}
+  - {fileID: 11400000, guid: 8ae8afa18af1be341ad06503dca3482f, type: 2}
+  - {fileID: 11400000, guid: 5388b78c3a0fa774d841dbd9f5bf3b6d, type: 2}
+  - {fileID: 11400000, guid: 9b0227661a7deda4a97a805d3ff60c2e, type: 2}
+  - {fileID: 11400000, guid: f77f1275df0464040bd1c3027409d2c3, type: 2}
+  - {fileID: 11400000, guid: 79fcbf099703cca40973504cac615ce0, type: 2}
+  - {fileID: 11400000, guid: 1415463683cffc84aa5b39d0a615f33f, type: 2}
+  - {fileID: 11400000, guid: 29020c6957a3b284da0afef7d926233e, type: 2}
+  - {fileID: 11400000, guid: 985b8a79d7a0f914ea5295d00d5731d3, type: 2}
+  - {fileID: 11400000, guid: e362fe721d75bba449cba56c0dc3ab0d, type: 2}
+  - {fileID: 11400000, guid: dc7ce5b5e0a2a0443b960668a2f3ea7d, type: 2}
+  - {fileID: 11400000, guid: 6a997cba579c9b4458ecc77c4def4486, type: 2}
+  - {fileID: 11400000, guid: 4fb1424db14cb0f47869a109320653f9, type: 2}
+  - {fileID: 11400000, guid: d7cb794ab35c18f4bb0c13a309c15ed8, type: 2}
+  - {fileID: 11400000, guid: 9d533663152b210469574e7c05bbda81, type: 2}
+  - {fileID: 11400000, guid: e1e7af795df43054f9a8a59ba87576dc, type: 2}
+  - {fileID: 11400000, guid: 56eb30b10cf9d794fb6c035f89c1d912, type: 2}
+  - {fileID: 11400000, guid: 9d1f0b44f6aab074b9e46718b71dd34d, type: 2}
+  - {fileID: 11400000, guid: 21253de34b2f25641b770acf90a8f093, type: 2}
+  - {fileID: 11400000, guid: 6f6b3047b3d5fdc4db614b6e1230766d, type: 2}
+  - {fileID: 11400000, guid: 5fc6f46f98c60af40862c9c7c7cf3a72, type: 2}
+  - {fileID: 11400000, guid: 2710265c577420b449e8828f1624aa1b, type: 2}
+  - {fileID: 11400000, guid: 8b08bc5c61069344f9ed356e60a8d9c4, type: 2}
+  pawnUpgrades:
+    pieceType: 0
+    movementUpgrades:
+    - {fileID: 11400000, guid: 1890cfe856425334aad685d5e56cd85b, type: 2}
+    - {fileID: 11400000, guid: d1684be29d8fd54468ab575722120679, type: 2}
+    - {fileID: 11400000, guid: c901eaf5adb96f6429b11de2cca19ff4, type: 2}
+    - {fileID: 11400000, guid: 12e46accbb35990428b0648932a9e10d, type: 2}
+    - {fileID: 11400000, guid: d23af999745688246b593b12ff43b405, type: 2}
+    - {fileID: 11400000, guid: 4c46800c30704e4479fe5c5c64a1aaa0, type: 2}
+    abilityUpgrades:
+    - {fileID: 11400000, guid: 69ddff0922502b246b1309aa5cf4e834, type: 2}
+    - {fileID: 11400000, guid: 540f79e62eabe9146a184196af828034, type: 2}
+    - {fileID: 11400000, guid: 3e3f025e6e92d454f8c507d177079f51, type: 2}
+    - {fileID: 11400000, guid: d4e0d22e753f05f4cb345cad3d441909, type: 2}
+    - {fileID: 11400000, guid: f74962d90d22bd24083b945578a8b13f, type: 2}
+    - {fileID: 11400000, guid: 6a9ce541b2222664ca22b40ae7b68db1, type: 2}
+    - {fileID: 11400000, guid: 2dcbacc91b69a3a46b31394de50871d5, type: 2}
+    statUpgrades: []
+  knightUpgrades:
+    pieceType: 2
+    movementUpgrades:
+    - {fileID: 11400000, guid: 957d25f00d316d846ad31f26d3b5833e, type: 2}
+    - {fileID: 11400000, guid: a1ace27d01baf69489bafeccfba0e25b, type: 2}
+    - {fileID: 11400000, guid: 85f161b0ca4a7d444bb97bf4ed47ba8c, type: 2}
+    - {fileID: 11400000, guid: bac5524952de5554eadc94208343f66b, type: 2}
+    abilityUpgrades:
+    - {fileID: 11400000, guid: 929a05eb68194f346a44752311caf9d9, type: 2}
+    - {fileID: 11400000, guid: 077d0c3ac24a9d74e973abc2aabbd640, type: 2}
+    - {fileID: 11400000, guid: dc156c01ec6c57a46b09308bedbbe051, type: 2}
+    - {fileID: 11400000, guid: 18f06c81b35969d46a7ce26919f8a8c9, type: 2}
+    - {fileID: 11400000, guid: 5ef60865d0668e943a88bdc8e1b7a726, type: 2}
+    - {fileID: 11400000, guid: c5a5f8870bab19b4ab7fe849d7b0407e, type: 2}
+    - {fileID: 11400000, guid: 5b9d67a8edd32e648a5c40e9972d006b, type: 2}
+    - {fileID: 11400000, guid: 48387bca636e48a4d87fabb589fcfebe, type: 2}
+    - {fileID: 11400000, guid: 84322facf9dcb204a8c0757d559890f4, type: 2}
+    - {fileID: 11400000, guid: c8f5a6d66780bc041919418c8730b927, type: 2}
+    statUpgrades: []
+  bishopUpgrades:
+    pieceType: 3
+    movementUpgrades:
+    - {fileID: 11400000, guid: 30eb52906a6f7224d9f976fa74669c5a, type: 2}
+    - {fileID: 11400000, guid: a720f50dc82be23409ebacc5933b19b3, type: 2}
+    - {fileID: 11400000, guid: 6cb39b773f97236469556d09c0f25043, type: 2}
+    - {fileID: 11400000, guid: 9eafac7f714f90a41956906eed395e75, type: 2}
+    - {fileID: 11400000, guid: bf60873cf3b2c9c42b852e6c0fccf09b, type: 2}
+    abilityUpgrades:
+    - {fileID: 11400000, guid: f7e980ce65dc5be45b436bdc55dc2f6d, type: 2}
+    - {fileID: 11400000, guid: 36097ca2b9fff7b44a596729c31b5518, type: 2}
+    - {fileID: 11400000, guid: 895249fc90843f74aafbc252e3a09db1, type: 2}
+    - {fileID: 11400000, guid: 7fe55e33daaa5c04ca615545d2b2e3bb, type: 2}
+    - {fileID: 11400000, guid: 68c7260f8dade3043baef917cb86cbd7, type: 2}
+    - {fileID: 11400000, guid: 3b0dc65d7cf0b7b458723aa9c48d3e24, type: 2}
+    - {fileID: 11400000, guid: e1bb2dbfedb8fe4409a489c70ad05ee9, type: 2}
+    - {fileID: 11400000, guid: b1362a68e43df124d912c23532520cfd, type: 2}
+    - {fileID: 11400000, guid: 33478e0be13554145aa0d4267c54d07f, type: 2}
+    - {fileID: 11400000, guid: dc02d880e02d1b0488d7db93b354e79d, type: 2}
+    - {fileID: 11400000, guid: 57d8c42bbd4632e4d8dbdfd52871c16c, type: 2}
+    - {fileID: 11400000, guid: ca0082228842e4843a6110e03de4b285, type: 2}
+    - {fileID: 11400000, guid: 48dc1421618de5b4ca59594cc795fcee, type: 2}
+    - {fileID: 11400000, guid: d651ec94764b96e4aa4d73415c98e0d5, type: 2}
+    statUpgrades: []
+  rookUpgrades:
+    pieceType: 1
+    movementUpgrades:
+    - {fileID: 11400000, guid: 5ecc3a96f32ad63409035d8482980b50, type: 2}
+    - {fileID: 11400000, guid: 20f034a8a964689448a21ff754b61e08, type: 2}
+    - {fileID: 11400000, guid: eaab34ccbd657a443bab285db1ceef67, type: 2}
+    - {fileID: 11400000, guid: 2af0789af5ef73b40bb64ad0adae52b0, type: 2}
+    abilityUpgrades:
+    - {fileID: 11400000, guid: e04abbeffb08be0448fe1c5d5562f196, type: 2}
+    - {fileID: 11400000, guid: aed542c38d1b85f4bb80a6f73bd0cc99, type: 2}
+    - {fileID: 11400000, guid: bef52b273f73ff54b9faae888e1376bb, type: 2}
+    - {fileID: 11400000, guid: 5658ebc6eb71d8d48b7cadc974198aa6, type: 2}
+    - {fileID: 11400000, guid: 28a4f10c9325b5d49b47e049b33d2374, type: 2}
+    - {fileID: 11400000, guid: c1c38929dc1c9cf4fb62658b9596a970, type: 2}
+    statUpgrades: []
+  queenUpgrades:
+    pieceType: 4
+    movementUpgrades:
+    - {fileID: 11400000, guid: 290d32ad8ffafa749ba213a0d6d63894, type: 2}
+    - {fileID: 11400000, guid: 8e08ecbc9fdfbc149b77540fcb9801a7, type: 2}
+    - {fileID: 11400000, guid: 62d2fe3875bda2340ad5920e55280068, type: 2}
+    abilityUpgrades:
+    - {fileID: 11400000, guid: 29663b9413882614483a4bdf10493f9f, type: 2}
+    - {fileID: 11400000, guid: 0fbafe12dd0472345a1d0994668d8c1b, type: 2}
+    - {fileID: 11400000, guid: 541d1608131e28a4c9719c7107b48d0e, type: 2}
+    - {fileID: 11400000, guid: b7aae132ecfbac84d9f840840466e495, type: 2}
+    - {fileID: 11400000, guid: ee755a46fc4d7f742a594aa2ecfce498, type: 2}
+    - {fileID: 11400000, guid: 6b5cff71761656f4086d5effcdac18c3, type: 2}
+    - {fileID: 11400000, guid: b6e124e91f4291647879070ddf1ebf2e, type: 2}
+    statUpgrades: []
+  kingUpgrades:
+    pieceType: 5
+    movementUpgrades:
+    - {fileID: 11400000, guid: 23b606e0f75b7bc478ee2bfa87d17b9e, type: 2}
+    - {fileID: 11400000, guid: a46c6ace2f351e84d9ae70f2512a2be4, type: 2}
+    - {fileID: 11400000, guid: 3f67bb4c5d02aa54095f541d28cd24de, type: 2}
+    - {fileID: 11400000, guid: 99fa3530985682f499526ac2baa1f111, type: 2}
+    abilityUpgrades: []
+    statUpgrades: []
+  weightSettings:
+    movementWeight: 1
+    statWeight: 2
+    abilityWeight: 1.5
+    commonWeight: 50
+    uncommonWeight: 30
+    rareWeight: 15
+    epicWeight: 4
+    legendaryWeight: 1
+    commonPoolChance: 0.5

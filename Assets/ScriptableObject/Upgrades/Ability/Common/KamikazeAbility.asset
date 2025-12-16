@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: efc7da5f8a9465f4a9eb83400ec620c8, type: 3}
+  m_Name: KamikazeAbility
+  m_EditorClassIdentifier: 
+  upgradeId: KamikazeAbilitySO
+  upgradeName: "\uCE74\uBBF8\uCE74\uC81C"
+  description: "\uC0AC\uB9DD\uC2DC \uD604\uC7AC \uACF5\uACA9\uB825\uB9CC\uD07C\uC758
+    \uB370\uBBF8\uC9C0\uB97C \uC8FC\uBCC0 8\uCE78\uC5D0 \uC90C."
+  icon: {fileID: 0}
+  upgradeType: 2
+  target: 0
+  pieceFilter: 0
+  rarity: 1
+  trigger: 11
+  stackable: 0
+  maxStacks: 1
+  damageMultiplier: 1

@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2db663de9e030894c871d7b59c0adf49, type: 3}
+  m_Name: Upgrade_Bishop_RookMove
+  m_EditorClassIdentifier: 
+  upgradeId: BishopRookMoveUpgradeSO
+  upgradeName: "\uB8E9 \uBB34\uBE0C"
+  description: "\uC9C1\uC120 \uC774\uB3D9"
+  icon: {fileID: 0}
+  upgradeType: 0
+  target: 0
+  pieceFilter: 4
+  rarity: 4
+  movementToAdd: {fileID: 11400000, guid: 5d21ef1e3731e8c4d8a2165d2b14fef0, type: 2}
+  replaceExisting: 0

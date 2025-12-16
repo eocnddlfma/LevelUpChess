@@ -7,6 +7,7 @@ using LevelUpChess.Board;
 using LevelUpChess.Core;
 using LevelUpChess.Managers;
 using LevelUpChess.UI;
+using LevelUpChess.Upgrades;
 
 namespace LevelUpChess.Networking
 {
@@ -15,7 +16,6 @@ namespace LevelUpChess.Networking
         [SerializeField] private string gameSceneName = "ChessScene";
         
         private bool _isHost;
-        private AsyncOperation _preloadOperation;
 
         public event System.Action OnSceneReady;
 
@@ -100,7 +100,7 @@ namespace LevelUpChess.Networking
             
             // NetworkManager를 통해 씬 로드 (모든 클라이언트 동기화)
             Debug.Log($"[SceneHandler] Broadcasting scene load to all clients: {gameSceneName}");
-            var status = NetworkManager.Singleton.SceneManager.LoadScene(gameSceneName, LoadSceneMode.Single);
+            var status = NetworkManager.Singleton.SceneManager.LoadScene(gameSceneName, LoadSceneMode.Additive);
             
             if (status != SceneEventProgressStatus.Started)
             {
@@ -119,6 +119,22 @@ namespace LevelUpChess.Networking
             
             if (sceneName != gameSceneName) return;
 
+            // 게임 씬을 활성 씬으로 먼저 설정
+            Scene gameScene = SceneManager.GetSceneByName(gameSceneName);
+            if (gameScene.isLoaded)
+            {
+                SceneManager.SetActiveScene(gameScene);
+                Debug.Log($"[SceneHandler] Set active scene to: {gameSceneName}");
+            }
+
+            // 그 다음 이전 씬(MultiScene) 언로드
+            Scene previousScene = SceneManager.GetSceneByName("MultiScene");
+            if (previousScene.isLoaded && previousScene.name != gameSceneName)
+            {
+                Debug.Log($"[SceneHandler] Unloading previous scene: {previousScene.name}");
+                SceneManager.UnloadSceneAsync(previousScene);
+            }
+
             StartCoroutine(InitializeGameWithDelay());
             UnsubscribeFromSceneEvents();
         }
@@ -129,6 +145,17 @@ namespace LevelUpChess.Networking
 
             FindFirstObjectByType<BoardGenerator>()?.InitializeExistingBoard();
             ServiceLocator.Get<NetworkGameManager>()?.SetTeamFromNetwork(_isHost);
+
+            // UpgradeManager 확인
+            var upgradeManager = FindFirstObjectByType<UpgradeManager>();
+            if (upgradeManager != null)
+            {
+                Debug.Log($"[SceneHandler] UpgradeManager found: {upgradeManager.name}, Instance: {(UpgradeManager.Instance != null ? "Set" : "NULL")}");
+            }
+            else
+            {
+                Debug.LogError("[SceneHandler] UpgradeManager NOT FOUND in scene!");
+            }
 
             OnSceneReady?.Invoke();
         }
