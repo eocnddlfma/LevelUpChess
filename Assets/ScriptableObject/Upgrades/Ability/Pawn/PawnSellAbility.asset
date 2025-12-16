@@ -13,9 +13,9 @@ MonoBehaviour:
   m_Name: PawnSellAbility
   m_EditorClassIdentifier: 
   upgradeId: PawnSellAbilitySO
-  upgradeName: "\uD3F0\uC758 \uD310\uB9E4"
-  description: "\uD3F0\uC774 \uC8FD\uC744 \uB54C \uC8FC\uBCC0 \uC544\uAD70 \uD3F0\uC5D0\uAC8C
-    \uACBD\uD5D8\uCE58 +1"
+  upgradeName: "\uD3F0 \uD314\uC774"
+  description: "\uC774 \uD53C\uC2A4\uB97C \uC81C\uAC70\uD569\uB2C8\uB2E4. \uB2E8\uCCB4
+    \uAC15\uD654 1\uAC1C\uB97C \uC5BB\uC2B5\uB2C8\uB2E4."
   icon: {fileID: 0}
   upgradeType: 2
   target: 0

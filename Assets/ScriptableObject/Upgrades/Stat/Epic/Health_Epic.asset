@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ce244c57ff9ce7745ac2a37c255332ba, type: 3}
+  m_Name: Health_Epic
+  m_EditorClassIdentifier: 
+  upgradeId: Health_Epic
+  upgradeName: "Epic \uCCB4\uB825 \uC99D\uAC00"
+  description: "\uCD5C\uB300 \uCCB4\uB825\uC744 20\uB9CC\uD07C \uC99D\uAC00\uC2DC\uD0B5\uB2C8\uB2E4"
+  icon: {fileID: 0}
+  upgradeType: 1
+  target: 0
+  pieceFilter: 0
+  rarity: 4
+  statType: 0
+  flatBonus: 5
+  percentBonus: 0
+  isPermanent: 1

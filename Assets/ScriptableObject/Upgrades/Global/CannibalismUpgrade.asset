@@ -13,8 +13,11 @@ MonoBehaviour:
   m_Name: CannibalismUpgrade
   m_EditorClassIdentifier: 
   upgradeId: CannibalismUpgradeSO
-  upgradeName: "\uC2DD\uC778\uC885"
-  description: "\uBAA8\uB4E0 \uC544\uAD70 \uCCB4\uB825 +1"
+  upgradeName: "\uB3D9\uC871 \uD3EC\uC2DD"
+  description: "\uAC19\uC740 \uD300\uC744 \uACF5\uACA9\uD560 \uACBD\uC6B0 \uACF5\uACA9\uB2F9\uD55C
+    \uD300\uC6D0\uC740 \uC989\uC2DC \uC0AC\uB9DD\uD569\uB2C8\uB2E4. \uC0AC\uB9DD\uD55C
+    \uD300\uC6D0\uC73C\uB85C\uBD80\uD130 \uC5BB\uB294 \uACBD\uD5D8\uCE58\uB294 3\uBC30\uAC00
+    \uB429\uB2C8\uB2E4."
   icon: {fileID: 0}
   upgradeType: 3
   target: 0

@@ -66,10 +66,18 @@ namespace LevelUpChess.Upgrades.UI
                     rt.anchoredPosition = Vector2.zero;
                 }
 
+                var cardUI = card.GetComponent<UpgradeCardUI>();
+                if (cardUI == null)
+                {
+                    Debug.LogError("[UpgradeSelectionPanelUI] Card prefab does not have UpgradeCardUI component!");
+                    Destroy(card);
+                    continue;
+                }
+
                 card.gameObject.SetActive(false);
                 int index = i;
-                card.OnCardSelected += (cardIndex) => OnCardSelected(cardIndex);
-                _cards.Add(card);
+                cardUI.OnCardSelected += (cardIndex) => OnCardSelected(cardIndex);
+                _cards.Add(cardUI);
             }
 
             // 초기 상태 숨김

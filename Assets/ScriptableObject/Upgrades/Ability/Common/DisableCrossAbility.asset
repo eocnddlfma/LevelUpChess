@@ -13,16 +13,15 @@ MonoBehaviour:
   m_Name: DisableCrossAbility
   m_EditorClassIdentifier: 
   upgradeId: DisableCrossAbilitySO
-  upgradeName: "\uC2ED\uC790 \uBB34\uD6A8\uD654"
-  description: "\uB8E9\uC774 \uACF5\uACA9\uBC1B\uC744 \uB54C \uC2ED\uC790 \uBC29\uD5A5
-    \uACF5\uACA9 \uBB34\uD6A8\uD654"
+  upgradeName: "\uB5BC\uAEC4\uB8E9"
+  description: "\uC2ED\uC790 \uBC29\uD5A5\uC911 \uB9C9\uD788\uC9C0 \uC54A\uC740 \uC704\uCE58\uC5D0
+    \uC788\uB294 \uC801 \uD53C\uC2A4\uB294 \uD589\uB3D9\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."
   icon: {fileID: 0}
   upgradeType: 2
   target: 0
   pieceFilter: 2
   rarity: 1
-  trigger: 12
+  trigger: 8
   stackable: 0
   maxStacks: 1
-  attackReduction: 3
   range: 0

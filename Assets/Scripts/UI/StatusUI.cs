@@ -28,7 +28,12 @@ namespace LevelUpChess.UI
         [SerializeField] private TextMeshProUGUI healthText;    // 체력 수치 표시
         [SerializeField] private Image attackIcon;              // 공격력 아이콘 이미지
         [SerializeField] private TextMeshProUGUI attackText;    // 공격력 수치 표시
+        [SerializeField] private Image shieldIcon;              // 보호막 아이콘 이미지
         [SerializeField] private TextMeshProUGUI levelText;     // 레벨 표시
+        
+        [Header("보호막바 UI 요소")]
+        [SerializeField] private Image shieldFillImage;         // 보호막 바 채움
+        [SerializeField] private Image shieldTrailImage;        // 보호막 트레일 바
         
         [Header("색상 설정")]
         [SerializeField] private Color fullHealthColor = Color.green;
@@ -37,6 +42,7 @@ namespace LevelUpChess.UI
         [SerializeField] private Color trailColor = Color.white;
         [SerializeField] private Color healthTextColor = Color.white;
         [SerializeField] private Color attackTextColor = Color.yellow;
+        [SerializeField] private Color shieldBarColor = new Color(0.3f, 0.3f, 0.3f, 1f); // 진한 회색
         [SerializeField] private Color levelTextColor = Color.cyan;
         [SerializeField] private Color expBarColor = new Color(0.3f, 0.7f, 1f, 1f);  // 하늘색
         [SerializeField] private Color expBackgroundColor = new Color(0.15f, 0.15f, 0.15f, 0.8f);
@@ -52,6 +58,7 @@ namespace LevelUpChess.UI
         [SerializeField] private float lowHealthThreshold = 0.3f;
         [SerializeField] private bool showHealthNumbers = true;
         [SerializeField] private bool showAttackPower = true;
+        [SerializeField] private bool showShield = true;
         [SerializeField] private bool showLevel = true;
         [SerializeField] private bool showExpBar = true;
         [SerializeField] private bool showExpNumbers = false;  // 경험치 수치 표시 여부
@@ -59,16 +66,23 @@ namespace LevelUpChess.UI
         private int maxHealth = 1;
         private int currentHealth = 1;
         private int attackPower = 1;
+        private int shield = 0;
         private int level = 1;
         
         // 경험치 관련
         private int currentExp = 0;
         private int expToNextLevel = 100;
         
+        // Shield 바 관련
+        private float currentShieldFillAmount = 0f;
+        private float currentShieldTrailAmount = 0f;
+        
         // DOTween 시퀀스
         private Tweener fillTween;
         private Tweener trailTween;
         private Tweener expTween;
+        private Tweener shieldFillTween;
+        private Tweener shieldTrailTween;
         
         private float currentFillAmount = 1f;
         private float currentTrailAmount = 1f;
@@ -87,8 +101,18 @@ namespace LevelUpChess.UI
             if (attackText != null)
                 attackText.color = attackTextColor;
             
+            if (shieldIcon != null)
+                shieldIcon.color = shieldBarColor;
+            
             if (levelText != null)
                 levelText.color = levelTextColor;
+            
+            
+            if (shieldFillImage != null)
+                shieldFillImage.color = shieldBarColor;
+            
+            if (shieldTrailImage != null)
+                shieldTrailImage.color = trailColor;
             
             // 경험치 바 색상 설정
             if (expBackgroundImage != null)
@@ -139,6 +163,16 @@ namespace LevelUpChess.UI
         {
             attackPower = attack;
             UpdateStatsText();
+        }
+        
+        /// <summary>
+        /// 보호막 설정
+        /// </summary>
+        public void SetShield(int shieldValue)
+        {
+            shield = shieldValue;
+            UpdateStatsText();
+            UpdateShieldBar();
         }
         
         /// <summary>
@@ -338,6 +372,21 @@ namespace LevelUpChess.UI
                     attackText.gameObject.SetActive(false);
             }
             
+            // 보호막 표시 (아이콘만)
+            if (showShield && shield > 0)
+            {
+                if (shieldIcon != null)
+                    shieldIcon.gameObject.SetActive(true);
+            }
+            else
+            {
+                if (shieldIcon != null)
+                    shieldIcon.gameObject.SetActive(false);
+            }
+            
+            // 보호막 바 업데이트 (최대 체력에 비례)
+            UpdateShieldBar();
+            
             // 레벨 표시
             if (showLevel && levelText != null)
             {
@@ -352,15 +401,34 @@ namespace LevelUpChess.UI
         
         private void UpdateHealthBarImmediate()
         {
-            fillTween?.Kill();
-            trailTween?.Kill();
-            
-            float target = (float)currentHealth / maxHealth;
-            currentFillAmount = target;
-            currentTrailAmount = target;
-            
-            UpdateHealthBarVisuals();
+            UpdateBar(fillImage, trailImage, ref currentFillAmount, ref currentTrailAmount, (float)currentHealth / maxHealth, ref fillTween, ref trailTween);
             UpdateStatsText();
+        }
+        
+        /// <summary>
+        /// 보호막 바 업데이트 (최대 체력에 비례)
+        /// </summary>
+        private void UpdateShieldBar()
+        {
+            UpdateBar(shieldFillImage, shieldTrailImage, ref currentShieldFillAmount, ref currentShieldTrailAmount, Mathf.Clamp01((float)shield / maxHealth), ref shieldFillTween, ref shieldTrailTween);
+        }
+        
+        /// <summary>
+        /// 바 업데이트 공통 메소드
+        /// </summary>
+        private void UpdateBar(Image fillImg, Image trailImg, ref float currentFill, ref float currentTrail, float target, ref Tweener fillTw, ref Tweener trailTw)
+        {
+            fillTw?.Kill();
+            trailTw?.Kill();
+            
+            currentFill = target;
+            currentTrail = target;
+            
+            if (fillImg != null)
+                fillImg.fillAmount = currentFill;
+            
+            if (trailImg != null)
+                trailImg.fillAmount = currentTrail;
         }
         
         /// <summary>
@@ -374,10 +442,11 @@ namespace LevelUpChess.UI
         /// <summary>
         /// 수치 표시 설정
         /// </summary>
-        public void SetShowNumbers(bool showHealth, bool showAttack)
+        public void SetShowNumbers(bool showHealth, bool showAttack, bool showShield = true)
         {
             showHealthNumbers = showHealth;
             showAttackPower = showAttack;
+            this.showShield = showShield;
             UpdateStatsText();
         }
     }

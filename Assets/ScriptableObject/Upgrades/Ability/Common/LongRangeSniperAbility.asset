@@ -13,8 +13,9 @@ MonoBehaviour:
   m_Name: LongRangeSniperAbility
   m_EditorClassIdentifier: 
   upgradeId: LongRangeSniperAbilitySO
-  upgradeName: "\uC7A5\uAC70\uB9AC \uC800\uACA9\uC218"
-  description: "\uBE44\uC20D\uC774 \uACF5\uACA9\uD560 \uB54C \uACF5\uACA9\uB825 +2"
+  upgradeName: "\uCD08\uC7A5\uAC70\uB9AC \uC800\uACA9"
+  description: "5\uCE78 \uC774\uC0C1 \uAC70\uB9AC\uC5D0 \uC788\uB294 \uC801\uC744
+    \uACF5\uACA9\uD560 \uACBD\uC6B0 \uC989\uC0AC\uD569\uB2C8\uB2E4"
   icon: {fileID: 0}
   upgradeType: 2
   target: 0

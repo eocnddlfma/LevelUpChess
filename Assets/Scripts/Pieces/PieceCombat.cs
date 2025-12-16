@@ -47,6 +47,7 @@ namespace LevelUpChess.Pieces
         private int _attackPower;
         private int _defense = 0;
         private int _shield = 0;
+        private int _maxShield = 0;
         private int _healthRegeneration = 0;
         private float _lifeSteal = 0f;
         
@@ -79,7 +80,7 @@ namespace LevelUpChess.Pieces
         public int Shield => _shield + _bonusShield;
         public int HealthRegeneration => _healthRegeneration + _bonusHealthRegen;
         public float LifeSteal => _lifeSteal + _bonusLifeSteal;
-        public int Level { get => _level; set { _level = value; _ui?.UpdateAll(_currentHealth, MaxHealth, AttackPower, _level); } }
+        public int Level { get => _level; set { _level = value; _ui?.UpdateAll(_currentHealth, MaxHealth, AttackPower, _level, Shield); } }
         public int CurrentExp => _currentExp;
         public int ExpToNextLevel => _level; // 레벨만큼 경험치 필요
         public bool IsAlive => _currentHealth > 0;
@@ -109,6 +110,7 @@ namespace LevelUpChess.Pieces
             _attackPower = attackPower;
             _defense = defense;
             _shield = shield;
+            _maxShield = shield;
             _healthRegeneration = healthRegen;
             _lifeSteal = lifeSteal;
             _level = 1;
@@ -178,10 +180,18 @@ namespace LevelUpChess.Pieces
         /// </summary>
         private void ApplyHealthRegeneration()
         {
-            if (_healthRegeneration > 0 && _currentHealth < _maxHealth)
+            int totalRegen = HealthRegeneration;
+            if (totalRegen > 0 && _currentHealth < _maxHealth)
             {
-                Heal(_healthRegeneration);
-                Debug.Log($"[PieceCombat] {_piece.name} regenerated {_healthRegeneration} HP at turn end");
+                Heal(totalRegen);
+                Debug.Log($"[PieceCombat] {_piece.name} regenerated {totalRegen} HP at turn end");
+
+                // 체력이 최대치가 되었으면 보호막 회복
+                if (_currentHealth >= _maxHealth && _maxShield > 0)
+                {
+                    _shield = _maxShield;
+                    Debug.Log($"[PieceCombat] {_piece.name} shield restored to {_shield} at full health");
+                }
             }
         }
         
@@ -375,46 +385,42 @@ namespace LevelUpChess.Pieces
                 Debug.Log($"[PieceCombat] {_piece.name} is currently invincible. Damage ignored.");
                 return false;
             }
-            // 1. 방어력 적용
-            int actualDamage = Mathf.Max(1, amount - _defense); // 최소 1 대미지
-            
-            // 2. 보호막 먼저 소모
-            if (_shield > 0)
+
+            // 1. 보호막 확인 - 보호막이 있으면 방어력 2배 효과 + 데미지 무시
+            int totalShield = _shield + _bonusShield;
+            if (totalShield > 0)
             {
-                if (_shield >= actualDamage)
-                {
-                    _shield -= actualDamage;
-                    Debug.Log($"[PieceCombat] Shield absorbed {actualDamage} damage. Shield remaining: {_shield}");
-                    _ui?.ShowDamageEffect(actualDamage);
-                    return false;
-                }
-                else
-                {
-                    actualDamage -= _shield;
-                    Debug.Log($"[PieceCombat] Shield absorbed {_shield} damage. {actualDamage} damage to health.");
-                    _shield = 0;
-                }
+                // 보호막이 있을 때는 방어력 효과 2배 적용
+                int actualDamage = Mathf.Max(1, amount - (_defense * 2)); // 최소 1 대미지
+
+                // 보호막이 있으면 데미지를 완전히 무시 (보호막 소모 없음)
+                Debug.Log($"[PieceCombat] Shield protected against {actualDamage} damage. Shield remaining: {totalShield}");
+                _ui?.ShowDamageEffect(0); // 데미지 효과는 0으로 표시
+                return false;
             }
+
+            // 2. 보호막이 없으면 일반 방어력 적용
+            int actualDamageNoShield = Mathf.Max(1, amount - _defense); // 최소 1 대미지
             
             // 3. 체력 감소
-            _currentHealth -= actualDamage;
+            _currentHealth -= actualDamageNoShield;
             _currentHealth = Mathf.Max(0, _currentHealth);
-            
+
             _ui?.UpdateHealth(_currentHealth, _maxHealth);
-            _ui?.ShowDamageEffect(actualDamage);
-            
+            _ui?.ShowDamageEffect(actualDamageNoShield);
+
             // OnHit 능력 실행 (피해 후, 사망 전)
             var upgradeManager = UpgradeManager.Instance;
             if (upgradeManager != null)
             {
                 var hitContext = upgradeManager.CreateAbilityContext(_piece, null);
-                hitContext.Damage = actualDamage;
+                hitContext.Damage = actualDamageNoShield;
                 hitContext.Attacker = attacker;
                 upgradeManager.ExecuteAbilities(_piece, AbilityTrigger.OnHit, hitContext);
-                
+
                 // BonusDamage 적용 (음수면 데미지 감소)
-                actualDamage += hitContext.BonusDamage;
-                actualDamage = Mathf.Max(1, actualDamage); // 최소 1 데미지
+                actualDamageNoShield += hitContext.BonusDamage;
+                actualDamageNoShield = Mathf.Max(1, actualDamageNoShield); // 최소 1 데미지
             }
             
             if (_currentHealth <= 0 && handleDeath)
@@ -434,7 +440,7 @@ namespace LevelUpChess.Pieces
             }
 
             // raise OnDamageTaken event on victim
-            _piece?.RaiseDamageTaken(attacker, actualDamage);
+            _piece?.RaiseDamageTaken(attacker, actualDamageNoShield);
             return false;
         }
         
@@ -533,7 +539,7 @@ namespace LevelUpChess.Pieces
         {
             _maxHealth += amount;
             _currentHealth += amount; // 현재 체력도 함께 증가
-            _ui?.UpdateAll(_currentHealth, _maxHealth, _attackPower, _level);
+            _ui?.UpdateAll(_currentHealth, _maxHealth, _attackPower, _level, Shield);
             Debug.Log($"[PieceCombat] {_piece.name} max health increased by {amount}. New value: {_maxHealth}");
         }
         
@@ -553,7 +559,7 @@ namespace LevelUpChess.Pieces
         {
             _maxHealth = newMaxHealth;
             _currentHealth = Mathf.Min(_currentHealth, _maxHealth);
-            _ui?.UpdateAll(_currentHealth, _maxHealth, _attackPower, _level);
+            _ui?.UpdateAll(_currentHealth, _maxHealth, _attackPower, _level, Shield);
         }
         
         /// <summary>
@@ -613,7 +619,7 @@ namespace LevelUpChess.Pieces
             }
             if (Application.isPlaying)
             {
-                _ui?.UpdateAll(_currentHealth, MaxHealth, AttackPower, _level);
+                _ui?.UpdateAll(_currentHealth, MaxHealth, AttackPower, _level, Shield);
             }
         }
 
@@ -645,7 +651,7 @@ namespace LevelUpChess.Pieces
             }
             if (Application.isPlaying)
             {
-                _ui?.UpdateAll(_currentHealth, MaxHealth, AttackPower, _level);
+                _ui?.UpdateAll(_currentHealth, MaxHealth, AttackPower, _level, Shield);
             }
         }
 
@@ -747,7 +753,7 @@ namespace LevelUpChess.Pieces
             _currentHealth += healthIncrease; // 레벨업 시 체력도 회복
             _attackPower += attackIncrease;
             
-            _ui?.UpdateAll(_currentHealth, _maxHealth, _attackPower, _level);
+            _ui?.UpdateAll(_currentHealth, _maxHealth, _attackPower, _level, Shield);
             _ui?.OnLevelUp(_level, _currentExp, ExpToNextLevel);
             
             Debug.Log($"[PieceCombat] {_piece.name} is now level {_level}! HP: {_maxHealth}, ATK: {_attackPower}");
@@ -873,7 +879,7 @@ namespace LevelUpChess.Pieces
                 _currentHealth += upgrade.FlatBonus;
             }
             
-            _ui?.UpdateAll(_currentHealth, MaxHealth, AttackPower, _level);
+            _ui?.UpdateAll(_currentHealth, MaxHealth, AttackPower, _level, Shield);
             Debug.Log($"[PieceCombat] {_piece.name} stat upgrade applied: {upgrade.UpgradeName}");
         }
         
@@ -887,7 +893,7 @@ namespace LevelUpChess.Pieces
             if (_statUpgrades.Remove(upgrade))
             {
                 RecalculateBonusStats();
-                _ui?.UpdateAll(_currentHealth, MaxHealth, AttackPower, _level);
+                _ui?.UpdateAll(_currentHealth, MaxHealth, AttackPower, _level, Shield);
             }
         }
         

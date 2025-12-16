@@ -37,6 +37,9 @@ namespace LevelUpChess.Upgrades
         
         // 각 기물의 적용된 업그레이드 추적
         private Dictionary<int, List<string>> _pieceAppliedUpgrades = new Dictionary<int, List<string>>();
+        
+        // 글로벌 업그레이드 중복 방지
+        private HashSet<string> appliedGlobalUpgrades = new HashSet<string>();
 
         // 현재 선택 대기 중인 업그레이드
         private List<UpgradeBaseSO> _pendingSelections = new List<UpgradeBaseSO>();
@@ -660,7 +663,10 @@ namespace LevelUpChess.Upgrades
             upgrade.Apply(piece);
 
             // 적용 기록
-            TrackAppliedUpgrade(piece, upgrade.UpgradeId);
+            if (!string.IsNullOrEmpty(upgrade.UpgradeHash))
+            {
+                TrackAppliedUpgrade(piece, upgrade.UpgradeHash);
+            }
 
             Debug.Log($"[UpgradeManager] {piece.name}에 {upgrade.UpgradeName} 적용 완료");
         }
@@ -688,8 +694,10 @@ namespace LevelUpChess.Upgrades
         /// <summary>
         /// 적용된 업그레이드 기록
         /// </summary>
-        private void TrackAppliedUpgrade(ChessPiece piece, string upgradeId)
+        private void TrackAppliedUpgrade(ChessPiece piece, string upgradeHash)
         {
+            if (string.IsNullOrEmpty(upgradeHash)) return;
+            
             int pieceId = piece.GetInstanceID();
             
             if (!_pieceAppliedUpgrades.ContainsKey(pieceId))
@@ -697,9 +705,9 @@ namespace LevelUpChess.Upgrades
                 _pieceAppliedUpgrades[pieceId] = new List<string>();
             }
 
-            if (!_pieceAppliedUpgrades[pieceId].Contains(upgradeId))
+            if (!_pieceAppliedUpgrades[pieceId].Contains(upgradeHash))
             {
-                _pieceAppliedUpgrades[pieceId].Add(upgradeId);
+                _pieceAppliedUpgrades[pieceId].Add(upgradeHash);
             }
         }
 
@@ -747,8 +755,17 @@ namespace LevelUpChess.Upgrades
                 return;
             }
 
+            // 중복 방지
+            if (appliedGlobalUpgrades.Contains(upgrade.UpgradeHash))
+            {
+                Debug.LogWarning($"[UpgradeManager] 글로벌 업그레이드 {upgrade.UpgradeHash} 이미 적용됨");
+                return;
+            }
+
             if (IsServer)
             {
+                appliedGlobalUpgrades.Add(upgrade.UpgradeHash);
+                
                 if (upgrade is GlobalUpgradeSO globalUpgrade)
                 {
                     globalUpgrade.ApplyToTeam(teamId, teamPieces);
@@ -804,15 +821,24 @@ namespace LevelUpChess.Upgrades
                 return;
             }
 
-            // 3개 랜덤 선택 (중복 없이)
+            // 3개 랜덤 선택 (중복 없이, 이미 적용된 글로벌 제외)
             var selected = new List<UpgradeBaseSO>();
             var availableIndices = new List<int>();
             for (int i = 0; i < globals.Count; i++)
             {
-                availableIndices.Add(i);
+                if (!appliedGlobalUpgrades.Contains(globals[i].UpgradeHash))
+                {
+                    availableIndices.Add(i);
+                }
             }
 
-            int count = Mathf.Min(3, globals.Count);
+            if (availableIndices.Count == 0)
+            {
+                Debug.LogWarning("[UpgradeManager] 모든 글로벌 업그레이드가 이미 적용됨");
+                return;
+            }
+
+            int count = Mathf.Min(3, availableIndices.Count);
             for (int i = 0; i < count; i++)
             {
                 int randomIndex = UnityEngine.Random.Range(0, availableIndices.Count);
@@ -931,6 +957,7 @@ namespace LevelUpChess.Upgrades
             var result = new List<UpgradeBaseSO>();
             foreach (var id in ids)
             {
+                if (string.IsNullOrEmpty(id)) continue;
                 // upgradePool에서 id로 찾기
                 var upgrade = upgradePool?.GetUpgradeById(id);
                 if (upgrade != null)
@@ -1004,7 +1031,7 @@ namespace LevelUpChess.Upgrades
                     bool alreadyApplied = false;
                     foreach (var appliedList in _playerAppliedUpgrades.Values)
                     {
-                        if (appliedList.Contains(upgrade.UpgradeId))
+                        if (appliedList.Contains(upgrade.UpgradeHash))
                         {
                             alreadyApplied = true;
                             break;
@@ -1038,7 +1065,7 @@ namespace LevelUpChess.Upgrades
             {
                 _playerAppliedUpgrades[teamKey] = new List<string>();
             }
-            _playerAppliedUpgrades[teamKey].Add(upgrade.UpgradeId);
+            _playerAppliedUpgrades[teamKey].Add(upgrade.UpgradeHash);
             
             // 업그레이드 적용
             upgrade.ApplyGlobalEffect(team);
@@ -1046,14 +1073,14 @@ namespace LevelUpChess.Upgrades
             Debug.Log($"[UpgradeManager] Applied global upgrade '{upgrade.UpgradeName}' to team {team}");
             
             // 클라이언트에 알림
-            NotifyGlobalUpgradeAppliedClientRpc(upgrade.UpgradeId, team);
+            NotifyGlobalUpgradeAppliedClientRpc(upgrade.UpgradeHash, team);
         }
 
         [ClientRpc]
         private void NotifyGlobalUpgradeAppliedClientRpc(string upgradeId, Team team)
         {
             // 클라이언트에서도 업그레이드 적용 (로컬 효과)
-            var upgrade = upgradePool?.GlobalUpgrades.Find(u => u.UpgradeId == upgradeId);
+            var upgrade = upgradePool?.GlobalUpgrades.Find(u => u.UpgradeHash == upgradeId);
             if (upgrade is GlobalUpgradeSO globalUpgrade)
             {
                 globalUpgrade.ApplyGlobalEffect(team);

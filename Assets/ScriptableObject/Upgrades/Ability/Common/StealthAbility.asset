@@ -14,7 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   upgradeId: StealthAbilitySO
   upgradeName: "\uC740\uC2E0"
-  description: "\uBE44\uC20D\uC774 \uACF5\uACA9\uBC1B\uC744 \uB54C \uACF5\uACA9 \uBB34\uD6A8\uD654"
+  description: "\uC774\uB3D9\uD55C \uD6C4 1\uD134\uAC04 \uBB34\uC801 \uC0C1\uD0DC\uAC00
+    \uB429\uB2C8\uB2E4."
   icon: {fileID: 0}
   upgradeType: 2
   target: 0

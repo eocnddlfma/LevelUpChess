@@ -13,9 +13,11 @@ MonoBehaviour:
   m_Name: LoneWolfAbility
   m_EditorClassIdentifier: 
   upgradeId: LoneWolfAbilitySO
-  upgradeName: "\uC678\uB85C\uC6B4 \uB291\uB300"
-  description: "\uD3F0\uC774 \uC8FD\uC744 \uB54C \uC8FC\uBCC0 \uC544\uAD70 \uD3F0\uC5D0\uAC8C
-    \uACF5\uACA9\uB825 +1"
+  upgradeName: "\uB098 \uD63C\uC790 \uC0B0\uB2E4"
+  description: "\uC989\uC2DC \uB0B4 \uD300\uC758 \uBAA8\uB4E0 \uB2E4\uB978 \uD3F0\uB4E4\uC774
+    \uCC98\uCE58\uB428. \uCC98\uCE58\uB41C \uACBD\uD5D8\uCE58\uB294 \uD574\uB2F9
+    \uD3F0\uC774 5\uBC30\uB85C \uD761\uC218\uB428, \uCCB4\uB825, \uACF5\uACA9\uB825\uC774
+    2\uBC30\uAC00 \uB428."
   icon: {fileID: 0}
   upgradeType: 2
   target: 0

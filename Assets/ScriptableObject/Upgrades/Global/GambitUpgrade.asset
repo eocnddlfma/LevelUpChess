@@ -14,7 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   upgradeId: GambitUpgradeSO
   upgradeName: "\uAC2C\uBE57"
-  description: "\uBAA8\uB4E0 \uC544\uAD70 \uACF5\uACA9\uB825 +1"
+  description: "\uD0B9\uC744 \uC81C\uC678\uD55C \uBAA8\uB4E0 \uD53C\uC2A4\uAC00 \uAC01\uC790
+    50% \uD655\uB960\uB85C \uC0AC\uB9DD\uD569\uB2C8\uB2E4. \uC0DD\uC874\uD55C \uD53C\uC2A4\uB294
+    \uB808\uBCA8\uC774 3 \uC99D\uAC00\uD569\uB2C8\uB2E4."
   icon: {fileID: 0}
   upgradeType: 3
   target: 0
@@ -22,7 +24,4 @@ MonoBehaviour:
   rarity: 1
   targetTeam: 0
   deathChance: 0.5
-  survivorBonusExp: 5
-  expMultiplier: 2
-  attackBonus: 2
-  minimumSurvivors: 2
+  levelBonus: 3

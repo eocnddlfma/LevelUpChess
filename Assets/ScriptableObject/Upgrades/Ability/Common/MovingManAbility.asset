@@ -13,9 +13,9 @@ MonoBehaviour:
   m_Name: MovingManAbility
   m_EditorClassIdentifier: 
   upgradeId: MovingManAbilitySO
-  upgradeName: "\uC6C0\uC9C1\uC774\uB294 \uC0AC\uB78C"
-  description: "\uB8E9\uC774 \uC774\uB3D9\uD560 \uB54C \uC8FC\uBCC0 \uC801\uC5D0\uAC8C
-    \uACF5\uACA9\uB825 +1"
+  upgradeName: "\uBB34\uBE59\uB9E8"
+  description: "\uC774\uB3D9\uD55C \uCE78 \uC218\uB9CC\uD07C \uACBD\uD5D8\uCE58\uAC00
+    \uC99D\uAC00\uD569\uB2C8\uB2E4."
   icon: {fileID: 0}
   upgradeType: 2
   target: 0

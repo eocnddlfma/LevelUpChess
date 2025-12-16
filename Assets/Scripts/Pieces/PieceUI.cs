@@ -26,12 +26,13 @@ namespace LevelUpChess.Pieces
         /// <summary>
         /// 전체 UI 업데이트 (초기화 없이 값만 설정)
         /// </summary>
-        public void UpdateAll(int currentHealth, int maxHealth, int attackPower, int level)
+        public void UpdateAll(int currentHealth, int maxHealth, int attackPower, int level, int shield = 0)
         {
             if (_statusUI != null)
             {
                 _statusUI.SetHealth(currentHealth, maxHealth);
                 _statusUI.SetAttackPower(attackPower);
+                _statusUI.SetShield(shield);
                 _statusUI.SetLevel(level);
             }
         }

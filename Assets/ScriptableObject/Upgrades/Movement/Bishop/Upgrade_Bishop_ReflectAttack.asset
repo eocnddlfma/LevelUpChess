@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   upgradeId: BishopReflectAttackUpgradeSO
   upgradeName: "\uB9AC\uD50C\uB809\uD2B8 \uC5B4\uD0DD"
-  description: "\uACF5\uACA9 \uBC18\uC0AC \uC5B4\uD0DD"
+  description: "\uBCBD\uC5D0 \uD295\uAE30\uB294 \uBC18\uC0AC \uC774\uB3D9"
   icon: {fileID: 0}
   upgradeType: 0
   target: 0

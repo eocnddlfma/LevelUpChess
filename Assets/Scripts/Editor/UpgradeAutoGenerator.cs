@@ -406,16 +406,16 @@ namespace LevelUpChess.Editor
             }
 
             // 등급별로 스탯 업그레이드 생성
-            GenerateStatUpgradesForRarity(UpgradeRarity.Common);
-            GenerateStatUpgradesForRarity(UpgradeRarity.Uncommon);
-            GenerateStatUpgradesForRarity(UpgradeRarity.Rare);
-            GenerateStatUpgradesForRarity(UpgradeRarity.Epic);
-            GenerateStatUpgradesForRarity(UpgradeRarity.Legendary);
+            GenerateStatUpgradesForRarity(1); // Common
+            GenerateStatUpgradesForRarity(2); // Uncommon
+            GenerateStatUpgradesForRarity(3); // Rare
+            GenerateStatUpgradesForRarity(4); // Epic
+            GenerateStatUpgradesForRarity(5); // Legendary
         }
 
-        private void GenerateStatUpgradesForRarity(UpgradeRarity rarity)
+        private void GenerateStatUpgradesForRarity(int rarity)
         {
-            string rarityName = rarity.ToString();
+            string rarityName = GetRarityName(rarity);
             string dir = $"{SO_BASE_PATH}/Stat/{rarityName}";
             if (!Directory.Exists(dir))
             {
@@ -425,14 +425,14 @@ namespace LevelUpChess.Editor
             int multiplier = GetMultiplierForRarity(rarity);
 
             // 각 스탯 타입별로 업그레이드 생성
-            CreateStatUpgrade<AttackUpgradeSO>(dir, $"Attack_{rarityName}", $"{rarityName} Attack Boost", $"Increases attack power by {multiplier}", multiplier, rarity);
-            CreateStatUpgrade<DefenseUpgradeSO>(dir, $"Defense_{rarityName}", $"{rarityName} Defense Boost", $"Increases defense by {multiplier}", multiplier, rarity);
-            CreateStatUpgrade<HealthUpgradeSO>(dir, $"Health_{rarityName}", $"{rarityName} Health Boost", $"Increases max health by {multiplier * 5}", multiplier * 5, rarity);
-            CreateStatUpgrade<ShieldUpgradeSO>(dir, $"Shield_{rarityName}", $"{rarityName} Shield Boost", $"Increases shield by {multiplier}", multiplier, rarity);
-            CreateStatUpgrade<RegenUpgradeSO>(dir, $"Regen_{rarityName}", $"{rarityName} Regen Boost", $"Increases health regeneration by {multiplier}", multiplier, rarity);
+            CreateStatUpgrade<AttackUpgradeSO>(dir, $"Attack_{rarityName}", $"{rarityName} 공격력 증가", $"공격력을 {multiplier}만큼 증가시킵니다", multiplier, rarity);
+            CreateStatUpgrade<DefenseUpgradeSO>(dir, $"Defense_{rarityName}", $"{rarityName} 방어력 증가", $"방어력을 {multiplier}만큼 증가시킵니다", multiplier, rarity);
+            CreateStatUpgrade<HealthUpgradeSO>(dir, $"Health_{rarityName}", $"{rarityName} 체력 증가", $"최대 체력을 {multiplier * 5}만큼 증가시킵니다", multiplier * 5, rarity);
+            CreateStatUpgrade<ShieldUpgradeSO>(dir, $"Shield_{rarityName}", $"{rarityName} 보호막 증가", $"보호막을 {multiplier}만큼 증가시킵니다", multiplier, rarity);
+            CreateStatUpgrade<RegenUpgradeSO>(dir, $"Regen_{rarityName}", $"{rarityName} 재생 증가", $"체력 재생을 {multiplier}만큼 증가시킵니다", multiplier, rarity);
         }
 
-        private void CreateStatUpgrade<T>(string dir, string fileName, string displayName, string description, int value, UpgradeRarity rarity) where T : StatUpgradeSO
+        private void CreateStatUpgrade<T>(string dir, string fileName, string displayName, string description, int value, int rarity) where T : StatUpgradeSO
         {
             string path = $"{dir}/{fileName}.asset";
 
@@ -449,12 +449,8 @@ namespace LevelUpChess.Editor
             serialized.FindProperty("upgradeType").enumValueIndex = (int)UpgradeType.Stat;
             serialized.FindProperty("upgradeId").stringValue = fileName;
 
-            // StatUpgradeSO의 Value 설정
-            if (so is AttackUpgradeSO attack) serialized.FindProperty("value").intValue = value;
-            else if (so is DefenseUpgradeSO defense) serialized.FindProperty("value").intValue = value;
-            else if (so is HealthUpgradeSO health) serialized.FindProperty("value").intValue = value;
-            else if (so is ShieldUpgradeSO shield) serialized.FindProperty("value").intValue = value;
-            else if (so is RegenUpgradeSO regen) serialized.FindProperty("value").intValue = value;
+            // StatUpgradeSO의 flatBonus 설정
+            serialized.FindProperty("flatBonus").intValue = value;
 
             serialized.ApplyModifiedProperties();
 
@@ -462,16 +458,29 @@ namespace LevelUpChess.Editor
             Debug.Log($"[UpgradeAutoGenerator] 생성: {path} ({typeof(T).Name})");
         }
 
-        private int GetMultiplierForRarity(UpgradeRarity rarity)
+        private int GetMultiplierForRarity(int rarity)
         {
             return rarity switch
             {
-                UpgradeRarity.Common => 1,
-                UpgradeRarity.Uncommon => 2,
-                UpgradeRarity.Rare => 3,
-                UpgradeRarity.Epic => 4,
-                UpgradeRarity.Legendary => 5,
+                1 => 1, // Common
+                2 => 2, // Uncommon
+                3 => 3, // Rare
+                4 => 4, // Epic
+                5 => 5, // Legendary
                 _ => 1
+            };
+        }
+
+        private string GetRarityName(int rarity)
+        {
+            return rarity switch
+            {
+                1 => "Common",
+                2 => "Uncommon",
+                3 => "Rare",
+                4 => "Epic",
+                5 => "Legendary",
+                _ => "Common"
             };
         }
 

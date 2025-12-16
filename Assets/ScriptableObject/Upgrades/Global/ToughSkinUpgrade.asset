@@ -13,8 +13,9 @@ MonoBehaviour:
   m_Name: ToughSkinUpgrade
   m_EditorClassIdentifier: 
   upgradeId: ToughSkinUpgradeSO
-  upgradeName: 
-  description: 
+  upgradeName: "\uC548\uC544\uD504\uAC8C \uB9DE\uB294\uBC95"
+  description: "\uBAA8\uB4E0 \uC6B0\uB9AC\uD300\uC778 \uD53C\uC2A4\uB4E4\uC758 \uBC29\uC5B4\uB825\uC774
+    3 \uC99D\uAC00\uD569\uB2C8\uB2E4"
   icon: {fileID: 0}
   upgradeType: 3
   target: 0

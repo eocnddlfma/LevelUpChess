@@ -14,8 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   upgradeId: BombDropAbilitySO
   upgradeName: "\uD3ED\uD0C4 \uD22C\uD558"
-  description: "\uBE44\uC20D\uC774 \uACF5\uACA9\uD560 \uB54C \uC8FC\uBCC0 \uC801\uC5D0\uAC8C
-    2 \uB370\uBBF8\uC9C0"
+  description: "\uACF5\uACA9\uD55C \uBC94\uC704 \uAE30\uC900 \uC2ED\uC790\uB85C \uC2A4\uD50C\uB380"
   icon: {fileID: 0}
   upgradeType: 2
   target: 0

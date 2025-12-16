@@ -14,7 +14,7 @@ namespace LevelUpChess.Upgrades.Movement
 
         private void Reset()
         {
-            upgradeId = "movement_pawn_larger_attack";
+            upgradeName = "movement_pawn_larger_attack";
             upgradeName = DEFAULT_NAME;
             description = DEFAULT_DESC;
             rarity = 3;

@@ -14,7 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   upgradeId: CounterAttackAbilitySO
   upgradeName: "\uBC18\uACA9"
-  description: "\uB098\uC774\uD2B8\uAC00 \uACF5\uACA9\uBC1B\uC744 \uB54C \uBC18\uACA9"
+  description: "\uACF5\uACA9\uC744 \uBC1B\uC740 \uACBD\uC6B0 \uB300\uC0C1\uC5D0\uAC8C
+    \uACF5\uACA9\uD569\uB2C8\uB2E4."
   icon: {fileID: 0}
   upgradeType: 2
   target: 0

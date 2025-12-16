@@ -16,7 +16,7 @@ namespace LevelUpChess.Upgrades.Movement
         private void Reset()
         {
             // 에디터에서 기본값 설정
-            upgradeId = "movement_pawn_backstep";
+            upgradeName = "movement_pawn_backstep";
             upgradeName = DEFAULT_NAME;
             description = DEFAULT_DESC;
             rarity = 1; // Uncommon

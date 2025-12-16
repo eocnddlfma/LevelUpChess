@@ -14,7 +14,7 @@ namespace LevelUpChess.Upgrades.Movement
 
         private void Reset()
         {
-            upgradeId = "movement_rook_bishop_move";
+            upgradeName = "movement_rook_bishop_move";
             upgradeName = DEFAULT_NAME;
             description = DEFAULT_DESC;
             rarity = 4;

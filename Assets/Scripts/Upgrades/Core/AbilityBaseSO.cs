@@ -15,7 +15,7 @@ namespace LevelUpChess.Upgrades
         [SerializeField] protected int maxStacks = 1;
         
         // IAbility Implementation
-        public string AbilityId => upgradeId;
+        public string AbilityId => UpgradeHash;
         public string AbilityName => upgradeName;
         string IAbility.Description => description;
         public virtual AbilityTrigger Trigger => trigger;
@@ -34,7 +34,7 @@ namespace LevelUpChess.Upgrades
         {
             if (piece == null || piece.Combat == null) return;
             
-            piece.Combat.RemoveAbility(upgradeId);
+            piece.Combat.RemoveAbility(UpgradeHash);
             Debug.Log($"[Ability] {upgradeName} removed from {piece.name}");
         }
         

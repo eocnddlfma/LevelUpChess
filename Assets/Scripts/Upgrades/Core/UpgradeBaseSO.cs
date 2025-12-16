@@ -1,5 +1,8 @@
 using UnityEngine;
 using LevelUpChess.Pieces;
+using System;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace LevelUpChess.Upgrades
 {
@@ -9,7 +12,6 @@ namespace LevelUpChess.Upgrades
     public abstract class UpgradeBaseSO : ScriptableObject
     {
         [Header("기본 정보")]
-        [SerializeField] protected string upgradeId;
         [SerializeField] protected string upgradeName;
         [SerializeField, TextArea(2, 4)] protected string description;
         [SerializeField] protected Sprite icon;
@@ -23,7 +25,7 @@ namespace LevelUpChess.Upgrades
         [SerializeField, Range(1, 5)] protected int rarity = 1;
         
         // Properties
-        public string UpgradeId => upgradeId;
+        public string UpgradeHash => ComputeHash(upgradeName);
         public string UpgradeName => upgradeName;
         public string Description => description;
         public Sprite Icon => icon;
@@ -56,7 +58,7 @@ namespace LevelUpChess.Upgrades
         public virtual void ApplyToTeam(Team team)
         {
             // 기본 구현: 해당 팀의 모든 기물에 적용
-            var pieces = Object.FindObjectsByType<ChessPiece>(FindObjectsSortMode.None);
+            var pieces = UnityEngine.Object.FindObjectsByType<ChessPiece>(FindObjectsSortMode.None);
             foreach (var piece in pieces)
             {
                 if (piece.Team == team && CanApplyTo(piece))
@@ -79,12 +81,26 @@ namespace LevelUpChess.Upgrades
             return description;
         }
         
+        /// <summary>
+        /// 업그레이드 이름의 SHA256 해시 계산
+        /// </summary>
+        private string ComputeHash(string input)
+        {
+            if (string.IsNullOrEmpty(input)) return "";
+            using (SHA256 sha256 = SHA256.Create())
+            {
+                byte[] bytes = Encoding.UTF8.GetBytes(input);
+                byte[] hash = sha256.ComputeHash(bytes);
+                return BitConverter.ToString(hash).Replace("-", "").ToLower();
+            }
+        }
+        
 #if UNITY_EDITOR
         protected virtual void OnValidate()
         {
-            if (string.IsNullOrEmpty(upgradeId))
+            if (string.IsNullOrEmpty(upgradeName))
             {
-                upgradeId = name.ToLower().Replace(" ", "_");
+                upgradeName = "New Upgrade";
             }
             SetDefaultNameAndDescription();
         }

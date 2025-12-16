@@ -14,7 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   upgradeId: NecromancerUpgradeSO
   upgradeName: "\uB124\uD06C\uB85C\uB9E8\uC11C"
-  description: "\uC8FD\uC740 \uC544\uAD70\uC744 \uC880\uBE44\uB85C \uBD80\uD65C\uC2DC\uD0A4\uAE30"
+  description: "\uD0B9\uC758 \uCCB4\uB825\uC774 1\uC774 \uB429\uB2C8\uB2E4. \uD3F0\uC774
+    \uC8FD\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4."
   icon: {fileID: 0}
   upgradeType: 3
   target: 0

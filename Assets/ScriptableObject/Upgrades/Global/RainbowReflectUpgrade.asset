@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: RainbowReflectUpgrade
   m_EditorClassIdentifier: 
   upgradeId: RainbowReflectUpgradeSO
-  upgradeName: "\uBB34\uC9C0\uAC1C \uBC18\uC0AC"
-  description: "\uBAA8\uB4E0 \uC544\uAD70 \uBC18\uC0AC \uB370\uBBF8\uC9C0"
+  upgradeName: "\uBB34\uC9C0\uAC1C\uBC18\uC0AC"
+  description: "\uBC1B\uC740 \uB370\uBBF8\uC9C0\uC758 \uC808\uBC18\uC744 \uBC18\uC0AC\uD569\uB2C8\uB2E4."
   icon: {fileID: 0}
   upgradeType: 3
   target: 0

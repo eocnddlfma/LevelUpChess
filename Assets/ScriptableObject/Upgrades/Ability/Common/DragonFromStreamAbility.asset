@@ -13,9 +13,8 @@ MonoBehaviour:
   m_Name: DragonFromStreamAbility
   m_EditorClassIdentifier: 
   upgradeId: DragonFromStreamAbilitySO
-  upgradeName: "\uC6A9\uC758 \uD0C4\uC0DD"
-  description: "\uD3F0\uC774 \uC8FD\uC744 \uB54C \uC8FC\uBCC0 \uC544\uAD70 \uD3F0\uC5D0\uAC8C
-    \uACF5\uACA9\uB825 +1, \uBC29\uC5B4\uB825 +1"
+  upgradeName: "\uAC1C\uCC9C\uC5D0\uC11C \uC6A9\uB09C\uB2E4"
+  description: "\uD038\uC73C\uB85C \uC2B9\uAE09"
   icon: {fileID: 0}
   upgradeType: 2
   target: 0

@@ -21,7 +21,7 @@ MonoBehaviour:
   target: 0
   pieceFilter: 0
   rarity: 1
-  trigger: 8
+  trigger: 12
   stackable: 0
   maxStacks: 1
   attackBonusPerMove: 2

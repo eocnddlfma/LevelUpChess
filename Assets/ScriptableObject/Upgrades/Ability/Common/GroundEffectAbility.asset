@@ -13,9 +13,11 @@ MonoBehaviour:
   m_Name: GroundEffectAbility
   m_EditorClassIdentifier: 
   upgradeId: GroundEffectAbilitySO
-  upgradeName: "\uB545 \uD6A8\uACFC"
-  description: "\uBE44\uC20D\uC774 \uACF5\uACA9\uD560 \uB54C \uC8FC\uBCC0 \uC801\uC5D0\uAC8C
-    \uACF5\uACA9\uB825 +1"
+  upgradeName: "\uC7A5\uD310"
+  description: "\uC0C1\uB300\uBC29\uC744 \uACF5\uACA9\uD55C \uC704\uCE58\uC5D0 \uC7A5\uD310\uC744
+    \uAE5D\uB2C8\uB2E4. \uD574\uB2F9 \uC7A5\uD310 \uC704\uC5D0 \uC788\uB294 \uC801\uC740
+    \uBE44\uC20D \uACF5\uACA9\uB825\uC758 /3\uC744 \uC785\uC2B5\uB2C8\uB2E4. \uC7A5\uD310
+    \uC9C0\uC18D\uC2DC\uAC04 4\uD134"
   icon: {fileID: 0}
   upgradeType: 2
   target: 0

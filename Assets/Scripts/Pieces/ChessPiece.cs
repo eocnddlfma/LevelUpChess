@@ -118,6 +118,16 @@ namespace LevelUpChess.Pieces
             Bus<TurnChangedEvent>.OnEvent += OnTurnChanged;
         }
         
+        private void Start()
+        {
+            // NetworkGameManager를 통해 로컬 플레이어 팀 확인 후 회전 적용
+            var networkManager = ServiceLocator.Get<NetworkGameManager>();
+            if (networkManager != null && networkManager.LocalPlayerTeam == Team.Black)
+            {
+                RotateForBlackTeam();
+            }
+        }
+        
         private void OnDestroy()
         {
             Bus<TurnChangedEvent>.OnEvent -= OnTurnChanged;
@@ -600,6 +610,18 @@ namespace LevelUpChess.Pieces
                 };
                 
                 sb.AppendLine($"  {moveTypeName} <i>{movement.name}</i>");
+            }
+        }
+
+        /// <summary>
+        /// 흑팀 플레이어를 위한 피스 회전
+        /// </summary>
+        public void RotateForBlackTeam()
+        {
+            SpriteRenderer spriteRenderer = GetComponent<SpriteRenderer>();
+            if (spriteRenderer != null)
+            {
+                spriteRenderer.transform.localRotation = Quaternion.Euler(0, 0, 180);
             }
         }
     }

@@ -13,8 +13,10 @@ MonoBehaviour:
   m_Name: MachoismUpgrade
   m_EditorClassIdentifier: 
   upgradeId: MachoismUpgradeSO
-  upgradeName: "\uB9C8\uCD08\uC774\uC998"
-  description: "\uBAA8\uB4E0 \uC544\uAD70 \uBC29\uC5B4\uB825 +1"
+  upgradeName: "\uB9C8\uCD78\uC774\uC998"
+  description: "\uB4A4\uB85C \uC774\uB3D9\uD558\uC9C0 \uBABB\uD569\uB2C8\uB2E4. \uC606\uC73C\uB85C\uB294
+    \uACF5\uACA9\uD560\uB54C\uB9CC \uC774\uB3D9\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4.
+    \uAC00\uD558\uB294 \uD53C\uD574\uAC00 2\uBC30\uB85C \uC99D\uAC00\uD569\uB2C8\uB2E4."
   icon: {fileID: 0}
   upgradeType: 3
   target: 0

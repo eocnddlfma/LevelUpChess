@@ -13,9 +13,9 @@ MonoBehaviour:
   m_Name: SpawnPawnAbility
   m_EditorClassIdentifier: 
   upgradeId: SpawnPawnAbilitySO
-  upgradeName: "\uD3F0 \uC0DD\uC131"
-  description: "\uD038\uC774 \uACF5\uACA9\uD560 \uB54C \uC8FC\uBCC0 \uC801\uC5D0\uAC8C
-    \uACF5\uACA9\uB825 +1"
+  upgradeName: "\uB3C4\uD2F0\uB0B3\uC74C"
+  description: "\uC774\uB3D9\uC2DC \uC774\uB3D9 \uC804 \uC790\uB9AC\uC5D0 \uD3F0
+    \uC0DD\uC131"
   icon: {fileID: 0}
   upgradeType: 2
   target: 0

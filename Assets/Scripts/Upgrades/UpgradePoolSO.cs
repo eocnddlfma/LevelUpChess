@@ -30,10 +30,6 @@ namespace LevelUpChess.Upgrades
         [Header("=== 뽑기 설정 ===")]
         [SerializeField] private UpgradeWeightSettings weightSettings = new UpgradeWeightSettings();
 
-        // 캐시된 모든 업그레이드 리스트
-        private List<UpgradeBaseSO> _cachedAllUpgrades;
-        private bool _cacheValid = false;
-
         #region Properties
         
         public UpgradeWeightSettings WeightSettings => weightSettings;
@@ -81,11 +77,6 @@ namespace LevelUpChess.Upgrades
         /// </summary>
         public List<UpgradeBaseSO> GetAllUpgrades()
         {
-            if (_cacheValid && _cachedAllUpgrades != null)
-            {
-                return new List<UpgradeBaseSO>(_cachedAllUpgrades);
-            }
-
             var all = new List<UpgradeBaseSO>();
             
             // 공통 업그레이드
@@ -104,10 +95,7 @@ namespace LevelUpChess.Upgrades
             all.AddRange(queenUpgrades.GetAllUpgrades());
             all.AddRange(kingUpgrades.GetAllUpgrades());
 
-            _cachedAllUpgrades = all;
-            _cacheValid = true;
-            
-            return new List<UpgradeBaseSO>(all);
+            return all;
         }
 
         /// <summary>
@@ -157,10 +145,10 @@ namespace LevelUpChess.Upgrades
                 if (drawn.Upgrade != null)
                 {
                     results.Add(drawn);
-                    tempExclude.Add(drawn.Upgrade.UpgradeId);
+                    tempExclude.Add(drawn.Upgrade.UpgradeHash);
                     
                     // 뽑힌 업그레이드 제거
-                    availableUpgrades.RemoveAll(x => x.upgrade.UpgradeId == drawn.Upgrade.UpgradeId);
+                    availableUpgrades.RemoveAll(x => x.upgrade.UpgradeHash == drawn.Upgrade.UpgradeHash);
                 }
             }
 
@@ -203,7 +191,7 @@ namespace LevelUpChess.Upgrades
             foreach (var upgrade in upgrades)
             {
                 if (upgrade == null) continue;
-                if (excludeIds.Contains(upgrade.UpgradeId)) continue;
+                if (excludeIds.Contains(upgrade.UpgradeHash)) continue;
                 if (upgrade.Rarity > maxRarity) continue;
                 if (!upgrade.CanApplyTo(piece)) continue;
 
@@ -288,7 +276,7 @@ namespace LevelUpChess.Upgrades
             // 공통 업그레이드
             foreach (var upgrade in GetAllCommonUpgrades())
             {
-                if (excludeIds != null && excludeIds.Contains(upgrade.UpgradeId)) continue;
+                if (excludeIds != null && excludeIds.Contains(upgrade.UpgradeHash)) continue;
                 if (upgrade.CanApplyTo(piece))
                 {
                     applicable.Add(upgrade);
@@ -301,7 +289,7 @@ namespace LevelUpChess.Upgrades
             {
                 foreach (var upgrade in piecePool.GetAllUpgrades())
                 {
-                    if (excludeIds != null && excludeIds.Contains(upgrade.UpgradeId)) continue;
+                    if (excludeIds != null && excludeIds.Contains(upgrade.UpgradeHash)) continue;
                     if (upgrade.CanApplyTo(piece))
                     {
                         applicable.Add(upgrade);
@@ -335,9 +323,11 @@ namespace LevelUpChess.Upgrades
         /// </summary>
         public UpgradeBaseSO GetUpgradeById(string id)
         {
+            if (string.IsNullOrEmpty(id)) return null;
+            
             foreach (var upgrade in GetAllUpgrades())
             {
-                if (upgrade.UpgradeId == id)
+                if (upgrade != null && upgrade.UpgradeHash == id)
                 {
                     return upgrade;
                 }
@@ -432,29 +422,10 @@ namespace LevelUpChess.Upgrades
 
         #endregion
 
-        #region Cache Management
-
-        /// <summary>
-        /// 캐시 무효화 (업그레이드 추가/제거 후 호출)
-        /// </summary>
-        public void InvalidateCache()
-        {
-            _cacheValid = false;
-            _cachedAllUpgrades = null;
-        }
-
-        private void OnValidate()
-        {
-            InvalidateCache();
-        }
-
-        #endregion
-
 #if UNITY_EDITOR
         [ContextMenu("Validate Upgrades")]
         private void ValidateUpgrades()
         {
-            InvalidateCache();
             var all = GetAllUpgrades();
             var ids = new HashSet<string>();
             int nullCount = 0;
@@ -469,21 +440,21 @@ namespace LevelUpChess.Upgrades
                     continue;
                 }
 
-                if (string.IsNullOrEmpty(upgrade.UpgradeId))
+                if (string.IsNullOrEmpty(upgrade.UpgradeHash))
                 {
-                    Debug.LogError($"[UpgradePool] {upgrade.name}의 ID가 비어있습니다!");
+                    Debug.LogError($"[UpgradePool] {upgrade.name}의 해시가 비어있습니다!");
                     emptyIdCount++;
                     continue;
                 }
 
-                if (ids.Contains(upgrade.UpgradeId))
+                if (ids.Contains(upgrade.UpgradeHash))
                 {
-                    Debug.LogError($"[UpgradePool] 중복된 ID: {upgrade.UpgradeId}");
+                    Debug.LogError($"[UpgradePool] 중복된 해시: {upgrade.UpgradeHash}");
                     duplicateCount++;
                 }
                 else
                 {
-                    ids.Add(upgrade.UpgradeId);
+                    ids.Add(upgrade.UpgradeHash);
                 }
             }
 

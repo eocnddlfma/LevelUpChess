@@ -13,9 +13,12 @@ MonoBehaviour:
   m_Name: StructuralViolenceAbility
   m_EditorClassIdentifier: 
   upgradeId: StructuralViolenceAbilitySO
-  upgradeName: "\uAD6C\uC870\uC801 \uD3ED\uB825"
-  description: "\uD3F0\uC774 \uC8FD\uC744 \uB54C \uC8FC\uBCC0 \uC801 \uD3F0\uC5D0\uAC8C
-    \uACF5\uACA9\uB825 +1"
+  upgradeName: "\uD3F0 \uAD6C\uC870\uC801 \uD3ED\uB825"
+  description: "\uACF5\uACA9\uD560\uB54C \uC5F0\uACB0(\uC8FC\uBCC0 8\uCE78\uC5D0
+    \uB2E4\uB978 \uD3F0\uC774 \uC788\uB2E4\uBA74 +1, \uD574\uB2F9 \uD3F0\uC744 \uAE30\uC900\uC73C\uB85C
+    \uB610 \uC5F0\uACB0\uD568)\uB418\uC5B4 \uC788\uC744\uB54C \uC5F0\uACB0\uB41C
+    \uD3F0 \uAC2F\uC218\uB9CC\uD07C \uAC00\uD558\uB294 \uB370\uBBF8\uC9C0 \uBC30\uB85C
+    \uC99D\uAC00."
   icon: {fileID: 0}
   upgradeType: 2
   target: 0

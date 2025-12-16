@@ -13,9 +13,8 @@ MonoBehaviour:
   m_Name: ForkAttackAbility
   m_EditorClassIdentifier: 
   upgradeId: ForkAttackAbilitySO
-  upgradeName: "\uD3EC\uD06C \uACF5\uACA9"
-  description: "\uB098\uC774\uD2B8\uAC00 \uACF5\uACA9\uD560 \uB54C \uC8FC\uBCC0 \uC801\uC5D0\uAC8C
-    \uACF5\uACA9\uB825 +1"
+  upgradeName: "\uD3EC\uD06C\uD084"
+  description: "\uD3EC\uD06C\uC5D0 \uC131\uACF5\uD588\uC744\uB54C \uB458\uB2E4 \uB54C\uB9BD\uB2C8\uB2E4."
   icon: {fileID: 0}
   upgradeType: 2
   target: 0

@@ -13,9 +13,10 @@ MonoBehaviour:
   m_Name: LookAtMeAbility
   m_EditorClassIdentifier: 
   upgradeId: LookAtMeAbilitySO
-  upgradeName: "\uB098\uB97C \uBD10"
-  description: "\uB8E9\uC774 \uACF5\uACA9\uBC1B\uC744 \uB54C \uC8FC\uBCC0 \uC544\uAD70\uC5D0\uAC8C
-    \uBC29\uC5B4\uB825 +1"
+  upgradeName: "\uB8E9\uC5E3\uBBF8"
+  description: "\uC774 \uD53C\uC2A4\uB97C \uACF5\uACA9\uD55C \uD53C\uC2A4\uB97C \uC774
+    \uD53C\uC2A4\uAC00 \uC8FD\uAE30 \uC804\uAE4C\uC9C0 \uB2E4\uB978 \uB300\uC0C1\uC744
+    \uACF5\uACA9\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."
   icon: {fileID: 0}
   upgradeType: 2
   target: 0
@@ -24,4 +25,3 @@ MonoBehaviour:
   trigger: 12
   stackable: 0
   maxStacks: 1
-  tauntRange: 1

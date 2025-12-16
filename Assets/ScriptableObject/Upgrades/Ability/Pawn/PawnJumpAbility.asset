@@ -13,9 +13,10 @@ MonoBehaviour:
   m_Name: PawnJumpAbility
   m_EditorClassIdentifier: 
   upgradeId: PawnJumpAbilitySO
-  upgradeName: "\uD3F0 \uC810\uD504"
-  description: "\uBE44\uC20D\uC774 \uC774\uB3D9\uD560 \uB54C \uD3F0\uC744 \uB6F0\uC5B4\uB118\uC744
-    \uC218 \uC788\uC74C"
+  upgradeName: "\uC774\uD3F0\uC740 \uC774\uC81C \uC81C\uAECD\uB2C8\uB2E4"
+  description: "\uC774\uB3D9\uCE78\uC744 \uACC4\uC0B0\uD560\uB54C \uD3F0\uC774 \uC788\uB294
+    \uACBD\uC6B0 \uD3F0\uC744 \uB744\uC5B4 \uB118\uC5B4\uC11C \uACF5\uACA9\uD560
+    \uC218 \uC788\uB2E4"
   icon: {fileID: 0}
   upgradeType: 2
   target: 0

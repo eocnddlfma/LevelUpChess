@@ -14,7 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   upgradeId: DeepThrustAbilitySO
   upgradeName: "\uAE4A\uC740 \uCC0C\uB974\uAE30"
-  description: "\uB8E9\uC774 \uACF5\uACA9\uD560 \uB54C \uACF5\uACA9\uB825 +2"
+  description: "\uACF5\uACA9\uD55C \uBC29\uD5A5\uC73C\uB85C \uACF5\uACA9\uBC1B\uC740
+    \uB300\uC0C1 \uB4A4\uC5D0 \uC788\uB294 \uB300\uC0C1\uAE4C\uC9C0 \uD53C\uD574\uB97C
+    \uC785\uC74C."
   icon: {fileID: 0}
   upgradeType: 2
   target: 0

@@ -13,9 +13,10 @@ MonoBehaviour:
   m_Name: KnightTimeAbility
   m_EditorClassIdentifier: 
   upgradeId: KnightTimeAbilitySO
-  upgradeName: "\uAE30\uC0AC\uC758 \uC2DC\uAC04"
-  description: "\uB098\uC774\uD2B8\uAC00 \uACF5\uACA9\uD560 \uB54C \uACF5\uACA9\uB825
-    +3"
+  upgradeName: "\uB098\uC774\uD2B8 \uD0C0\uC784"
+  description: "\uD604\uC7AC \uD134\uC218\uB97C 3\uC73C\uB85C \uB098\uB208 \uAC12\uC774
+    2\uC77C \uACBD\uC6B0 \uB370\uBBF8\uC9C0\uB97C \uBC1B\uC9C0 \uC54A\uACE0 \uACF5\uACA9\uB825
+    +5\uAC00 \uB429\uB2C8\uB2E4."
   icon: {fileID: 0}
   upgradeType: 2
   target: 0
@@ -24,3 +25,4 @@ MonoBehaviour:
   trigger: 2
   stackable: 0
   maxStacks: 1
+  attackBonus: 5

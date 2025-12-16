@@ -13,15 +13,16 @@ MonoBehaviour:
   m_Name: PawnGraceAbility
   m_EditorClassIdentifier: 
   upgradeId: PawnGraceAbilitySO
-  upgradeName: "\uD3F0\uC758 \uC740\uCD1D"
-  description: "\uD3F0\uC774 \uC8FD\uC744 \uB54C \uC8FC\uBCC0 \uC544\uAD70 \uD3F0\uC5D0\uAC8C
-    \uCCB4\uB825 +1"
+  upgradeName: "\uD3F0\uC740\uC815"
+  description: "1\uD68C \uACF5\uACA9\uC744 \uBC1B\uC544\uB3C4 \uD574\uB2F9 \uACF5\uACA9\uC744
+    \uBB34\uD6A8\uD654\uD568. \uC774 \uD53C\uC2A4 2\uD68C \uD589\uB3D9\uC2DC \uD6A8\uACFC
+    \uCDA9\uC804\uB428."
   icon: {fileID: 0}
   upgradeType: 2
   target: 0
   pieceFilter: 1
   rarity: 1
-  trigger: 2
+  trigger: 12
   stackable: 0
   maxStacks: 1
   actionsToRecharge: 2
