@@ -18,7 +18,7 @@ namespace LevelUpChess.Pieces.Movements.UpgradableMovements
         }
 
 #if UNITY_EDITOR
-        protected virtual void OnValidate()
+        protected override void OnValidate()
         {
             base.OnValidate();
             pieceFilter = PieceTypeFilter.King;

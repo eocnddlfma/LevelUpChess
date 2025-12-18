@@ -16,7 +16,6 @@ namespace LevelUpChess.Upgrades
     /// <summary>
     /// 업그레이드 시스템 매니저
     /// 레벨업 시 업그레이드 선택, 적용 및 네트워크 동기화 담당
-    /// NetworkBehaviour로 작동하며 프리팹으로 생성하여 NetworkManager에 등록 필요
     /// </summary>
     public class UpgradeManager : NetworkBehaviour
     {
@@ -67,6 +66,7 @@ namespace LevelUpChess.Upgrades
         public event Action<List<UpgradeBaseSO>, ChessPiece> OnUpgradeSelectionAvailable;
         public event Action<UpgradeBaseSO, ChessPiece> OnUpgradeApplied;
         public event Action OnUpgradeSelectionCancelled;
+        public event Action OnPlayerUpgradeSelectionCompleted;
 
         public static UpgradeManager Instance { get; private set; }
 
@@ -96,20 +96,12 @@ namespace LevelUpChess.Upgrades
 
         private void OnEnable()
         {
-            Bus<PlayerLevelUpEvent>.OnEvent += OnPlayerLevelUp;
             Bus<AttackSuccessEvent>.OnEvent += OnAttackSuccess;
         }
 
         private void OnDisable()
         {
-            Bus<PlayerLevelUpEvent>.OnEvent -= OnPlayerLevelUp;
             Bus<AttackSuccessEvent>.OnEvent -= OnAttackSuccess;
-        }
-
-        private void OnPlayerLevelUp(PlayerLevelUpEvent eventData)
-        {
-            // 플레이어가 레벨업하면 업그레이드 선택 창 표시
-            StartCoroutine(ShowUpgradeSelectionForPlayer(eventData));
         }
 
         private void OnAttackSuccess(AttackSuccessEvent eventData)
@@ -122,16 +114,7 @@ namespace LevelUpChess.Upgrades
                                         eventData.DamageDealt, eventData.TargetDied);
         }
 
-        private System.Collections.IEnumerator ShowUpgradeSelectionForPlayer(PlayerLevelUpEvent eventData)
-        {
-            // 잠시 기다렸다가 업그레이드 선택 창 표시 (UI가 준비될 시간)
-            yield return new UnityEngine.WaitForSeconds(0.5f);
-            
-            // 해당 팀의 플레이어에게 업그레이드 선택 제공
-            OfferUpgradeSelection(eventData);
-        }
-
-        private void OfferUpgradeSelection(PlayerLevelUpEvent eventData)
+        public void OfferUpgradeSelection(PlayerLevelUpEvent eventData)
         {
             Team team = eventData.Team;
             int playerLevel = eventData.NewLevel;
@@ -189,9 +172,9 @@ namespace LevelUpChess.Upgrades
             _pendingNetworkSelections[coord] = pending;
 
             // 모든 클라이언트에 동일한 옵션 전송
-            ShowSelectionClientRpc(pending.Options, coord.x, coord.y, (int)pending.OwnerTeam);
+            ShowSelectionClientRpc(pending.Options, coord.x, coord.y, (int)pending.OwnerTeam, true);
 
-            // 선택 완료까지 대기 (코루틴이나 이벤트로 처리)
+            
         }
 
         private void AutoLoadUpgradePool()
@@ -369,13 +352,13 @@ namespace LevelUpChess.Upgrades
         }
 
         [ClientRpc]
-        private void ShowSelectionClientRpc(int[] upgradeIndices, int tileX, int tileY, int ownerTeam)
+        private void ShowSelectionClientRpc(int[] upgradeIndices, int tileX, int tileY, int ownerTeam, bool isGlobal = false)
         {
             // 클라이언트 측: UI 표시
             var ui = FindFirstObjectByType<UpgradeSelectionPanelUI>();
             if (ui != null)
             {
-                ui.ShowWithOptions(upgradeIndices, tileX, tileY, ownerTeam);
+                ui.ShowWithOptions(upgradeIndices, tileX, tileY, ownerTeam, isGlobal);
             }
             else
             {
@@ -437,6 +420,9 @@ namespace LevelUpChess.Upgrades
                 Debug.LogWarning($"[UpgradeManager] Tile occupant: {(tile?.OccupyingPiece != null ? tile.OccupyingPiece.name : "NULL")}");
 
                 pending.Chosen = true; // 선택 완료로 설정하여 더 이상 선택하지 못함
+                Debug.Log("[UpgradeManager] Invoking OnPlayerUpgradeSelectionCompleted for global upgrade");
+                OnPlayerUpgradeSelectionCompleted?.Invoke();
+                OnPlayerUpgradeSelectionCompletedClientRpc();
                 return;
             }
 
@@ -457,6 +443,9 @@ namespace LevelUpChess.Upgrades
 
             // 대기 상태 초기화
             ClearPendingSelection();
+            Debug.Log("[UpgradeManager] Invoking OnPlayerUpgradeSelectionCompleted");
+            OnPlayerUpgradeSelectionCompleted?.Invoke();
+            OnPlayerUpgradeSelectionCompletedClientRpc();
         }
 
         [ClientRpc]
@@ -932,12 +921,29 @@ namespace LevelUpChess.Upgrades
             ApplyGlobalUpgrade((int)team, upgrade, teamPieces);
             Debug.Log($"[UpgradeManager] Applied selected global upgrade '{upgrade.UpgradeName}' to team {team}.");
 
-            // UI 숨김
-            var ui = UnityEngine.Object.FindFirstObjectByType<LevelUpChess.Upgrades.UI.UpgradeSelectionPanelUI>();
-            if (ui != null)
-            {
-                ui.Hide();
-            }
+            // 선택 완료 이벤트 발생
+            OnPlayerUpgradeSelectionCompleted?.Invoke();
+            // OnPlayerUpgradeSelectionCompletedClientRpc(); // 서버에서만 호출
+        }
+
+        [Rpc(SendTo.Server)]
+        public void ApplyGlobalUpgradeServerRpc(int cardIndex, int upgradeIndex, Team team)
+        {
+            var upgrade = GetUpgradeByIndex(upgradeIndex);
+            ApplyGlobalUpgrade(upgrade, team);
+
+            // 글로벌 업그레이드 선택 결과를 모든 클라이언트에 알림
+            NotifySelectionResultClientRpc(cardIndex, 0, 0, NetworkManager.Singleton.LocalClientId);
+
+            // UI 닫힘 후 다음 이벤트 처리
+            OnPlayerUpgradeSelectionCompletedClientRpc();
+        }
+
+        [ClientRpc]
+        public void OnPlayerUpgradeSelectionCompletedClientRpc()
+        {
+            // UI 닫힘 후 다음 이벤트 처리는 UpgradeSelectionPanelUI.Hide()에서
+            // EventQueue.Instance.OnUIClosed()를 호출하여 처리한다.
         }
 
         // 네트워크/외부에서 업그레이드 인덱스로 업그레이드 정보를 얻을 수 있도록 공개 헬퍼
@@ -945,6 +951,12 @@ namespace LevelUpChess.Upgrades
         {
             if (upgradePool == null) return null;
             return upgradePool.GetUpgradeByIndex(index);
+        }
+
+        public int GetUpgradeIndex(UpgradeBaseSO upgrade)
+        {
+            if (upgradePool == null) return -1;
+            return upgradePool.GetUpgradeIndex(upgrade);
         }
 
         /// <summary>
@@ -1083,6 +1095,9 @@ namespace LevelUpChess.Upgrades
             upgrade.ApplyGlobalEffect(team);
             
             Debug.Log($"[UpgradeManager] Applied global upgrade '{upgrade.UpgradeName}' to team {team}");
+            
+            // 이벤트 큐에 메시지 추가
+            EventQueue.Instance.Enqueue(new ShowMessageEvent { Message = $"{team} 팀에 '{upgrade.UpgradeName}' 글로벌 업그레이드가 적용되었습니다!" });
             
             // 클라이언트에 알림
             NotifyGlobalUpgradeAppliedClientRpc(upgrade.UpgradeHash, team);

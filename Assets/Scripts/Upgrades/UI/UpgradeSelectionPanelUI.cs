@@ -17,6 +17,7 @@ namespace LevelUpChess.Upgrades.UI
     /// </summary>
     public class UpgradeSelectionPanelUI : MonoBehaviour
     {
+        private static bool isShowing = false;
         [Header("UI References")]
         [SerializeField] private GameObject panelRoot;
         [SerializeField] private CanvasGroup canvasGroup;
@@ -258,13 +259,36 @@ namespace LevelUpChess.Upgrades.UI
 
             _canSelect = false; // disable further selection locally to prevent double clicks
 
+            // 선택된 카드 하이라이트 애니메이션
+            _cards[cardIndex].HighlightAsChosen(() =>
+            {
+                // 선택 카드 애니메이션이 끝난 뒤 패널 닫기
+                Hide();
+            });
+
+            // 선택되지 않은 카드들 작아지며 사라지는 애니메이션
+            for (int i = 0; i < _cards.Count; i++)
+            {
+                if (i == cardIndex) continue;
+
+                _cards[i].ShrinkAndHide(() =>
+                {
+                    // 나머지 카드는 단순히 사라지기만 하면 되고,
+                    // 큐 진행 타이밍은 선택 카드 애니메이션 기준으로 맞춘다.
+                });
+            }
+
+            // 선택된 카드의 애니메이션이 끝난 후에도 Hide() 호출 (중복 방지)
+            // HighlightAsChosen의 OnComplete에 콜백 추가 필요 없음, 이미 ShrinkAndHide에서 처리
+
             // 요청: 서버에 선택 전송
             if (UpgradeManager.Instance != null)
             {
                 if (_isGlobalSelection)
                 {
                     // 글로벌 업그레이드 선택
-                    UpgradeManager.Instance.ApplyGlobalUpgrade(_cards[cardIndex].Upgrade, _targetTeam);
+                    var upgradeIndex = UpgradeManager.Instance.GetUpgradeIndex(_cards[cardIndex].Upgrade);
+                    UpgradeManager.Instance.ApplyGlobalUpgradeServerRpc(cardIndex, upgradeIndex, _targetTeam);
                 }
                 else
                 {
@@ -279,8 +303,8 @@ namespace LevelUpChess.Upgrades.UI
         /// </summary>
         private void OnUpgradeApplied(UpgradeBaseSO upgrade, ChessPiece piece)
         {
-            // 선택 완료 후 패널 숨김
-            Hide();
+            // 선택 완료 후 패널 숨김 - 애니메이션 후 OnCardSelected에서 처리하므로 여기서는 제거
+            // Hide();
         }
 
         /// <summary>
@@ -297,7 +321,6 @@ namespace LevelUpChess.Upgrades.UI
         private void OnSkipClicked()
         {
             _upgradeManager?.CancelSelection();
-            Hide();
         }
 
         /// <summary>
@@ -306,7 +329,6 @@ namespace LevelUpChess.Upgrades.UI
         private void OnCloseClicked()
         {
             _upgradeManager?.CancelSelection();
-            Hide();
         }
 
         /// <summary>
@@ -314,8 +336,10 @@ namespace LevelUpChess.Upgrades.UI
         /// </summary>
         public void Show()
         {
+            if (isShowing) return;
             if (_isVisible) return;
             _isVisible = true;
+            isShowing = true;
 
             panelRoot.SetActive(true);
             
@@ -337,7 +361,7 @@ namespace LevelUpChess.Upgrades.UI
         /// <summary>
         /// 서버에서 전달된 옵션으로 UI를 표시합니다.
         /// </summary>
-        public void ShowWithOptions(int[] upgradeIndices, int tileX, int tileY, int ownerTeam)
+        public void ShowWithOptions(int[] upgradeIndices, int tileX, int tileY, int ownerTeam, bool isGlobal = false)
         {
             _currentTileX = tileX;
             _currentTileY = tileY;
@@ -357,24 +381,34 @@ namespace LevelUpChess.Upgrades.UI
                 }
             }
 
-            // 좌표 기준으로 기물을 찾아서 UI에 전달합니다. 기물이 아직 없으면 잠깐 대기합니다.
+            // 좌표 기준으로 글로벌 업그레이드인지 판별 (하위 호환성 유지)
             var coord = new UnityEngine.Vector2Int(tileX, tileY);
-            var boardMgr = FindFirstObjectByType<LevelUpChess.Board.BoardManager>();
-            ChessPiece piece = null;
-
-            if (boardMgr != null)
+            bool isGlobalUpgrade = isGlobal || (coord == UnityEngine.Vector2Int.zero);
+            if (isGlobalUpgrade)
             {
-                piece = boardMgr.GetPieceAt(coord);
-            }
-
-            if (piece != null)
-            {
-                OnSelectionAvailable(upgrades, piece);
+                // 글로벌 업그레이드
+                ShowGlobalUpgradeSelections(upgrades, (Team)ownerTeam);
             }
             else
             {
-                // 기물이 아직 생성되지 않았을 수 있으므로 최대 2초 동안 폴링
-                StartCoroutine(WaitForPieceAndShow(upgrades, coord, 2f, ownerTeam));
+                // 피스 업그레이드
+                var boardMgr = FindFirstObjectByType<LevelUpChess.Board.BoardManager>();
+                ChessPiece piece = null;
+
+                if (boardMgr != null)
+                {
+                    piece = boardMgr.GetPieceAt(coord);
+                }
+
+                if (piece != null)
+                {
+                    OnSelectionAvailable(upgrades, piece);
+                }
+                else
+                {
+                    // 기물이 아직 생성되지 않았을 수 있으므로 최대 2초 동안 폴링
+                    StartCoroutine(WaitForPieceAndShow(upgrades, coord, 2f, ownerTeam));
+                }
             }
 
             // 선택 권한 결정: NetworkGameManager의 LocalPlayerTeam과 비교
@@ -416,14 +450,14 @@ namespace LevelUpChess.Upgrades.UI
                 }
             }
 
-            // 선택자라면 즉시 패널 닫기
-            if (NetworkManager.Singleton.LocalClientId == chosenClientId)
+            // 선택자라면 즉시 패널 닫기 (피스 업그레이드만)
+            if (NetworkManager.Singleton.LocalClientId == chosenClientId && !_isGlobalSelection)
             {
                 Hide();
                 return;
             }
 
-            // 비선택자는 하이라이트 애니메이션이 끝난 뒤 패널을 닫도록 함
+            // 비선택자 또는 글로벌 선택자는 하이라이트 애니메이션이 끝난 뒤 패널을 닫도록 함
             StartCoroutine(HideAfterDelay(0.8f));
         }
 
@@ -440,6 +474,7 @@ namespace LevelUpChess.Upgrades.UI
         {
             if (!_isVisible && !immediate) return;
             _isVisible = false;
+            isShowing = false;
 
             if (immediate)
             {
@@ -467,6 +502,14 @@ namespace LevelUpChess.Upgrades.UI
             // Time.timeScale = 1f;
 
             _targetPiece = null;
+
+             // 카드 애니메이션 및 패널 닫기가 모두 끝난 시점에서
+             // EventQueue에 현재 UI 이벤트 처리가 완료되었음을 알린다.
+            var eventQueue = EventQueue.Instance;
+            if (eventQueue != null)
+            {
+                eventQueue.OnUIClosed();
+            }
         }
 
         private System.Collections.IEnumerator FadeIn()

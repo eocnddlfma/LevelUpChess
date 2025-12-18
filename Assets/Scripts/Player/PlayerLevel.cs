@@ -2,6 +2,8 @@ using UnityEngine;
 using LevelUpChess.Events;
 using LevelUpChess.Core;
 using LevelUpChess.Pieces;
+using LevelUpChess.Upgrades;
+using LevelUpChess.Managers;
 
 namespace LevelUpChess.Player
 {
@@ -96,12 +98,33 @@ namespace LevelUpChess.Player
             
             Debug.Log($"[PlayerLevel] {_team} player LevelUp! Used {expNeeded} exp, remaining: {_currentExp}, next level needs: {ExpToNextLevel}");
             
-            // 레벨업 이벤트 발생
-            Bus<PlayerLevelUpEvent>.Raise(new PlayerLevelUpEvent
+            // 먼저 팀 강화
+            BoostTeamPieces();
+            
+            // 그 후 업그레이드 선택을 EventQueue에 enqueue
+            var upgradeManager = LevelUpChess.Upgrades.UpgradeManager.Instance;
+            if (upgradeManager != null)
             {
-                Team = _team,
-                NewLevel = _level
-            });
+                // 선택 완료 콜백 등록
+                upgradeManager.OnPlayerUpgradeSelectionCompleted += OnPlayerUpgradeSelectionCompleted;
+
+                // 플레이어 레벨업 이벤트를 큐에 쌓아서 순차 처리
+                EventQueue.Instance.Enqueue(new PlayerLevelUpEvent
+                {
+                    Team = _team,
+                    NewLevel = _level
+                });
+            }
+            else
+            {
+                Debug.LogWarning("[PlayerLevel] UpgradeManager not found!");
+                // UpgradeManager가 없으면 기존처럼 바로 브로드캐스트
+                Bus<PlayerLevelUpEvent>.Raise(new PlayerLevelUpEvent
+                {
+                    Team = _team,
+                    NewLevel = _level
+                });
+            }
         }
         
         /// <summary>
@@ -121,5 +144,51 @@ namespace LevelUpChess.Player
                 ExpToNextLevel = ExpToNextLevel
             });
         }
-    }
+        /// <summary>
+        /// 팀의 살아있는 기물들 스탯 증가
+        /// </summary>
+        private void BoostTeamPieces()
+        {
+            var gameManager = ServiceLocator.Get<NetworkGameManager>();
+            if (gameManager == null) return;
+            
+            var teamPieces = gameManager.GetPiecesOfTeam(_team);
+            int boostedCount = 0;
+            
+            foreach (var piece in teamPieces)
+            {
+                if (piece.IsAlive)
+                {
+                    // 공격력 +1, 체력 +1
+                    piece.Stats.AddModifier(StatType.Attack, 1);
+                    piece.Stats.AddModifier(StatType.Health, 1);
+                    boostedCount++;
+                    
+                    Debug.Log($"[PlayerLevel] {piece.name} boosted: +1 Attack, +1 Health");
+                }
+            }
+            
+            if (boostedCount > 0)
+            {
+                Debug.Log($"[PlayerLevel] {_team} player level up boosted {boostedCount} pieces");
+            }
+        }
+
+        private void OnPlayerUpgradeSelectionCompleted()
+        {
+            Debug.Log("[PlayerLevel] Player upgrade selection completed");
+            // 콜백 해제
+            var upgradeManager = LevelUpChess.Upgrades.UpgradeManager.Instance;
+            if (upgradeManager != null)
+            {
+                upgradeManager.OnPlayerUpgradeSelectionCompleted -= OnPlayerUpgradeSelectionCompleted;
+            }
+            
+            // 이벤트 발생
+            Bus<PlayerLevelUpEvent>.Raise(new PlayerLevelUpEvent
+            {
+                Team = _team,
+                NewLevel = _level
+            });
+        }    }
 }

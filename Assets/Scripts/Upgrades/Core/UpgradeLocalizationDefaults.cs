@@ -65,6 +65,7 @@ namespace LevelUpChess.Upgrades
             { "VampirismAbilitySO", ("흡혈", "공격 시 공격력의 1/4만큼 체력을 회복합니다.") },
             { "ForceMassAccelAbilitySO", ("F=ma", "공격 거리에 비례해 피해가 증가합니다.") },
             { "KamikazeAbilitySO", ("카미카제", "사망 시 주변 8칸에 현재 공격력만큼 피해를 줍니다.") },
+            { "BerserkerAbilitySO", ("광전사", "체력이 낮을수록 공격력이 증가합니다.") },
 
             // Pawn abilities
             { "PawnAutoMoveAbilitySO", ("자동이동", "행동 후 자동으로 한 칸 전진하며 앞에 적이 있으면 공격합니다.") },

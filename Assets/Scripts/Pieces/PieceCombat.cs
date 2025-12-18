@@ -62,7 +62,7 @@ namespace LevelUpChess.Pieces
         // 레벨 시스템
         private int _level = 1;
         private int _currentExp = 0;
-        private bool _pendingLevelUp = false;
+        private int _pendingLevelUps = 0;
         
         // 능력 시스템
         private List<IAbility> _abilities = new List<IAbility>();
@@ -347,16 +347,20 @@ namespace LevelUpChess.Pieces
                                     upgradeManager.ExecuteAbilities(_piece, AbilityTrigger.OnAfterMove, moveContext);
                                 }
                                 
-                                if (_pendingLevelUp)
+                                if (_pendingLevelUps > 0)
                                 {
-                                    Bus<PieceLevelUpEvent>.Raise(new PieceLevelUpEvent
+                                    for (int i = 0; i < _pendingLevelUps; i++)
                                     {
-                                        Piece = _piece,
-                                        NewLevel = _level,
-                                        AttackIncrease = 0, // 이미 증가됨
-                                        HealthIncrease = 0  // 이미 증가됨
-                                    });
-                                    _pendingLevelUp = false;
+                                        Debug.Log($"[PieceCombat] Enqueuing PieceLevelUpEvent for {_piece.name} to level {_level - _pendingLevelUps + i + 1}");
+                                        EventQueue.Instance.Enqueue(new PieceLevelUpEvent
+                                        {
+                                            Piece = _piece,
+                                            NewLevel = _level - _pendingLevelUps + i + 1,
+                                            AttackIncrease = 0, // 이미 증가됨
+                                            HealthIncrease = 0  // 이미 증가됨
+                                        });
+                                    }
+                                    _pendingLevelUps = 0;
                                 }
                                 onComplete?.Invoke();
                             });
@@ -739,15 +743,17 @@ namespace LevelUpChess.Pieces
             Debug.Log($"[PieceCombat] {_piece.name} gained {amount} exp. Total: {_currentExp}/{ExpToNextLevel} (Level {_level})");
             
             // 레벨업 체크 - 경험치가 충분한 동안 계속 레벨업
+            int levelUps = 0;
             while (_currentExp >= ExpToNextLevel)
             {
                 LevelUp();
+                levelUps++;
             }
             
-            if (_level > previousLevel)
+            if (levelUps > 0)
             {
                 Debug.Log($"[PieceCombat] {_piece.name} leveled up from {previousLevel} to {_level}! Remaining exp: {_currentExp}/{ExpToNextLevel}");
-                _pendingLevelUp = true;
+                _pendingLevelUps += levelUps;
             }
             else
             {

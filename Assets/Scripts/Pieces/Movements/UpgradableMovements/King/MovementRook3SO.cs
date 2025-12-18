@@ -18,7 +18,7 @@ namespace LevelUpChess.Pieces.Movements.UpgradableMovements
         }
 
 #if UNITY_EDITOR
-        protected virtual void OnValidate()
+        protected override void OnValidate()
         {
             base.OnValidate();
             pieceFilter = PieceTypeFilter.King;
@@ -48,13 +48,13 @@ namespace LevelUpChess.Pieces.Movements.UpgradableMovements
 
                     if (t.OccupyingPiece == null)
                     {
-                        moves.Add(new Move(piece, piece.CurrentTile, t, MoveType.Move));
+                        moves.Add(new Move(pos, cur));
                     }
                     else
                     {
                         if (t.OccupyingPiece.Team != piece.Team)
                         {
-                            moves.Add(new Move(piece, piece.CurrentTile, t, MoveType.Attack));
+                            moves.Add(new Move(pos, cur) { isCapture = true });
                         }
                         break;
                     }

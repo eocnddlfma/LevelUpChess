@@ -9906,6 +9906,7 @@ GameObject:
   - component: {fileID: 1820837523}
   - component: {fileID: 1820837525}
   - component: {fileID: 1820837524}
+  - component: {fileID: 1820837526}
   m_Layer: 0
   m_Name: Managers
   m_TagString: Untagged
@@ -9994,6 +9995,18 @@ MonoBehaviour:
   ShowTopMostFoldoutHeaderGroup: 1
   boardGenerator: {fileID: 1551606544}
   gameMessageUI: {fileID: 527288095}
+--- !u!114 &1820837526
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1820837518}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fcc832e454773c244ba22e71b58a0721, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1001 &1836970163
 PrefabInstance:
   m_ObjectHideFlags: 0

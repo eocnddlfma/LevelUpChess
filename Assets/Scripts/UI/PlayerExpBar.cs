@@ -24,6 +24,8 @@ namespace LevelUpChess.UI
         [Header("Settings")]
         [SerializeField] private Color fillColor = Color.yellow;
         
+        public Team TargetTeam => targetTeam;
+        
         // 플레이어 레벨/경험치 상태
         private int _level = 1;
         private int _currentExp = 0;
@@ -109,59 +111,39 @@ namespace LevelUpChess.UI
             
             Debug.Log($"[PlayerExpBar] {targetTeam} player LevelUp! Used {expNeeded} exp, remaining: {_currentExp}, next level needs: {ExpToNextLevel}");
             
-            // 플레이어 레벨업 시 팀의 살아있는 기물들 스탯 증가
+            // 먼저 팀 강화
             BoostTeamPieces();
             
-            // 글로벌 업그레이드 선택 표시
-            ShowGlobalUpgradeSelection();
-        }
-        
-        /// <summary>
-        /// 글로벌 업그레이드 선택 UI 표시
-        /// </summary>
-        private void ShowGlobalUpgradeSelection()
-        {
-            var upgradeManager = UpgradeManager.Instance;
-            if (upgradeManager == null) return;
-            
-            // 사용 가능한 글로벌 업그레이드 가져오기
-            var availableGlobalUpgrades = upgradeManager.GetAvailableGlobalUpgrades(targetTeam);
-            if (availableGlobalUpgrades == null || availableGlobalUpgrades.Count == 0)
+            // 그 후 업그레이드 선택을 EventQueue에 enqueue
+            var upgradeManager = LevelUpChess.Upgrades.UpgradeManager.Instance;
+            if (upgradeManager != null)
             {
-                Debug.Log($"[PlayerExpBar] No available global upgrades for {targetTeam}");
-                return;
+                // 선택 완료 콜백 등록
+                upgradeManager.OnPlayerUpgradeSelectionCompleted += OnPlayerUpgradeSelectionCompleted;
+
+                // 플레이어 레벨업 이벤트를 큐에 쌓아서 순차 처리
+                EventQueue.Instance.Enqueue(new PlayerLevelUpEvent
+                {
+                    Team = targetTeam,
+                    NewLevel = _level
+                });
             }
-            
-            // 3개 또는 가능한 만큼 선택
-            int selectionCount = Mathf.Min(3, availableGlobalUpgrades.Count);
-            var selectedUpgrades = new System.Collections.Generic.List<GlobalUpgradeSO>();
-            
-            // 랜덤으로 선택
-            var shuffled = new System.Collections.Generic.List<GlobalUpgradeSO>(availableGlobalUpgrades);
-            for (int i = 0; i < shuffled.Count; i++)
+            else
             {
-                int randomIndex = Random.Range(i, shuffled.Count);
-                (shuffled[i], shuffled[randomIndex]) = (shuffled[randomIndex], shuffled[i]);
-            }
-            
-            for (int i = 0; i < selectionCount; i++)
-            {
-                selectedUpgrades.Add(shuffled[i]);
-            }
-            
-            // UI 표시
-            var upgradePanel = LevelUpChess.Upgrades.UI.UpgradeSelectionPanelUI.Instance;
-            if (upgradePanel != null)
-            {
-                upgradePanel.ShowGlobalSelection(selectedUpgrades, targetTeam);
-                Debug.Log($"[PlayerExpBar] Showing {selectionCount} global upgrade options for {targetTeam} player level up");
+                Debug.LogWarning("[PlayerExpBar] UpgradeManager not found!");
+                // UpgradeManager가 없으면 기존처럼 바로 브로드캐스트
+                Bus<PlayerLevelUpEvent>.Raise(new PlayerLevelUpEvent
+                {
+                    Team = targetTeam,
+                    NewLevel = _level
+                });
             }
         }
         
         /// <summary>
         /// 팀의 살아있는 기물들 스탯 증가
         /// </summary>
-        private void BoostTeamPieces()
+        public void BoostTeamPieces()
         {
             var gameManager = ServiceLocator.Get<NetworkGameManager>();
             if (gameManager == null) return;
@@ -224,6 +206,24 @@ namespace LevelUpChess.UI
         {
             targetTeam = team;
             UpdateUI(level, currentExp, expToNextLevel);
+        }
+
+        private void OnPlayerUpgradeSelectionCompleted()
+        {
+            Debug.Log("[PlayerExpBar] Player upgrade selection completed");
+            // 콜백 해제
+            var upgradeManager = LevelUpChess.Upgrades.UpgradeManager.Instance;
+            if (upgradeManager != null)
+            {
+                upgradeManager.OnPlayerUpgradeSelectionCompleted -= OnPlayerUpgradeSelectionCompleted;
+            }
+            
+            // 이벤트 발생
+            Bus<PlayerLevelUpEvent>.Raise(new PlayerLevelUpEvent
+            {
+                Team = targetTeam,
+                NewLevel = _level
+            });
         }
     }
 }

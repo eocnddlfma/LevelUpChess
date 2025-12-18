@@ -57,10 +57,10 @@ namespace LevelUpChess.UI
     }
     
     /// <summary>
-    /// 메시지를 지정된 시간동안 표시
+    /// 메시지를 지정된 시간동안 표시 (콜백 지원)
     /// duration = 0이면 지속 표시 (명시적으로 HideMessage 호출 필요)
     /// </summary>
-    public void ShowMessage(string message, float duration = -1f)
+    public void ShowMessage(string message, float duration = -1f, System.Action onComplete = null)
     {
         if (messageText == null)
         {
@@ -87,12 +87,13 @@ namespace LevelUpChess.UI
             messageText.text = message;
             messageText.gameObject.SetActive(true);
             Debug.Log($"[GameMessageUI] Showing persistent message: {message}, Active: {messageText.gameObject.activeSelf}");
+            onComplete?.Invoke(); // 즉시 콜백 호출
             return;
         }
         
         // 새 메시지 표시
         float displayDuration = duration > 0 ? duration : defaultDisplayDuration;
-        currentMessageCoroutine = StartCoroutine(ShowMessageCoroutine(message, displayDuration));
+        currentMessageCoroutine = StartCoroutine(ShowMessageCoroutine(message, displayDuration, onComplete));
     }
     
     /// <summary>
@@ -113,7 +114,7 @@ namespace LevelUpChess.UI
         }
     }
     
-    private IEnumerator ShowMessageCoroutine(string message, float duration)
+    private IEnumerator ShowMessageCoroutine(string message, float duration, System.Action onComplete = null)
     {
         // 메시지 표시
         messageText.text = message;
@@ -129,6 +130,9 @@ namespace LevelUpChess.UI
         messageText.gameObject.SetActive(false);
         
         currentMessageCoroutine = null;
+        
+        // 콜백 호출
+        onComplete?.Invoke();
     }
     }
 }

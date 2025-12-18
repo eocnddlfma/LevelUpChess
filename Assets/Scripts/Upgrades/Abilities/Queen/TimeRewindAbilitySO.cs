@@ -18,6 +18,14 @@ namespace LevelUpChess.Upgrades.Abilities
         private const string DEFAULT_NAME = "시간역행";
         private const string DEFAULT_DESC = "사용 시 이동 가능한 위치가 초기화됩니다.";
 
+        private void OnEnable()
+        {
+            if (string.IsNullOrEmpty(upgradeName)) upgradeName = DEFAULT_NAME;
+            if (string.IsNullOrEmpty(description)) description = DEFAULT_DESC;
+            trigger = AbilityTrigger.OnTurnStart;
+            pieceFilter = PieceTypeFilter.Queen;
+        }
+
         public override void OnApply(ChessPiece piece)
         {
             if (piece.PieceType != PieceType.Queen) return;

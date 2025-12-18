@@ -942,11 +942,17 @@ namespace LevelUpChess.Editor
                 {
                     string typeName = $"Movement{key}SO"; // MovementBackstepMoveSO
                     string assetName = GetMovementAssetName(typeName); // MovementBackstepMove
-                    string assetPath = $"Assets/ScriptableObject/{assetName}.asset";
-                    PieceMovementSO movementSO = AssetDatabase.LoadAssetAtPath<PieceMovementSO>(assetPath);
-                    if (movementSO != null)
+                    // Infer piece filter from upgradeTypeName
+                    var pieceFilter = InferPieceFilterFromTypeName(upgradeTypeName);
+                    if (pieceFilter.HasValue)
                     {
-                        return movementSO;
+                        string pieceFolder = ResolvePieceFolderForMovement(pieceFilter.Value);
+                        string assetPath = $"Assets/ScriptableObject/Movements/UpgradableMovements/{pieceFolder}/{assetName}.asset";
+                        PieceMovementSO movementSO = AssetDatabase.LoadAssetAtPath<PieceMovementSO>(assetPath);
+                        if (movementSO != null)
+                        {
+                            return movementSO;
+                        }
                     }
                 }
             }

@@ -151,18 +151,44 @@ namespace LevelUpChess.Upgrades.UI
         /// <summary>
         /// 선택된 카드로 하이라이트하고 선택 애니메이션 재생
         /// </summary>
-        public void HighlightAsChosen()
+        public void HighlightAsChosen(System.Action onComplete = null)
         {
             // 기존 트윈 정리
             transform.DOKill();
             rarityBorder?.DOColor(selectionGlowColor, selectionDuration / 2f).SetLoops(2, LoopType.Yoyo);
 
-            // 선택 스케일 애니메이션: 빠르게 확대 후 원위치
+            // 선택 스케일 애니메이션:
+            // - 전체 소요 시간(selectionDuration) 동안만 재생되도록
+            // - 1/2 기간 동안 확대, 나머지 1/2 기간 동안 원래 크기로 복귀
+            //   (ShrinkAndHide(selectionDuration)와 총 시간 일치)
             _selectionTween?.Kill();
             _selectionTween = transform
-                .DOScale(_originalScale * selectionScale, selectionDuration)
+                .DOScale(_originalScale * selectionScale, selectionDuration * 0.5f)
                 .SetEase(Ease.OutBack)
-                .OnComplete(() => transform.DOScale(_originalScale, selectionDuration * 0.6f).SetEase(Ease.InBack));
+                .OnComplete(() => 
+                {
+                    transform.DOScale(_originalScale, selectionDuration * 0.5f)
+                        .SetEase(Ease.InBack)
+                        .OnComplete(() => onComplete?.Invoke());
+                });
+        }
+
+        /// <summary>
+        /// 선택되지 않은 카드: 작아지며 사라지는 애니메이션
+        /// </summary>
+        public void ShrinkAndHide(System.Action onComplete = null)
+        {
+            // 기존 트윈 정리
+            transform.DOKill();
+            _selectionTween?.Kill();
+
+            // 작아지며 사라지는 애니메이션
+            transform.DOScale(new Vector3(0.1f, 0.1f, 0.1f), selectionDuration)
+                .SetEase(Ease.InBack)
+                .OnComplete(() => 
+                {
+                    onComplete?.Invoke();
+                });
         }
 
         public void OnPointerEnter(PointerEventData eventData)
