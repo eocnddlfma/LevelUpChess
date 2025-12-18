@@ -12,13 +12,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5af500beb9860fd47bb1acc7343fda6b, type: 3}
   m_Name: Upgrade_Queen_ReflectAttack
   m_EditorClassIdentifier: 
-  upgradeId: QueenReflectAttackUpgradeSO
   upgradeName: "\uB9AC\uD50C\uB809\uD2B8 \uC5B4\uD0DD"
-  description: "\uACF5\uACA9 \uBC18\uC0AC \uC5B4\uD0DD"
+  description: "\uACF5\uACA9\uC744 \uBC18\uC0AC\uD558\uB294 \uC5B4\uD0DD\uC744 \uC0AC\uC6A9\uD569\uB2C8\uB2E4."
   icon: {fileID: 0}
   upgradeType: 0
   target: 0
   pieceFilter: 5
   rarity: 4
-  movementToAdd: {fileID: 11400000, guid: 6882fc951df17b54caf9b037511360bf, type: 2}
+  movementToAdd: {fileID: 0}
   replaceExisting: 0

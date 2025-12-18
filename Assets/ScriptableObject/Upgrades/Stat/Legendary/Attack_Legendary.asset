@@ -12,7 +12,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 63757eb5dfc9c6e458860994ea4f0148, type: 3}
   m_Name: Attack_Legendary
   m_EditorClassIdentifier: 
-  upgradeId: Attack_Legendary
   upgradeName: "Legendary \uACF5\uACA9\uB825 \uC99D\uAC00"
   description: "\uACF5\uACA9\uB825\uC744 5\uB9CC\uD07C \uC99D\uAC00\uC2DC\uD0B5\uB2C8\uB2E4"
   icon: {fileID: 0}
@@ -21,6 +20,6 @@ MonoBehaviour:
   pieceFilter: 0
   rarity: 5
   statType: 3
-  flatBonus: 1
+  flatBonus: 5
   percentBonus: 0
   isPermanent: 1

@@ -12,7 +12,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c01517f1fe45c134aa8810534a5ee724, type: 3}
   m_Name: PushbackUpgrade
   m_EditorClassIdentifier: 
-  upgradeId: PushbackUpgradeSO
   upgradeName: "\uBC00\uC5B4"
   description: "\uACF5\uACA9\uC2DC \uC0C1\uB300\uBC29\uC744 \uBC14\uB77C\uBCF4\uB294
     \uBC29\uD5A5\uC73C\uB85C \uACF5\uACA9\uB825/5\uB9CC\uD07C \uBC00\uCE69\uB2C8\uB2E4.

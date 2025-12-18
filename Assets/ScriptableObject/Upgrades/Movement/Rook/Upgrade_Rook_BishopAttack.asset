@@ -12,9 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 52bee6a01e438be47b6bbae01605e5b9, type: 3}
   m_Name: Upgrade_Rook_BishopAttack
   m_EditorClassIdentifier: 
-  upgradeId: RookBishopAttackUpgradeSO
   upgradeName: "\uBE44\uC20D \uC5B4\uD0DD"
-  description: "\uB300\uAC01\uC120 \uACF5\uACA9"
+  description: "\uB300\uAC01\uC120\uC73C\uB85C \uACF5\uACA9\uD569\uB2C8\uB2E4."
   icon: {fileID: 0}
   upgradeType: 0
   target: 0

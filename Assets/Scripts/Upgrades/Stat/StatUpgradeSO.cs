@@ -82,8 +82,8 @@ namespace LevelUpChess.Upgrades
         protected override void SetDefaultNameAndDescription()
         {
             upgradeType = UpgradeType.Stat;
-            flatBonus = GetDefaultFlatBonus();
-            percentBonus = GetDefaultPercentBonus();
+            // flatBonus = GetDefaultFlatBonus(); // OnValidate에서 강제 설정하지 않음
+            // percentBonus = GetDefaultPercentBonus(); // OnValidate에서 강제 설정하지 않음
             statType = GetDefaultStatType();
         }
 

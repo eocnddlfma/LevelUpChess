@@ -12,10 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: eda856df10531574db0fa1c7f54e99d5, type: 3}
   m_Name: AccelerationAbility
   m_EditorClassIdentifier: 
-  upgradeId: AccelerationAbilitySO
   upgradeName: "\uAC00\uC18D\uB3C4"
-  description: "\uC774\uB3D9\uD560\uB54C\uB9C8\uB2E4 \uACF5\uACA9\uB825\uC774 2 \uC99D\uAC00\uD569\uB2C8\uB2E4.
-    \uACF5\uACA9\uC2DC \uCD08\uAE30\uD654\uB429\uB2C8\uB2E4."
+  description: "\uC774\uB3D9\uB9C8\uB2E4 \uACF5\uACA9\uB825\uC774 2 \uC99D\uAC00\uD558\uACE0
+    \uACF5\uACA9 \uC2DC \uCD08\uAE30\uD654\uB429\uB2C8\uB2E4."
   icon: {fileID: 0}
   upgradeType: 2
   target: 0

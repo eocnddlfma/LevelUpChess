@@ -3,6 +3,7 @@ using UnityEngine;
 using UnityEditor;
 using System.IO;
 using LevelUpChess.Pieces;
+using Pieces.Movements;
 
 namespace LevelUpChess.Editor
 {
@@ -14,7 +15,7 @@ namespace LevelUpChess.Editor
         private const string PIECE_DATA_FOLDER = "Assets/ScriptableObject/PieceData";
         private const string PREFAB_FOLDER = "Assets/Prefabs/Pieces";
         private const string RESOURCES_PREFAB_FOLDER = "Assets/Resources/Prefabs/Pieces";
-        private const string MOVEMENT_FOLDER = "Assets/ScriptableObject";
+        private const string UPGRADE_MOVEMENTS_FOLDER = "Assets/ScriptableObject/Movements/UpgradeMovements";
 
         [MenuItem("Chess/Setup Piece Data")]
         public static void ShowWindow()
@@ -48,8 +49,16 @@ namespace LevelUpChess.Editor
 
             GUILayout.Space(10);
 
+            if (GUILayout.Button("3. Upgrade Movement 생성", GUILayout.Height(40)))
+            {
+                CreateAllUpgradeMovements();
+            }
+
+            GUILayout.Space(10);
+
             if (GUILayout.Button("전체 실행 (생성 + 연결)", GUILayout.Height(50)))
             {
+                CreateAllUpgradeMovements();
                 CreateAllPieceData();
                 AssignPieceDataToPrefabs();
             }
@@ -57,6 +66,7 @@ namespace LevelUpChess.Editor
             GUILayout.Space(20);
             EditorGUILayout.HelpBox(
                 $"PieceData 저장 위치: {PIECE_DATA_FOLDER}\n" +
+                $"Upgrade Movements 저장 위치: {UPGRADE_MOVEMENTS_FOLDER}\n" +
                 $"프리팹 위치: {PREFAB_FOLDER}, {RESOURCES_PREFAB_FOLDER}", 
                 MessageType.None);
         }
@@ -73,12 +83,12 @@ namespace LevelUpChess.Editor
             }
 
             // 각 기물 타입별로 PieceDataSO 생성
-            CreatePieceData(PieceType.Pawn, "폰", 1, 1, "PawnMovement");
-            CreatePieceData(PieceType.Rook, "룩", 5, 5, "RookMovement");
-            CreatePieceData(PieceType.Knight, "나이트", 3, 3, "KnightMovement");
-            CreatePieceData(PieceType.Bishop, "비숍", 3, 3, "BishopMovement");
-            CreatePieceData(PieceType.Queen, "퀸", 9, 9, "RookMovement", "BishopMovement");
-            CreatePieceData(PieceType.King, "킹", 100, 1, "KingMovement");
+            CreatePieceData(PieceType.Pawn, "폰", 1, 1, "MovementPawnSO");
+            CreatePieceData(PieceType.Rook, "룩", 5, 5, "MovementRookSO");
+            CreatePieceData(PieceType.Knight, "나이트", 3, 3, "MovementKnightSO");
+            CreatePieceData(PieceType.Bishop, "비숍", 3, 3, "MovementBishopSO");
+            CreatePieceData(PieceType.Queen, "퀸", 9, 9, "MovementRookSO", "MovementBishopSO");
+            CreatePieceData(PieceType.King, "킹", 100, 1, "MovementKingSO");
 
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
@@ -112,7 +122,7 @@ namespace LevelUpChess.Editor
 
             for (int i = 0; i < movementNames.Length; i++)
             {
-                string movementPath = $"{MOVEMENT_FOLDER}/{movementNames[i]}.asset";
+                string movementPath = $"{UPGRADE_MOVEMENTS_FOLDER}/{pieceType}/{movementNames[i]}.asset";
                 PieceMovementSO movementSo = AssetDatabase.LoadAssetAtPath<PieceMovementSO>(movementPath);
                 
                 if (movementSo != null)
@@ -223,6 +233,77 @@ namespace LevelUpChess.Editor
             if (lowerName.StartsWith("black")) return Team.Black;
             
             return null;
+        }
+
+        private void CreateAllUpgradeMovements()
+        {
+            // 폴더 생성
+            if (!AssetDatabase.IsValidFolder("Assets/ScriptableObject/Movements"))
+            {
+                AssetDatabase.CreateFolder("Assets/ScriptableObject", "Movements");
+            }
+            if (!AssetDatabase.IsValidFolder(UPGRADE_MOVEMENTS_FOLDER))
+            {
+                AssetDatabase.CreateFolder("Assets/ScriptableObject/Movements", "UpgradeMovements");
+            }
+
+            // 각 기물 타입별로 Upgrade Movement 생성
+            CreateUpgradeMovement(PieceType.Pawn, "MovementPawnSO");
+            CreateUpgradeMovement(PieceType.Rook, "MovementRookSO");
+            CreateUpgradeMovement(PieceType.Knight, "MovementKnightSO");
+            CreateUpgradeMovement(PieceType.Bishop, "MovementBishopSO");
+            CreateUpgradeMovement(PieceType.Queen, "MovementRookSO", "MovementBishopSO");
+            CreateUpgradeMovement(PieceType.King, "MovementKingSO");
+
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
+            Debug.Log("[PieceDataSetup] All Upgrade Movements created successfully!");
+        }
+
+        private void CreateUpgradeMovement(PieceType pieceType, params string[] movementNames)
+        {
+            string folder = $"{UPGRADE_MOVEMENTS_FOLDER}/{pieceType}";
+            if (!AssetDatabase.IsValidFolder(folder))
+            {
+                AssetDatabase.CreateFolder(UPGRADE_MOVEMENTS_FOLDER, pieceType.ToString());
+            }
+
+            foreach (string movementName in movementNames)
+            {
+                string assetPath = $"{folder}/{movementName}.asset";
+                if (AssetDatabase.LoadAssetAtPath<PieceMovementSO>(assetPath) != null)
+                {
+                    Debug.Log($"[PieceDataSetup] {movementName} already exists, skipping...");
+                    continue;
+                }
+
+                PieceMovementSO movement = CreateMovementInstance(movementName);
+                if (movement != null)
+                {
+                    AssetDatabase.CreateAsset(movement, assetPath);
+                    Debug.Log($"[PieceDataSetup] Created: {assetPath}");
+                }
+            }
+        }
+
+        private PieceMovementSO CreateMovementInstance(string movementName)
+        {
+            switch (movementName)
+            {
+                case "MovementPawnSO":
+                    return ScriptableObject.CreateInstance<MovementPawnSO>();
+                case "MovementRookSO":
+                    return ScriptableObject.CreateInstance<MovementRookSO>();
+                case "MovementKnightSO":
+                    return ScriptableObject.CreateInstance<MovementKnightSO>();
+                case "MovementBishopSO":
+                    return ScriptableObject.CreateInstance<MovementBishopSO>();
+                case "MovementKingSO":
+                    return ScriptableObject.CreateInstance<MovementKingSO>();
+                default:
+                    Debug.LogWarning($"[PieceDataSetup] Unknown movement: {movementName}");
+                    return null;
+            }
         }
 
         private PieceType? GetPieceTypeFromName(string prefabName)

@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using LevelUpChess.Core;
 using LevelUpChess.Board;
+using LevelUpChess.Upgrades;
 
 namespace LevelUpChess.Pieces
 {
@@ -20,7 +21,11 @@ namespace LevelUpChess.Pieces
         [Header("Movement Type")]
         [SerializeField] protected MoveType moveType = MoveType.Normal;
         
+        [Header("Piece Filter")]
+        [SerializeField] protected PieceTypeFilter pieceFilter = PieceTypeFilter.Any;
+        
         public MoveType MoveType => moveType;
+        public PieceTypeFilter PieceFilter => pieceFilter;
         
         public abstract List<Move> GetAvailableMoves(ChessPiece piece);
 
@@ -109,7 +114,7 @@ namespace LevelUpChess.Pieces
                     {
                         moves.Add(new Move(pos, target));
                     }
-                    else if (t.OccupyingPiece.Team != piece.Team)
+                    else if (t.OccupyingPiece.Team != piece.Team || piece.CanAttackAllies)
                     {
                         moves.Add(new Move(pos, target) { isCapture = true });
                     }
@@ -118,5 +123,12 @@ namespace LevelUpChess.Pieces
 
             return FilterByMoveType(moves);
         }
+
+#if UNITY_EDITOR
+        protected virtual void OnValidate()
+        {
+            // 서브클래스에서 pieceFilter 설정
+        }
+#endif
     }
 }

@@ -2,6 +2,7 @@ using UnityEngine;
 using Unity.Netcode;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using LevelUpChess.Upgrades;
 using LevelUpChess.Upgrades.UI;
 using LevelUpChess.Pieces;
@@ -108,7 +109,7 @@ namespace LevelUpChess.Upgrades
         private void OnPlayerLevelUp(PlayerLevelUpEvent eventData)
         {
             // 플레이어가 레벨업하면 업그레이드 선택 창 표시
-            StartCoroutine(ShowUpgradeSelectionForPlayer(eventData.Team));
+            StartCoroutine(ShowUpgradeSelectionForPlayer(eventData));
         }
 
         private void OnAttackSuccess(AttackSuccessEvent eventData)
@@ -121,48 +122,56 @@ namespace LevelUpChess.Upgrades
                                         eventData.DamageDealt, eventData.TargetDied);
         }
 
-        private System.Collections.IEnumerator ShowUpgradeSelectionForPlayer(Team team)
+        private System.Collections.IEnumerator ShowUpgradeSelectionForPlayer(PlayerLevelUpEvent eventData)
         {
             // 잠시 기다렸다가 업그레이드 선택 창 표시 (UI가 준비될 시간)
             yield return new UnityEngine.WaitForSeconds(0.5f);
             
             // 해당 팀의 플레이어에게 업그레이드 선택 제공
-            OfferUpgradeSelection(team);
+            OfferUpgradeSelection(eventData);
         }
 
-        private void OfferUpgradeSelection(Team team)
+        private void OfferUpgradeSelection(PlayerLevelUpEvent eventData)
         {
+            Team team = eventData.Team;
+            int playerLevel = eventData.NewLevel;
+
             if (upgradePool == null)
             {
                 Debug.LogError("[UpgradeManager] UpgradePool이 설정되지 않았습니다.");
                 return;
             }
 
-            // 플레이어 레벨업 시에는 특정 기물이 아닌 플레이어 전체에게 적용되는 업그레이드 제공
-            // 임시로 더미 piece를 만들어서 처리 (실제로는 플레이어 레벨에 따른 업그레이드)
-            var dummyPiece = new GameObject("PlayerUpgradeDummy").AddComponent<ChessPiece>();
-            dummyPiece.DataSo = Resources.Load<PieceDataSO>("PieceData/KingData");
-            dummyPiece.Team = team;
-            dummyPiece.name = $"Player{team}Upgrade";
+            // 플레이어 레벨업 시 글로벌 업그레이드만 제공
+            // 적용된 글로벌 업그레이드 ID 목록 (중복 방지)
+            var excludedIds = allowDuplicates ? null : appliedGlobalUpgrades.ToList();
 
-            // 적용된 업그레이드 ID 목록
-            var excludedIds = allowDuplicates ? null : GetAppliedUpgrades(dummyPiece);
+            // 플레이어 레벨에 따른 최대 희귀도 계산
+            int maxRarity = Mathf.Min(baseMaxRarity + (playerLevel - 1) * rarityIncreasePerLevel, maxRarityLevel);
 
-            // 플레이어 레벨에 따른 최대 희귀도 계산 (임시로 레벨 1로 설정)
-            int maxRarity = baseMaxRarity;
+            // 글로벌 업그레이드 중 사용 가능한 것 필터링
+            var availableUpgrades = upgradePool.GlobalUpgrades.ToList();
 
-            var drawResults = upgradePool.DrawUpgrades(dummyPiece, upgradesPerSelection, excludedIds, maxRarity);
-            if (drawResults.Count == 0)
+            if (availableUpgrades.Count == 0)
             {
-                Debug.LogWarning($"[UpgradeManager] {team} 플레이어에 적용 가능한 업그레이드가 없습니다.");
-                Destroy(dummyPiece.gameObject);
+                Debug.LogWarning($"[UpgradeManager] {team} 플레이어에 적용 가능한 글로벌 업그레이드가 없습니다.");
                 return;
             }
 
-            var indices = new System.Collections.Generic.List<int>();
-            foreach (var dr in drawResults)
+            // 랜덤으로 업그레이드 선택
+            var selectedUpgrades = new List<UpgradeBaseSO>();
+            var tempList = new List<UpgradeBaseSO>(availableUpgrades);
+            for (int i = 0; i < Mathf.Min(upgradesPerSelection, tempList.Count); i++)
             {
-                indices.Add(upgradePool.GetUpgradeIndex(dr.Upgrade));
+                int randomIndex = UnityEngine.Random.Range(0, tempList.Count);
+                selectedUpgrades.Add(tempList[randomIndex]);
+                tempList.RemoveAt(randomIndex);
+            }
+
+            var indices = new System.Collections.Generic.List<int>();
+            foreach (var upgrade in selectedUpgrades)
+            {
+                indices.Add(upgradePool.GetUpgradeIndex(upgrade));
             }
 
             // 플레이어 업그레이드이므로 타일 좌표는 (0,0)으로 설정
@@ -174,7 +183,7 @@ namespace LevelUpChess.Upgrades
                 OwnerTeam = team,
                 Deadline = UnityEngine.Time.time + 15f,
                 Chosen = false,
-                TargetPieceInstanceId = dummyPiece.GetInstanceID()
+                TargetPieceInstanceId = 0  // 글로벌 업그레이드이므로 피스 없음
             };
 
             _pendingNetworkSelections[coord] = pending;
@@ -182,7 +191,7 @@ namespace LevelUpChess.Upgrades
             // 모든 클라이언트에 동일한 옵션 전송
             ShowSelectionClientRpc(pending.Options, coord.x, coord.y, (int)pending.OwnerTeam);
 
-            // 더미 오브젝트는 선택이 완료될 때까지 유지 (선택 완료 후 파괴)
+            // 선택 완료까지 대기 (코루틴이나 이벤트로 처리)
         }
 
         private void AutoLoadUpgradePool()
@@ -661,6 +670,9 @@ namespace LevelUpChess.Upgrades
 
             // 업그레이드 적용
             upgrade.Apply(piece);
+
+            // ChessPiece에 업그레이드 ID 저장
+            piece.AddAppliedUpgrade(upgrade.UpgradeHash);
 
             // 적용 기록
             if (!string.IsNullOrEmpty(upgrade.UpgradeHash))

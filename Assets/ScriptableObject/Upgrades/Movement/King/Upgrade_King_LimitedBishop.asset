@@ -12,7 +12,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 918299bfc0e018a4a810d5901e80f43e, type: 3}
   m_Name: Upgrade_King_LimitedBishop
   m_EditorClassIdentifier: 
-  upgradeId: KingLimitedBishopUpgradeSO
   upgradeName: "\uBE44\uC20D\uC758 \uBC1C\uAC78\uC74C"
   description: "\uB300\uAC01\uC120\uC73C\uB85C \uCD5C\uB300 3\uCE78\uAE4C\uC9C0 \uC774\uB3D9/\uACF5\uACA9\uD560
     \uC218 \uC788\uC2B5\uB2C8\uB2E4."

@@ -12,13 +12,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1e3f5c9b7c61c99438e11d861f531137, type: 3}
   m_Name: Upgrade_Bishop_KnightAttack
   m_EditorClassIdentifier: 
-  upgradeId: BishopKnightAttackUpgradeSO
   upgradeName: "\uB098\uC774\uD2B8 \uC5B4\uD0DD"
-  description: "\uB098\uC774\uD2B8 \uC5B4\uD0DD"
+  description: "\uB098\uC774\uD2B8\uCC98\uB7FC \uACF5\uACA9\uD569\uB2C8\uB2E4."
   icon: {fileID: 0}
   upgradeType: 0
   target: 0
   pieceFilter: 4
   rarity: 3
-  movementToAdd: {fileID: 11400000, guid: 7971d17350cca264583c10ec515e6ae8, type: 2}
+  movementToAdd: {fileID: 11400000, guid: 905bf557d05745d46994d0c3a7a05a24, type: 2}
   replaceExisting: 0

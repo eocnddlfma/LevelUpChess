@@ -12,10 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6371eaa5256e3a246a37f96741c5fcb9, type: 3}
   m_Name: HitAndRunAbility
   m_EditorClassIdentifier: 
-  upgradeId: HitAndRunAbilitySO
   upgradeName: "\uD788\uD2B8\uC564\uB7F0"
-  description: "\uC0C1\uB300\uBC29\uC744 \uACF5\uACA9\uD558\uACE0 \uC0C1\uB300\uBC29\uC774
-    \uC0AC\uB9DD\uD558\uB354\uB77C\uB3C4 \uC774\uB3D9\uD558\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4"
+  description: "\uACF5\uACA9 \uD6C4\uC5D0\uB3C4 \uC774\uB3D9\uD558\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4."
   icon: {fileID: 0}
   upgradeType: 2
   target: 0

@@ -12,7 +12,7 @@ namespace LevelUpChess.Upgrades
     /// </summary>
     public static class UpgradeLocalizationDefaults
     {
-        private static readonly Dictionary<string, (string name, string desc)> DefaultText = new()
+        public static readonly Dictionary<string, (string name, string desc)> DefaultText = new()
         {
             // Stat
             { "AttackUpgradeSO", ("공격력 증가", "공격력이 증가합니다.") },

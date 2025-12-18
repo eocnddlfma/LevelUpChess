@@ -12,8 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 737f52bd45060fa41b70cd48e5da06df, type: 3}
   m_Name: OverloadUpgrade
   m_EditorClassIdentifier: 
-  upgradeId: OverloadUpgradeSO
-  upgradeName: "\uACFC\uBD80\uD654"
+  upgradeName: New Upgrade
   description: "\uC0C1\uB300\uAC00 \uD2B9\uC815 \uAE30\uBB3C\uC744 2\uD68C \uC774\uC0C1
     \uC5F0\uC18D\uC73C\uB85C \uC0AC\uC6A9\uD588\uC744\uB54C \uD574\uB2F9 \uAE30\uBB3C\uC740
     1\uD134\uB3D9\uC548 \uC0AC\uC6A9 \uBD88\uAC00\uB2A5\uD569\uB2C8\uB2E4."

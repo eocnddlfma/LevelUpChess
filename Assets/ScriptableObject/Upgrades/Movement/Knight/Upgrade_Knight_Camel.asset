@@ -12,13 +12,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 37b980f90d7576a4abe03837b7dfff02, type: 3}
   m_Name: Upgrade_Knight_Camel
   m_EditorClassIdentifier: 
-  upgradeId: KnightCamelUpgradeSO
   upgradeName: "\uC2A4\uD018\uC5B4 \uBB34\uBE0C \uCE90\uBA40"
-  description: "\uCE90\uBA40 \uD615\uD0DC \uC774\uB3D9"
+  description: "\uCE90\uBA40(\uC2A4\uD018\uC5B4 \uBB34\uBE0C) \uD615\uD0DC\uB85C
+    \uC774\uB3D9\uD569\uB2C8\uB2E4."
   icon: {fileID: 0}
   upgradeType: 0
   target: 0
   pieceFilter: 3
   rarity: 3
-  movementToAdd: {fileID: 11400000, guid: d70904abb5029b942b6fdd2f5256c470, type: 2}
+  movementToAdd: {fileID: 11400000, guid: 905bf557d05745d46994d0c3a7a05a24, type: 2}
   replaceExisting: 0

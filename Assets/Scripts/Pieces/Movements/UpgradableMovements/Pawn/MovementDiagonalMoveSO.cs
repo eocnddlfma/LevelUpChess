@@ -2,19 +2,28 @@ using System.Collections.Generic;
 using UnityEngine;
 using LevelUpChess.Core;
 using LevelUpChess.Board;
+using LevelUpChess.Upgrades;
 
 namespace LevelUpChess.Pieces.Movements.UpgradableMovements
 {
     /// <summary>
-    /// 대각선 방향으로 이동하는 업그레이드 가능한 무브먼트 (이동 전용)
+    /// Pawn의 대각선 이동을 허용하는 업그레이드 가능한 무브먼트 (이동 전용)
     /// </summary>
-    [CreateAssetMenu(fileName = "MovementDiagonalMoveSO", menuName = "Chess/Piece Movement/Upgradable/Diagonal Move")]
+    [CreateAssetMenu(fileName = "MovementDiagonalMoveSO", menuName = "Chess/Piece Movement/Upgradable/Pawn Diagonal Move")]
     public class MovementDiagonalMoveSO : PieceMovementSO
     {
         private void OnEnable()
         {
             moveType = MoveType.MoveOnly;
         }
+
+#if UNITY_EDITOR
+        protected override void OnValidate()
+        {
+            base.OnValidate();
+            pieceFilter = PieceTypeFilter.Pawn;
+        }
+#endif
 
         public override List<Move> GetAvailableMoves(ChessPiece piece)
         {

@@ -12,16 +12,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 983c24bd7cba77f43b12c8e6c77e90a6, type: 3}
   m_Name: PawnAutoMoveAbility
   m_EditorClassIdentifier: 
-  upgradeId: PawnAutoMoveAbilitySO
   upgradeName: "\uC790\uB3D9\uC774\uB3D9"
   description: "\uC790\uAE30 \uD134 \uD589\uB3D9\uC774\uD6C4 \uC790\uB3D9 \uD55C\uCE78
     \uC804\uC9C4, \uC804\uC9C4\uC2DC \uC55E\uC5D0 \uC801 \uC788\uC744 \uACBD\uC6B0
     \uACF5\uACA9"
   icon: {fileID: 0}
-  upgradeType: 2
+  upgradeType: 0
   target: 0
   pieceFilter: 1
   rarity: 1
-  trigger: 10
+  trigger: 12
   stackable: 0
   maxStacks: 1

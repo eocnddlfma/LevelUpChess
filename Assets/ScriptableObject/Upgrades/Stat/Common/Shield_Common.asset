@@ -12,7 +12,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6b5ba9701d96d9c4e90176a56ea6f5ca, type: 3}
   m_Name: Shield_Common
   m_EditorClassIdentifier: 
-  upgradeId: Shield_Common
   upgradeName: "Common \uBCF4\uD638\uB9C9 \uC99D\uAC00"
   description: "\uBCF4\uD638\uB9C9\uC744 1\uB9CC\uD07C \uC99D\uAC00\uC2DC\uD0B5\uB2C8\uB2E4"
   icon: {fileID: 0}
@@ -21,6 +20,6 @@ MonoBehaviour:
   pieceFilter: 0
   rarity: 1
   statType: 5
-  flatBonus: 5
+  flatBonus: 1
   percentBonus: 0
   isPermanent: 1

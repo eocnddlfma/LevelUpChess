@@ -9,7 +9,7 @@ namespace LevelUpChess.Upgrades.Global
     [CreateAssetMenu(fileName = "GlobalAttackUpgrade", menuName = "LevelUpChess/Upgrades/Global/AttackUp")]
     public class GlobalAttackUpgradeSO : GlobalUpgradeSO
     {
-        private const string DEFAULT_NAME = "글로벌 어택 업그레이드";
+        private const string DEFAULT_NAME = "전체 공격력 업그레이드";
         private const string DEFAULT_DESC = "모든 아군 공격력 +1";
 
         [Header("Settings")]

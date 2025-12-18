@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 404df74573f3efa45b4d704ac45c19d8, type: 3}
+  m_Name: GivingTreeAbility
+  m_EditorClassIdentifier: 
+  upgradeName: "\uC544\uB08C\uC5C6\uC774 \uC8FC\uB294 \uB098\uBB34"
+  description: "\uD68C\uBCF5\uB825 +2, \uB9E4\uD134 \uCCB4\uB825\uC774 \uAC00\uC7A5
+    \uB0AE\uC740 \uC544\uAD70\uC744 \uD68C\uBCF5\uD558\uACE0 \uC790\uC2E0\uC758 \uCCB4\uB825\uC744
+    \uC18C\uBAA8\uD569\uB2C8\uB2E4."
+  icon: {fileID: 0}
+  upgradeType: 2
+  target: 0
+  pieceFilter: 5
+  rarity: 1
+  trigger: 9
+  stackable: 0
+  maxStacks: 1

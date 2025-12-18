@@ -14,7 +14,6 @@ namespace LevelUpChess.Upgrades.Movement
 
         private void Reset()
         {
-            upgradeName = "movement_pawn_sideway";
             upgradeName = DEFAULT_NAME;
             description = DEFAULT_DESC;
             rarity = 2;

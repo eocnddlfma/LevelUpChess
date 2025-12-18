@@ -12,9 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fff02ed34c694c04e84b3fe5dde8335a, type: 3}
   m_Name: Upgrade_Pawn_Backstep
   m_EditorClassIdentifier: 
-  upgradeId: PawnBackstepUpgradeSO
   upgradeName: "\uBC31\uC2A4\uD0ED"
-  description: "\uB4A4 \uC774\uB3D9"
+  description: "\uB4A4\uB85C \uC774\uB3D9\uD569\uB2C8\uB2E4."
   icon: {fileID: 0}
   upgradeType: 0
   target: 0

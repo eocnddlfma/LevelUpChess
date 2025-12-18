@@ -9,8 +9,8 @@ namespace LevelUpChess.Upgrades.Global
     [CreateAssetMenu(fileName = "GlobalHealthUpgrade", menuName = "LevelUpChess/Upgrades/Global/HealthUp")]
     public class GlobalHealthUpgradeSO : GlobalUpgradeSO
     {
-        private const string DEFAULT_NAME = "글로벌 헬스 업그레이드";
-        private const string DEFAULT_DESC = "모든 아군 최대 체력 +1";
+        private const string DEFAULT_NAME = "전체 체력 업그레이드";
+        private const string DEFAULT_DESC = "모든 아군 최대 체력 +5";
 
         [Header("Settings")]
         [Tooltip("체력 증가량")]

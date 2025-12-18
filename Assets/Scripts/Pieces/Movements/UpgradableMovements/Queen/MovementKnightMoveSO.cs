@@ -2,14 +2,15 @@ using System.Collections.Generic;
 using UnityEngine;
 using LevelUpChess.Core;
 using LevelUpChess.Board;
+using LevelUpChess.Upgrades;
 
 namespace LevelUpChess.Pieces.Movements.UpgradableMovements
 {
     /// <summary>
     /// 퀸용 나이트 무브 - 나이트 방식 이동만 가능 (공격 불가)
     /// </summary>
-    [CreateAssetMenu(fileName = "MovementKnightMoveSO", menuName = "Chess/Piece Movement/Upgradable/Knight Move")]
-    public class MovementKnightMoveSO : PieceMovementSO
+    [CreateAssetMenu(fileName = "MovementQueenKnightMoveSO", menuName = "Chess/Piece Movement/Upgradable/Queen Knight Move")]
+    public class MovementQueenKnightMoveSO : PieceMovementSO
     {
         private static readonly Vector2Int[] KnightOffsets = {
             new Vector2Int(2, 1), new Vector2Int(2, -1),
@@ -17,6 +18,14 @@ namespace LevelUpChess.Pieces.Movements.UpgradableMovements
             new Vector2Int(1, 2), new Vector2Int(1, -2),
             new Vector2Int(-1, 2), new Vector2Int(-1, -2)
         };
+
+#if UNITY_EDITOR
+        protected override void OnValidate()
+        {
+            base.OnValidate();
+            pieceFilter = PieceTypeFilter.Queen;
+        }
+#endif
 
         private void OnEnable()
         {

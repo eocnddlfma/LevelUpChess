@@ -12,7 +12,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3a9a72a221945c141942e6a2c5b42836, type: 3}
   m_Name: Defense_Common
   m_EditorClassIdentifier: 
-  upgradeId: Defense_Common
   upgradeName: "Common \uBC29\uC5B4\uB825 \uC99D\uAC00"
   description: "\uBC29\uC5B4\uB825\uC744 1\uB9CC\uD07C \uC99D\uAC00\uC2DC\uD0B5\uB2C8\uB2E4"
   icon: {fileID: 0}

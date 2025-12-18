@@ -12,7 +12,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7505210e99c7157468bd8d9458283be7, type: 3}
   m_Name: FocusBandUpgrade
   m_EditorClassIdentifier: 
-  upgradeId: FocusBandUpgradeSO
   upgradeName: "\uAE30\uD569\uC758 \uB760"
   description: "\uCCB4\uB825\uC774 0\uC774 \uB418\uB294 \uACF5\uACA9\uC744 \uBC1B\uC544\uB3C4
     \uD55C\uBC88 \uBB34\uB9C8\uD558\uACE0 \uCCB4\uB825\uC744 1\uB85C \uBC14\uAFC9\uB2C8\uB2E4."

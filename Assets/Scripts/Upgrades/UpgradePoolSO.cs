@@ -27,12 +27,12 @@ namespace LevelUpChess.Upgrades
         [SerializeField] private PieceUpgradePool queenUpgrades = new PieceUpgradePool { pieceType = PieceType.Queen };
         [SerializeField] private PieceUpgradePool kingUpgrades = new PieceUpgradePool { pieceType = PieceType.King };
 
-        [Header("=== 뽑기 설정 ===")]
-        [SerializeField] private UpgradeWeightSettings weightSettings = new UpgradeWeightSettings();
+        // ID to SO mapping dictionary for fast lookup
+        private Dictionary<string, UpgradeBaseSO> _upgradeIdToSO;
+
 
         #region Properties
         
-        public UpgradeWeightSettings WeightSettings => weightSettings;
         
         public List<UpgradeBaseSO> CommonMovementUpgrades => commonMovementUpgrades;
         public List<UpgradeBaseSO> CommonStatUpgrades => commonStatUpgrades;
@@ -128,7 +128,7 @@ namespace LevelUpChess.Upgrades
         public List<UpgradeDrawResult> DrawUpgrades(ChessPiece piece, int count, List<string> excludeIds = null, int maxRarity = 5)
         {
             var results = new List<UpgradeDrawResult>();
-            var availableUpgrades = GetWeightedPool(piece, excludeIds, maxRarity);
+            var availableUpgrades = GetAvailableUpgrades(piece, excludeIds, maxRarity);
             
             if (availableUpgrades.Count == 0)
             {
@@ -136,147 +136,41 @@ namespace LevelUpChess.Upgrades
                 return results;
             }
 
-            // 중복 방지를 위한 임시 제외 리스트
-            var tempExclude = new HashSet<string>(excludeIds ?? new List<string>());
-
             for (int i = 0; i < count && availableUpgrades.Count > 0; i++)
             {
-                var drawn = DrawOneWeighted(availableUpgrades);
-                if (drawn.Upgrade != null)
+                var drawn = DrawRandom(availableUpgrades);
+                if (drawn != null)
                 {
-                    results.Add(drawn);
-                    tempExclude.Add(drawn.Upgrade.UpgradeHash);
-                    
-                    // 뽑힌 업그레이드 제거
-                    availableUpgrades.RemoveAll(x => x.upgrade.UpgradeHash == drawn.Upgrade.UpgradeHash);
+                    results.Add(new UpgradeDrawResult(drawn, false, 1f)); // 가중치 없이
+                    availableUpgrades.Remove(drawn);
                 }
             }
 
             return results;
         }
-
         /// <summary>
-        /// 가중치가 적용된 풀 생성
+        /// 랜덤 단일 뽑기
         /// </summary>
-        private List<(UpgradeBaseSO upgrade, float weight, bool isCommon)> GetWeightedPool(
-            ChessPiece piece, List<string> excludeIds, int maxRarity)
+        private UpgradeBaseSO DrawRandom(List<UpgradeBaseSO> pool)
         {
-            var pool = new List<(UpgradeBaseSO upgrade, float weight, bool isCommon)>();
-            var excludeSet = new HashSet<string>(excludeIds ?? new List<string>());
-
-            // 공통 업그레이드 추가
-            AddToWeightedPool(pool, GetAllCommonUpgrades(), piece, excludeSet, maxRarity, isCommon: true);
-
-            // 피스 전용 업그레이드 추가
-            var piecePool = GetPiecePool(piece.PieceType);
-            if (piecePool != null)
-            {
-                AddToWeightedPool(pool, piecePool.GetAllUpgrades(), piece, excludeSet, maxRarity, isCommon: false);
-            }
-
-            return pool;
+            if (pool.Count == 0) return null;
+            int index = Random.Range(0, pool.Count);
+            return pool[index];
         }
 
         /// <summary>
-        /// 가중치 풀에 업그레이드 추가
+        /// 사용 가능한 업그레이드 리스트 반환
         /// </summary>
-        private void AddToWeightedPool(
-            List<(UpgradeBaseSO upgrade, float weight, bool isCommon)> pool,
-            List<UpgradeBaseSO> upgrades,
-            ChessPiece piece,
-            HashSet<string> excludeIds,
-            int maxRarity,
-            bool isCommon)
-        {
-            foreach (var upgrade in upgrades)
-            {
-                if (upgrade == null) continue;
-                if (excludeIds.Contains(upgrade.UpgradeHash)) continue;
-                if (upgrade.Rarity > maxRarity) continue;
-                if (!upgrade.CanApplyTo(piece)) continue;
-
-                // 가중치 계산
-                float weight = CalculateWeight(upgrade, isCommon);
-                pool.Add((upgrade, weight, isCommon));
-            }
-        }
-
-        /// <summary>
-        /// 업그레이드 가중치 계산
-        /// </summary>
-        private float CalculateWeight(UpgradeBaseSO upgrade, bool isCommon)
-        {
-            float weight = 1f;
-            
-            // 희귀도 가중치
-            weight *= weightSettings.GetRarityWeight(upgrade.Rarity);
-            
-            // 타입 가중치
-            weight *= weightSettings.GetTypeWeight(upgrade.UpgradeType);
-            
-            // 공통/전용 가중치
-            if (isCommon)
-            {
-                weight *= weightSettings.commonPoolChance;
-            }
-            else
-            {
-                weight *= (1f - weightSettings.commonPoolChance);
-            }
-
-            return weight;
-        }
-
-        /// <summary>
-        /// 가중치 기반 단일 뽑기
-        /// </summary>
-        private UpgradeDrawResult DrawOneWeighted(List<(UpgradeBaseSO upgrade, float weight, bool isCommon)> pool)
-        {
-            if (pool.Count == 0)
-            {
-                return new UpgradeDrawResult(null, false, 0f);
-            }
-
-            // 총 가중치 계산
-            float totalWeight = 0f;
-            foreach (var item in pool)
-            {
-                totalWeight += item.weight;
-            }
-
-            // 랜덤 값으로 선택
-            float randomValue = Random.Range(0f, totalWeight);
-            float cumulative = 0f;
-
-            foreach (var item in pool)
-            {
-                cumulative += item.weight;
-                if (randomValue <= cumulative)
-                {
-                    return new UpgradeDrawResult(item.upgrade, item.isCommon, item.weight);
-                }
-            }
-
-            // 폴백 (마지막 아이템)
-            var last = pool[pool.Count - 1];
-            return new UpgradeDrawResult(last.upgrade, last.isCommon, last.weight);
-        }
-
-        #endregion
-
-        #region Legacy Methods (하위 호환)
-
-        /// <summary>
-        /// 특정 기물에 적용 가능한 업그레이드 반환 (레거시)
-        /// </summary>
-        public List<UpgradeBaseSO> GetUpgradesForPiece(ChessPiece piece, List<string> excludeIds = null)
+        private List<UpgradeBaseSO> GetAvailableUpgrades(ChessPiece piece, List<string> excludeIds, int maxRarity)
         {
             var applicable = new List<UpgradeBaseSO>();
             
             // 공통 업그레이드
             foreach (var upgrade in GetAllCommonUpgrades())
             {
-                if (excludeIds != null && excludeIds.Contains(upgrade.UpgradeHash)) continue;
+                if (upgrade == null) continue;
+                if (excludeIds != null && upgrade.UpgradeHash != null && excludeIds.Contains(upgrade.UpgradeHash)) continue;
+                if (upgrade.Rarity > maxRarity) continue;
                 if (upgrade.CanApplyTo(piece))
                 {
                     applicable.Add(upgrade);
@@ -289,7 +183,9 @@ namespace LevelUpChess.Upgrades
             {
                 foreach (var upgrade in piecePool.GetAllUpgrades())
                 {
-                    if (excludeIds != null && excludeIds.Contains(upgrade.UpgradeHash)) continue;
+                    if (upgrade == null) continue;
+                    if (excludeIds != null && upgrade.UpgradeHash != null && excludeIds.Contains(upgrade.UpgradeHash)) continue;
+                    if (upgrade.Rarity > maxRarity) continue;
                     if (upgrade.CanApplyTo(piece))
                     {
                         applicable.Add(upgrade);
@@ -300,22 +196,25 @@ namespace LevelUpChess.Upgrades
             return applicable;
         }
 
+        #endregion
+
+        #region Legacy Methods (하위 호환)
+
         /// <summary>
-        /// 희귀도 필터링
+        /// ID to SO dictionary 구축 (lazy initialization)
         /// </summary>
-        public List<UpgradeBaseSO> FilterByRarity(List<UpgradeBaseSO> upgrades, int maxRarity)
+        private void BuildIdDictionary()
         {
-            var filtered = new List<UpgradeBaseSO>();
+            if (_upgradeIdToSO != null) return;
             
-            foreach (var upgrade in upgrades)
+            _upgradeIdToSO = new Dictionary<string, UpgradeBaseSO>();
+            foreach (var upgrade in GetAllUpgrades())
             {
-                if (upgrade.Rarity <= maxRarity)
+                if (upgrade != null && !string.IsNullOrEmpty(upgrade.UpgradeHash))
                 {
-                    filtered.Add(upgrade);
+                    _upgradeIdToSO[upgrade.UpgradeHash] = upgrade;
                 }
             }
-
-            return filtered;
         }
 
         /// <summary>
@@ -325,14 +224,8 @@ namespace LevelUpChess.Upgrades
         {
             if (string.IsNullOrEmpty(id)) return null;
             
-            foreach (var upgrade in GetAllUpgrades())
-            {
-                if (upgrade != null && upgrade.UpgradeHash == id)
-                {
-                    return upgrade;
-                }
-            }
-            return null;
+            BuildIdDictionary();
+            return _upgradeIdToSO.TryGetValue(id, out var upgrade) ? upgrade : null;
         }
 
         /// <summary>
@@ -468,17 +361,6 @@ namespace LevelUpChess.Upgrades
                 $"Rare:{stats.RarityCounts[2]}, Epic:{stats.RarityCounts[3]}, Legendary:{stats.RarityCounts[4]}\n" +
                 $"오류 - Null:{nullCount}, 빈ID:{emptyIdCount}, 중복:{duplicateCount}");
         }
-
-        [ContextMenu("Print Draw Probabilities")]
-        private void PrintDrawProbabilities()
-        {
-            Debug.Log("[UpgradePool] 뽑기 확률 (기본 설정 기준)\n" +
-                $"공통 풀 확률: {weightSettings.commonPoolChance * 100}%\n" +
-                $"전용 풀 확률: {(1f - weightSettings.commonPoolChance) * 100}%\n\n" +
-                $"타입 가중치 - 행마법:{weightSettings.movementWeight}, 스탯:{weightSettings.statWeight}, 능력:{weightSettings.abilityWeight}\n\n" +
-                $"희귀도 가중치 - Common:{weightSettings.commonWeight}, Uncommon:{weightSettings.uncommonWeight}, " +
-                $"Rare:{weightSettings.rareWeight}, Epic:{weightSettings.epicWeight}, Legendary:{weightSettings.legendaryWeight}");
-        }
 #endif
     }
 
@@ -519,6 +401,23 @@ namespace LevelUpChess.Upgrades
             StatCount = 0;
             AbilityCount = 0;
             RarityCounts = new int[5];
+        }
+    }
+
+    /// <summary>
+    /// 뽑기 결과
+    /// </summary>
+    public struct UpgradeDrawResult
+    {
+        public UpgradeBaseSO Upgrade;
+        public bool IsFromCommonPool;
+        public float DrawWeight;
+
+        public UpgradeDrawResult(UpgradeBaseSO upgrade, bool isCommon, float weight)
+        {
+            Upgrade = upgrade;
+            IsFromCommonPool = isCommon;
+            DrawWeight = weight;
         }
     }
 }

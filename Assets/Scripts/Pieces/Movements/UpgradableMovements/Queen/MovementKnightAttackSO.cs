@@ -2,19 +2,28 @@ using System.Collections.Generic;
 using UnityEngine;
 using LevelUpChess.Core;
 using LevelUpChess.Board;
+using LevelUpChess.Upgrades;
 
 namespace LevelUpChess.Pieces.Movements.UpgradableMovements
 {
     /// <summary>
-    /// Knight처럼 공격하는 업그레이드 가능한 무브먼트 (공격 전용)
+    /// Queen용 Knight처럼 공격하는 업그레이드 가능한 무브먼트 (공격 전용)
     /// </summary>
-    [CreateAssetMenu(fileName = "MovementKnightAttackSO", menuName = "Chess/Piece Movement/Upgradable/Knight Attack")]
-    public class MovementKnightAttackSO : PieceMovementSO
+    [CreateAssetMenu(fileName = "MovementQueenKnightAttackSO", menuName = "Chess/Piece Movement/Upgradable/Queen Knight Attack")]
+    public class MovementQueenKnightAttackSO : PieceMovementSO
     {
         private void OnEnable()
         {
             moveType = MoveType.AttackOnly;
         }
+
+#if UNITY_EDITOR
+        protected override void OnValidate()
+        {
+            base.OnValidate();
+            pieceFilter = PieceTypeFilter.Queen;
+        }
+#endif
 
         public override List<Move> GetAvailableMoves(ChessPiece piece)
         {

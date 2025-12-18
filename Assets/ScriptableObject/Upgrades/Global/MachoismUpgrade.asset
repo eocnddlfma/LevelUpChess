@@ -12,7 +12,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fe9fd9120372c3940a3055893d67ca5b, type: 3}
   m_Name: MachoismUpgrade
   m_EditorClassIdentifier: 
-  upgradeId: MachoismUpgradeSO
   upgradeName: "\uB9C8\uCD78\uC774\uC998"
   description: "\uB4A4\uB85C \uC774\uB3D9\uD558\uC9C0 \uBABB\uD569\uB2C8\uB2E4. \uC606\uC73C\uB85C\uB294
     \uACF5\uACA9\uD560\uB54C\uB9CC \uC774\uB3D9\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4.

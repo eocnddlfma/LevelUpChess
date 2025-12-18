@@ -12,13 +12,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 67517f728d99b7741b65b89b95d3f939, type: 3}
   m_Name: Upgrade_King_Rook3
   m_EditorClassIdentifier: 
-  upgradeId: KingRook3UpgradeSO
   upgradeName: "\uB8E9 \uCD5C\uB300 3\uCE78"
-  description: "\uB8E9\uCC98\uB7FC \uCD5C\uB300 3\uCE78 \uC774\uB3D9/\uACF5\uACA9"
+  description: "\uB8E9\uCC98\uB7FC \uCD5C\uB300 3\uCE78 \uC774\uB3D9/\uACF5\uACA9\uD569\uB2C8\uB2E4."
   icon: {fileID: 0}
   upgradeType: 0
   target: 0
   pieceFilter: 6
   rarity: 3
-  movementToAdd: {fileID: 11400000, guid: dbc6b97936070be478967f40023dfa8d, type: 2}
+  movementToAdd: {fileID: 11400000, guid: f15f828e9a14b054a80f2b84f82f59c9, type: 2}
   replaceExisting: 0

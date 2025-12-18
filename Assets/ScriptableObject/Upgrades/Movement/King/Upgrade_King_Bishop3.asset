@@ -12,13 +12,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6c64468ef039d63499c68894d3ed351c, type: 3}
   m_Name: Upgrade_King_Bishop3
   m_EditorClassIdentifier: 
-  upgradeId: KingBishop3UpgradeSO
   upgradeName: "\uBE44\uC20D \uCD5C\uB300 3\uCE78"
-  description: "\uBE44\uC20D\uCC98\uB7FC \uCD5C\uB300 3\uCE78 \uC774\uB3D9/\uACF5\uACA9"
+  description: "\uBE44\uC20D\uCC98\uB7FC \uCD5C\uB300 3\uCE78 \uC774\uB3D9/\uACF5\uACA9\uD569\uB2C8\uB2E4."
   icon: {fileID: 0}
   upgradeType: 0
   target: 0
   pieceFilter: 6
   rarity: 3
-  movementToAdd: {fileID: 11400000, guid: 985928003982dd543bdd76258447187e, type: 2}
+  movementToAdd: {fileID: 11400000, guid: 222d4adef485df34cb6bc4aa7df0bc84, type: 2}
   replaceExisting: 0

@@ -12,13 +12,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: eb4dcda4772404246a00fe2f3ee4c7df, type: 3}
   m_Name: Upgrade_Knight_Zebra
   m_EditorClassIdentifier: 
-  upgradeId: KnightZebraUpgradeSO
   upgradeName: "\uC81C\uBE0C\uB77C"
-  description: "\uC81C\uBE0C\uB77C \uD328\uD134 \uC774\uB3D9"
+  description: "\uC81C\uBE0C\uB77C \uD328\uD134\uC73C\uB85C \uC774\uB3D9\uD569\uB2C8\uB2E4."
   icon: {fileID: 0}
   upgradeType: 0
   target: 0
   pieceFilter: 3
   rarity: 3
-  movementToAdd: {fileID: 11400000, guid: 8da9fc9218ad01648993fd5d025e411b, type: 2}
+  movementToAdd: {fileID: 11400000, guid: 905bf557d05745d46994d0c3a7a05a24, type: 2}
   replaceExisting: 0

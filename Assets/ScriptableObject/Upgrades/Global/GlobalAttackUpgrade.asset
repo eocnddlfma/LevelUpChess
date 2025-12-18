@@ -12,8 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5610270ac90782845b1f18d36051fb30, type: 3}
   m_Name: GlobalAttackUpgrade
   m_EditorClassIdentifier: 
-  upgradeId: GlobalAttackUpgradeSO
-  upgradeName: "\uAE00\uB85C\uBC8C \uC5B4\uD0DD \uC5C5\uADF8\uB808\uC774\uB4DC"
+  upgradeName: "\uC804\uCCB4 \uACF5\uACA9\uB825 \uC5C5\uADF8\uB808\uC774\uB4DC"
   description: "\uBAA8\uB4E0 \uC544\uAD70 \uACF5\uACA9\uB825 +1"
   icon: {fileID: 0}
   upgradeType: 3

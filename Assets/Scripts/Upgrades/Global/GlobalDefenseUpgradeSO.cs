@@ -9,12 +9,12 @@ namespace LevelUpChess.Upgrades.Global
     [CreateAssetMenu(fileName = "GlobalDefenseUpgrade", menuName = "LevelUpChess/Upgrades/Global/DefenseUp")]
     public class GlobalDefenseUpgradeSO : GlobalUpgradeSO
     {
-        private const string DEFAULT_NAME = "글로벌 디펜스 업그레이드";
+        private const string DEFAULT_NAME = "전체 방어력 업그레이드";
         private const string DEFAULT_DESC = "모든 아군 방어력 +1";
 
         [Header("Settings")]
         [Tooltip("방어력 증가량")]
-        [SerializeField] private int defenseBonus = 2;
+        [SerializeField] private int defenseBonus = 1;
 
         private System.Collections.Generic.List<ChessPiece> _buffedPieces = new();
 

@@ -8,14 +8,14 @@ using LevelUpChess.Core;
 namespace LevelUpChess.Upgrades.Global
 {
     /// <summary>
-    /// 왕의 위엄: 킹 주변 기물들에게 버프 제공
+    /// 왕의 영역: 킹 주변 기물들에게 버프 제공
     /// 킹 중심 진형 전략
     /// </summary>
     [CreateAssetMenu(fileName = "KingsPrestigeUpgrade", menuName = "LevelUpChess/Upgrades/Global/KingsPrestige")]
     public class KingsPrestigeUpgradeSO : GlobalUpgradeSO
     {
-        private const string DEFAULT_NAME = "킹즈 프레스티지";
-        private const string DEFAULT_DESC = "킹이 죽으면 게임 종료";
+        private const string DEFAULT_NAME = "왕의 영역";
+        private const string DEFAULT_DESC = "킹 주변 기물들에게 버프 제공";
 
         [Header("King's Prestige Settings")]
         [Tooltip("킹 주변 버프 범위 (칸)")]
@@ -29,14 +29,10 @@ namespace LevelUpChess.Upgrades.Global
         
         [Tooltip("범위 내 아군 체력 재생 보너스")]
         [SerializeField] private int regenBonus = 1;
-        
-        [Tooltip("킹 자체 방어력 보너스")]
-        [SerializeField] private int kingDefenseBonus = 5;
 
         // 적용된 팀과 킹 참조
         private Dictionary<int, ChessPiece> _teamKings = new Dictionary<int, ChessPiece>();
         private List<ChessPiece> _buffedPieces = new List<ChessPiece>();
-        private Dictionary<int, ChessPiece> _buffedKings = new Dictionary<int, ChessPiece>();
 
         public override void ApplyToTeam(int teamId, List<ChessPiece> pieces)
         {
@@ -64,18 +60,11 @@ namespace LevelUpChess.Upgrades.Global
             }
 
             _teamKings[teamId] = king;
-            _buffedKings[teamId] = king;
 
             var boardManager = ServiceLocator.Get<BoardManager>();
             if (boardManager == null)
             {
                 Debug.LogWarning("[KingsPrestige] BoardManager not found");
-            }
-
-            // 킹에게 추가 방어력
-            if (king != null)
-            {
-                king.Stats.AddModifier(StatType.Defense, kingDefenseBonus);
             }
 
             // 주변 기물에 버프 적용
@@ -107,16 +96,6 @@ namespace LevelUpChess.Upgrades.Global
 
         public override void RemoveFromTeam(int teamId, List<ChessPiece> pieces)
         {
-            // remove king buff
-            if (_buffedKings.TryGetValue(teamId, out var king))
-            {
-                if (king != null)
-                {
-                    king.Stats.RemoveModifier(StatType.Defense, kingDefenseBonus);
-                }
-                _buffedKings.Remove(teamId);
-            }
-
             // remove piece buffs
             foreach (var p in _buffedPieces)
             {
@@ -158,8 +137,6 @@ namespace LevelUpChess.Upgrades.Global
             if (piece.PieceType == PieceType.King)
             {
                 _teamKings[teamId] = piece;
-                _buffedKings[teamId] = piece;
-                piece.Stats.AddModifier(StatType.Defense, kingDefenseBonus);
                 return;
             }
 
@@ -184,12 +161,6 @@ namespace LevelUpChess.Upgrades.Global
                 piece.Stats.RemoveModifier(StatType.Defense, defenseBonus);
                 piece.Stats.RemoveModifier(StatType.HealthRegeneration, regenBonus);
                 _buffedPieces.Remove(piece);
-            }
-
-            if (_buffedKings.TryGetValue(teamId, out var king) && king == piece)
-            {
-                piece.Stats.RemoveModifier(StatType.Defense, kingDefenseBonus);
-                _buffedKings.Remove(teamId);
             }
         }
 

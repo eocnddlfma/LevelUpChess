@@ -58,7 +58,7 @@ namespace LevelUpChess.Pieces
                 Vector2Int diag = new Vector2Int(pos.x + dx, pos.y + dir);
                 var diagTile = boardManager.GetTileAt(diag);
                 if (diagTile != null && diagTile.OccupyingPiece != null && 
-                    diagTile.OccupyingPiece.Team != piece.Team)
+                    (diagTile.OccupyingPiece.Team != piece.Team || piece.CanAttackAllies))
                 {
                     moves.Add(new Move(pos, diag) { isCapture = true });
                 }

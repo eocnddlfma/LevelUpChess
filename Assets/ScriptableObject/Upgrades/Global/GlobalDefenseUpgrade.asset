@@ -12,8 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1a7d00151a8ecf84b8995afdff0649f6, type: 3}
   m_Name: GlobalDefenseUpgrade
   m_EditorClassIdentifier: 
-  upgradeId: GlobalDefenseUpgradeSO
-  upgradeName: "\uAE00\uB85C\uBC8C \uB514\uD39C\uC2A4 \uC5C5\uADF8\uB808\uC774\uB4DC"
+  upgradeName: "\uC804\uCCB4 \uBC29\uC5B4\uB825 \uC5C5\uADF8\uB808\uC774\uB4DC"
   description: "\uBAA8\uB4E0 \uC544\uAD70 \uBC29\uC5B4\uB825 +1"
   icon: {fileID: 0}
   upgradeType: 3
@@ -21,4 +20,4 @@ MonoBehaviour:
   pieceFilter: 0
   rarity: 1
   targetTeam: 0
-  defenseBonus: 2
+  defenseBonus: 1

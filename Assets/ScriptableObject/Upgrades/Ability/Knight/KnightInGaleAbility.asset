@@ -12,10 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2604c535516a3684b9945d016e63e92d, type: 3}
   m_Name: KnightInGaleAbility
   m_EditorClassIdentifier: 
-  upgradeId: KnightInGaleAbilitySO
   upgradeName: "\uB098\uC774\uD2B8 \uC778 \uAC8C\uC77C"
-  description: "\uB098\uC774\uD2B8\uAC00 \uC544\uAD70\uC744 \uACF5\uACA9\uD560 \uACBD\uC6B0
-    \uACF5\uACA9\uB825\uB9CC\uD07C \uCCB4\uB825\uC744 \uD68C\uBCF5\uD569\uB2C8\uB2E4."
+  description: "\uC544\uAD70\uC744 \uACF5\uACA9\uD558\uBA74 \uACF5\uACA9\uB825\uB9CC\uD07C
+    \uCCB4\uB825\uC744 \uD68C\uBCF5\uD569\uB2C8\uB2E4."
   icon: {fileID: 0}
   upgradeType: 2
   target: 0

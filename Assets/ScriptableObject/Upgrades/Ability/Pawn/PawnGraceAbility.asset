@@ -12,11 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ca8d978e7e6ad38478249a426b776f5a, type: 3}
   m_Name: PawnGraceAbility
   m_EditorClassIdentifier: 
-  upgradeId: PawnGraceAbilitySO
   upgradeName: "\uD3F0\uC740\uC815"
-  description: "1\uD68C \uACF5\uACA9\uC744 \uBC1B\uC544\uB3C4 \uD574\uB2F9 \uACF5\uACA9\uC744
-    \uBB34\uD6A8\uD654\uD568. \uC774 \uD53C\uC2A4 2\uD68C \uD589\uB3D9\uC2DC \uD6A8\uACFC
-    \uCDA9\uC804\uB428."
+  description: "\uD55C \uBC88 \uACF5\uACA9\uC744 \uBB34\uD6A8\uD654\uD558\uBA70 \uB450
+    \uBC88 \uD589\uB3D9\uD558\uBA74 \uD6A8\uACFC\uAC00 \uCDA9\uC804\uB429\uB2C8\uB2E4."
   icon: {fileID: 0}
   upgradeType: 2
   target: 0

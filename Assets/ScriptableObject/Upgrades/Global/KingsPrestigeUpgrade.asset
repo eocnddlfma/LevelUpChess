@@ -12,17 +12,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1453227ce5b2b9e488ff6d54f5a06432, type: 3}
   m_Name: KingsPrestigeUpgrade
   m_EditorClassIdentifier: 
-  upgradeId: KingsPrestigeUpgradeSO
-  upgradeName: "\uD0B9\uC988 \uD504\uB808\uC2A4\uD2F0\uC9C0"
-  description: "\uD0B9\uC774 \uC8FD\uC73C\uBA74 \uAC8C\uC784 \uC885\uB8CC"
+  upgradeName: "\uC655\uC758 \uC601\uC5ED"
+  description: "\uD0B9 \uC8FC\uBCC0 \uAE30\uBB3C\uB4E4\uC5D0\uAC8C \uBC84\uD504 \uC81C\uACF5"
   icon: {fileID: 0}
   upgradeType: 3
   target: 0
-  pieceFilter: 6
+  pieceFilter: 0
   rarity: 1
   targetTeam: 0
   auraRange: 2
   attackBonus: 3
   defenseBonus: 2
   regenBonus: 1
-  kingDefenseBonus: 5

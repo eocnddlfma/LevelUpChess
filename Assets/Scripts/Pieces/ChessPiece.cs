@@ -48,6 +48,9 @@ namespace LevelUpChess.Pieces
         [HideInInspector]
         [SerializeField] private Tile _currentTile;
 
+        // 적용된 업그레이드 ID 목록 (저장/로드를 위해)
+        [SerializeField] private List<string> _appliedUpgradeIds = new List<string>();
+
         private SpriteRenderer _spriteRenderer;
         private PieceAnimator _animator;
         private PieceCombat _combat;
@@ -557,8 +560,7 @@ namespace LevelUpChess.Pieces
                 sb.AppendLine($"<b>체력:</b> {_combat.CurrentHealth}/{_combat.MaxHealth}");
                 sb.AppendLine($"<b>공격력:</b> {_combat.AttackPower}");
                 
-                if (_combat.Defense > 0)
-                    sb.AppendLine($"<b>방어력:</b> {_combat.Defense}");
+                sb.AppendLine($"<b>방어력:</b> {_combat.Defense}");
                 
                 if (_combat.Shield > 0)
                     sb.AppendLine($"<b>보호막:</b> {_combat.Shield}");
@@ -623,6 +625,33 @@ namespace LevelUpChess.Pieces
             {
                 spriteRenderer.transform.localRotation = Quaternion.Euler(0, 0, 180);
             }
+        }
+
+        /// <summary>
+        /// 적용된 업그레이드 ID 추가
+        /// </summary>
+        public void AddAppliedUpgrade(string upgradeId)
+        {
+            if (!string.IsNullOrEmpty(upgradeId) && !_appliedUpgradeIds.Contains(upgradeId))
+            {
+                _appliedUpgradeIds.Add(upgradeId);
+            }
+        }
+
+        /// <summary>
+        /// 적용된 업그레이드 ID 제거
+        /// </summary>
+        public void RemoveAppliedUpgrade(string upgradeId)
+        {
+            _appliedUpgradeIds.Remove(upgradeId);
+        }
+
+        /// <summary>
+        /// 적용된 업그레이드 ID 목록 반환
+        /// </summary>
+        public List<string> GetAppliedUpgradeIds()
+        {
+            return new List<string>(_appliedUpgradeIds);
         }
     }
 }

@@ -386,41 +386,63 @@ namespace LevelUpChess.Pieces
                 return false;
             }
 
-            // 1. 보호막 확인 - 보호막이 있으면 방어력 2배 효과 + 데미지 무시
+            int actualDamage = 0;
+
+            // 1. 보호막 확인 - 보호막이 있으면 먼저 보호막으로 데미지 흡수
             int totalShield = _shield + _bonusShield;
             if (totalShield > 0)
             {
                 // 보호막이 있을 때는 방어력 효과 2배 적용
-                int actualDamage = Mathf.Max(1, amount - (_defense * 2)); // 최소 1 대미지
+                actualDamage = Mathf.Max(1, amount - (_defense * 2)); // 최소 1 대미지
 
-                // 보호막이 있으면 데미지를 완전히 무시 (보호막 소모 없음)
-                Debug.Log($"[PieceCombat] Shield protected against {actualDamage} damage. Shield remaining: {totalShield}");
-                _ui?.ShowDamageEffect(0); // 데미지 효과는 0으로 표시
-                return false;
+                // 보호막으로 데미지 흡수
+                int shieldDamage = Mathf.Min(actualDamage, totalShield);
+                _shield -= shieldDamage;
+                actualDamage -= shieldDamage;
+
+                Debug.Log($"[PieceCombat] Shield absorbed {shieldDamage} damage. Shield remaining: {_shield}");
+
+                // 보호막으로 모두 흡수했으면 체력 데미지 없음
+                if (actualDamage <= 0)
+                {
+                    _ui?.ShowDamageEffect(0); // 데미지 효과는 0으로 표시
+                    _ui?.UpdateAll(_currentHealth, MaxHealth, AttackPower, _level, Shield);
+                    return false;
+                }
+
+                // 남은 데미지는 체력에 적용
+                _currentHealth -= actualDamage;
+                _currentHealth = Mathf.Max(0, _currentHealth);
+
+                _ui?.UpdateHealth(_currentHealth, _maxHealth);
+                _ui?.ShowDamageEffect(actualDamage);
+                _ui?.UpdateAll(_currentHealth, MaxHealth, AttackPower, _level, Shield);
             }
+            else
+            {
+                // 2. 보호막이 없으면 일반 방어력 적용
+                actualDamage = Mathf.Max(1, amount - _defense); // 최소 1 대미지
+                
+                // 3. 체력 감소
+                _currentHealth -= actualDamage;
+                _currentHealth = Mathf.Max(0, _currentHealth);
 
-            // 2. 보호막이 없으면 일반 방어력 적용
-            int actualDamageNoShield = Mathf.Max(1, amount - _defense); // 최소 1 대미지
-            
-            // 3. 체력 감소
-            _currentHealth -= actualDamageNoShield;
-            _currentHealth = Mathf.Max(0, _currentHealth);
-
-            _ui?.UpdateHealth(_currentHealth, _maxHealth);
-            _ui?.ShowDamageEffect(actualDamageNoShield);
+                _ui?.UpdateHealth(_currentHealth, _maxHealth);
+                _ui?.ShowDamageEffect(actualDamage);
+            }
 
             // OnHit 능력 실행 (피해 후, 사망 전)
             var upgradeManager = UpgradeManager.Instance;
             if (upgradeManager != null)
             {
                 var hitContext = upgradeManager.CreateAbilityContext(_piece, null);
-                hitContext.Damage = actualDamageNoShield;
+                hitContext.Damage = actualDamage;
                 hitContext.Attacker = attacker;
                 upgradeManager.ExecuteAbilities(_piece, AbilityTrigger.OnHit, hitContext);
 
                 // BonusDamage 적용 (음수면 데미지 감소)
-                actualDamageNoShield += hitContext.BonusDamage;
-                actualDamageNoShield = Mathf.Max(1, actualDamageNoShield); // 최소 1 데미지
+                actualDamage += hitContext.BonusDamage;
+                actualDamage = Mathf.Max(1, actualDamage); // 최소 1 데미지
             }
             
             if (_currentHealth <= 0 && handleDeath)
@@ -440,7 +462,7 @@ namespace LevelUpChess.Pieces
             }
 
             // raise OnDamageTaken event on victim
-            _piece?.RaiseDamageTaken(attacker, actualDamageNoShield);
+            _piece?.RaiseDamageTaken(attacker, actualDamage);
             return false;
         }
         

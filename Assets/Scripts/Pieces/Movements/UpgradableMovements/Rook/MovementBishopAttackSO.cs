@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using LevelUpChess.Core;
 using LevelUpChess.Board;
+using LevelUpChess.Upgrades;
 
 namespace LevelUpChess.Pieces
 {
@@ -17,6 +18,14 @@ namespace LevelUpChess.Pieces
             new Vector2Int(-1, 1),          // 좌상
             new Vector2Int(-1, -1)          // 좌하
         };
+
+#if UNITY_EDITOR
+        protected override void OnValidate()
+        {
+            base.OnValidate();
+            pieceFilter = PieceTypeFilter.Rook;
+        }
+#endif
 
         private void OnEnable()
         {

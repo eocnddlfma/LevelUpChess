@@ -12,13 +12,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 857a33c8ff9be46498205e5b4d4ae628, type: 3}
   m_Name: Upgrade_Rook_BishopMove
   m_EditorClassIdentifier: 
-  upgradeId: RookBishopMoveUpgradeSO
   upgradeName: "\uBE44\uC20D \uBB34\uBE0C"
-  description: "\uB300\uAC01\uC120 \uC774\uB3D9"
+  description: "\uB300\uAC01\uC120\uC73C\uB85C \uC774\uB3D9\uD569\uB2C8\uB2E4."
   icon: {fileID: 0}
   upgradeType: 0
   target: 0
   pieceFilter: 2
   rarity: 4
-  movementToAdd: {fileID: 11400000, guid: b824f0bf05799b04abcfb964d275be12, type: 2}
+  movementToAdd: {fileID: 11400000, guid: f15f828e9a14b054a80f2b84f82f59c9, type: 2}
   replaceExisting: 0

@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using LevelUpChess.Core;
 using LevelUpChess.Board;
+using LevelUpChess.Upgrades;
 
 namespace LevelUpChess.Pieces.Movements.UpgradableMovements
 {
@@ -15,6 +16,14 @@ namespace LevelUpChess.Pieces.Movements.UpgradableMovements
         {
             moveType = MoveType.MoveOnly;
         }
+
+#if UNITY_EDITOR
+        protected override void OnValidate()
+        {
+            base.OnValidate();
+            pieceFilter = PieceTypeFilter.Queen;
+        }
+#endif
 
         public override List<Move> GetAvailableMoves(ChessPiece piece)
         {

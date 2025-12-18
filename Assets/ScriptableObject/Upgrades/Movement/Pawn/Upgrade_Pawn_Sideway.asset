@@ -12,13 +12,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1def7389398a7a147b917c9497807362, type: 3}
   m_Name: Upgrade_Pawn_Sideway
   m_EditorClassIdentifier: 
-  upgradeId: PawnSidewayUpgradeSO
   upgradeName: "\uC0AC\uC774\uB4DC\uC6E8\uC774"
-  description: "\uC606 \uCE78 \uC774\uB3D9+\uACF5\uACA9"
+  description: "\uC606 \uCE78\uC73C\uB85C \uC774\uB3D9\uD558\uBA70 \uACF5\uACA9\uD569\uB2C8\uB2E4."
   icon: {fileID: 0}
   upgradeType: 0
   target: 0
   pieceFilter: 1
   rarity: 2
-  movementToAdd: {fileID: 11400000, guid: dc9f65999f41b3c4f9edc0d20f545996, type: 2}
+  movementToAdd: {fileID: 11400000, guid: 415cbcde44b1ba54ca79e905976ae425, type: 2}
   replaceExisting: 0

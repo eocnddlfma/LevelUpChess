@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 10d7c9f63e6f69545b648b7d469b0dbb, type: 3}
+  m_Name: LookAtMeAbility
+  m_EditorClassIdentifier: 
+  upgradeName: "\uB8E9\uC5E3\uBBF8"
+  description: "\uC774 \uB8E9\uC744 \uACF5\uACA9\uD55C \uC801\uC740 \uC774 \uB8E9\uC774
+    \uC8FD\uAE30 \uC804\uAE4C\uC9C0 \uB2E4\uB978 \uB300\uC0C1\uC744 \uACF5\uACA9\uD560
+    \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."
+  icon: {fileID: 0}
+  upgradeType: 2
+  target: 0
+  pieceFilter: 2
+  rarity: 1
+  trigger: 12
+  stackable: 0
+  maxStacks: 1

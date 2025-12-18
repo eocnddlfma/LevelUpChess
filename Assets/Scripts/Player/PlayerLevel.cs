@@ -41,12 +41,12 @@ namespace LevelUpChess.Player
         }
         
         /// <summary>
-        /// 기물 사망 시 호출 - 내 기물이 죽으면 경험치 획득
+        /// 기물 사망 시 호출 - 상대 기물이 죽으면 경험치 획득
         /// </summary>
         private void OnPieceDeath(PieceDeathEvent eventData)
         {
-            // 내 팀의 기물이 죽었을 때만 경험치 획득
-            if (eventData.DeadPieceTeam == _team)
+            // 상대 팀의 기물이 죽었을 때만 경험치 획득
+            if (eventData.DeadPieceTeam != _team)
             {
                 int expGain = eventData.PieceValue;
                 GainExperience(expGain);

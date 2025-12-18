@@ -12,7 +12,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ce244c57ff9ce7745ac2a37c255332ba, type: 3}
   m_Name: Health_Rare
   m_EditorClassIdentifier: 
-  upgradeId: Health_Rare
   upgradeName: "Rare \uCCB4\uB825 \uC99D\uAC00"
   description: "\uCD5C\uB300 \uCCB4\uB825\uC744 15\uB9CC\uD07C \uC99D\uAC00\uC2DC\uD0B5\uB2C8\uB2E4"
   icon: {fileID: 0}
@@ -21,6 +20,6 @@ MonoBehaviour:
   pieceFilter: 0
   rarity: 3
   statType: 0
-  flatBonus: 5
+  flatBonus: 15
   percentBonus: 0
   isPermanent: 1

@@ -291,12 +291,35 @@ namespace LevelUpChess.Editor
         {
             string[] dirs = {
                 $"{SO_BASE_PATH}/Ability",
-                $"{SO_BASE_PATH}/Ability/Common",
                 $"{SO_BASE_PATH}/Ability/Pawn",
+                $"{SO_BASE_PATH}/Ability/Knight",
                 $"{SO_BASE_PATH}/Ability/Rook",
                 $"{SO_BASE_PATH}/Ability/Bishop",
-                $"{SO_BASE_PATH}/Ability/Knight",
-                $"{SO_BASE_PATH}/Ability/Queen"
+                $"{SO_BASE_PATH}/Ability/Queen",
+                $"{SO_BASE_PATH}/Ability/King"
+            };
+            
+            foreach (var dir in dirs)
+            {
+                if (!Directory.Exists(dir))
+                {
+                    Directory.CreateDirectory(dir);
+                }
+            }
+        }
+
+        private void CreateUpgradableMovementDirectories()
+        {
+            string[] dirs = {
+                "Assets/ScriptableObject/Movements",
+                "Assets/ScriptableObject/Movements/UpgradableMovements",
+                "Assets/ScriptableObject/Movements/UpgradableMovements/Pawn",
+                "Assets/ScriptableObject/Movements/UpgradableMovements/Rook",
+                "Assets/ScriptableObject/Movements/UpgradableMovements/Knight",
+                "Assets/ScriptableObject/Movements/UpgradableMovements/Bishop",
+                "Assets/ScriptableObject/Movements/UpgradableMovements/Queen",
+                "Assets/ScriptableObject/Movements/UpgradableMovements/King",
+                "Assets/ScriptableObject/Movements/UpgradableMovements/General"
             };
             
             foreach (var dir in dirs)
@@ -447,10 +470,18 @@ namespace LevelUpChess.Editor
             serialized.FindProperty("rarity").intValue = (int)rarity;
             serialized.FindProperty("pieceFilter").enumValueIndex = (int)PieceTypeFilter.Any;
             serialized.FindProperty("upgradeType").enumValueIndex = (int)UpgradeType.Stat;
-            serialized.FindProperty("upgradeId").stringValue = fileName;
+            // serialized.FindProperty("upgradeId").stringValue = fileName; // upgradeId 필드가 없음
 
             // StatUpgradeSO의 flatBonus 설정
-            serialized.FindProperty("flatBonus").intValue = value;
+            var flatBonusProp = serialized.FindProperty("flatBonus");
+            if (flatBonusProp != null)
+            {
+                flatBonusProp.intValue = value;
+            }
+            else
+            {
+                Debug.LogError($"[UpgradeAutoGenerator] flatBonus 프로퍼티를 찾을 수 없습니다: {typeof(T).Name}");
+            }
 
             serialized.ApplyModifiedProperties();
 
@@ -543,22 +574,10 @@ namespace LevelUpChess.Editor
             {
                 var filterToUse = upgrade.PieceFilter;
 
-                // Try to infer missing piece filter from folder or type name so assignments go to the right pool.
+                // pieceFilter가 Any일 때는 그대로 사용 (OnValidate에서 설정되지 않은 경우)
                 if (filterToUse == PieceTypeFilter.Any)
                 {
-                    var inferred = InferPieceFilter(path, upgrade.GetType());
-                    if (inferred.HasValue)
-                    {
-                        filterToUse = inferred.Value;
-                        var serializedUpgrade = new SerializedObject(upgrade);
-                        var filterProp = serializedUpgrade.FindProperty("pieceFilter");
-                        if (filterProp != null)
-                        {
-                            filterProp.enumValueIndex = (int)filterToUse;
-                            serializedUpgrade.ApplyModifiedPropertiesWithoutUndo();
-                            EditorUtility.SetDirty(upgrade);
-                        }
-                    }
+                    // 기본적으로 Any로 유지
                 }
 
                 SerializedProperty targetList = ResolveTargetListProperty(
@@ -636,26 +655,22 @@ namespace LevelUpChess.Editor
                 : piecePool.FindPropertyRelative(childProperty);
         }
 
-        private PieceTypeFilter? InferPieceFilter(string assetPath, Type type)
+        private PieceTypeFilter? InferPieceFilterFromTypeName(string typeName)
         {
-            string lowerPath = assetPath.ToLowerInvariant();
-            string lowerName = type.Name.ToLowerInvariant();
+            string lowerName = typeName.ToLowerInvariant();
 
-            if (lowerPath.Contains("/pawn/") || lowerName.Contains("pawn"))
+            if (lowerName.Contains("pawn"))
                 return PieceTypeFilter.Pawn;
-            if (lowerPath.Contains("/knight/") || lowerName.Contains("knight"))
+            if (lowerName.Contains("knight"))
                 return PieceTypeFilter.Knight;
-            if (lowerPath.Contains("/bishop/") || lowerName.Contains("bishop"))
+            if (lowerName.Contains("bishop"))
                 return PieceTypeFilter.Bishop;
-            if (lowerPath.Contains("/rook/") || lowerName.Contains("rook"))
+            if (lowerName.Contains("rook"))
                 return PieceTypeFilter.Rook;
-            if (lowerPath.Contains("/queen/") || lowerName.Contains("queen"))
+            if (lowerName.Contains("queen"))
                 return PieceTypeFilter.Queen;
-            if (lowerPath.Contains("/king/") || lowerName.Contains("king"))
+            if (lowerName.Contains("king"))
                 return PieceTypeFilter.King;
-
-            if (lowerPath.Contains("/common/"))
-                return PieceTypeFilter.Any;
 
             return null;
         }
@@ -771,11 +786,32 @@ namespace LevelUpChess.Editor
                 var so = ScriptableObject.CreateInstance(type) as UpgradeBaseSO;
                 if (so == null) continue;
 
+                // Call OnValidate first to set default values including pieceFilter
+                var onValidateMethod = type.GetMethod("OnValidate", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
+                if (onValidateMethod != null)
+                {
+                    onValidateMethod.Invoke(so, null);
+                }
+
                 var serialized = new SerializedObject(so);
                 var idProp = serialized.FindProperty("upgradeId");
                 if (idProp != null) idProp.stringValue = type.Name;
 
-                // Description is set by OnValidate in the SO script
+                // Set upgradeName and description from localization defaults
+                if (UpgradeLocalizationDefaults.DefaultText.TryGetValue(type.Name, out var defaultText))
+                {
+                    var nameProp = serialized.FindProperty("upgradeName");
+                    if (nameProp != null)
+                    {
+                        nameProp.stringValue = defaultText.name;
+                    }
+
+                    var descProp = serialized.FindProperty("description");
+                    if (descProp != null)
+                    {
+                        descProp.stringValue = defaultText.desc;
+                    }
+                }
 
                 var filterProp = serialized.FindProperty("pieceFilter");
                 PieceTypeFilter filter = filterProp != null
@@ -784,7 +820,7 @@ namespace LevelUpChess.Editor
 
                 if ((filter == PieceTypeFilter.Any || filter == 0) && subFolder != "Global")
                 {
-                    var inferred = InferPieceFilter($"/{type.Name}/", type);
+                    var inferred = InferPieceFilter($"/{type.FullName}/", type);
                     if (inferred.HasValue)
                     {
                         filter = inferred.Value;
@@ -817,13 +853,8 @@ namespace LevelUpChess.Editor
                 AssetDatabase.CreateAsset(so, path);
                 Debug.Log($"[UpgradeAutoGenerator] 생성: {path} ({type.Name})");
 
-                // Call OnValidate to set default values
-                var onValidateMethod = type.GetMethod("OnValidate", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
-                if (onValidateMethod != null)
-                {
-                    onValidateMethod.Invoke(so, null);
-                    EditorUtility.SetDirty(so);
-                }
+                // OnValidate already called, just mark dirty
+                EditorUtility.SetDirty(so);
 
                 // Special handling for MovementUpgradeSO: auto-assign movementToAdd after asset creation
                 if (so is MovementUpgradeSO movementUpgrade)
@@ -851,6 +882,9 @@ namespace LevelUpChess.Editor
 
         private void CreateUpgradableMovementSOs()
         {
+            // 폴더 구조 생성
+            CreateUpgradableMovementDirectories();
+            
             var movementTypes = GetConcreteTypes<PieceMovementSO>();
             
             foreach (var type in movementTypes)
@@ -859,18 +893,32 @@ namespace LevelUpChess.Editor
                 if (type.Namespace != "LevelUpChess.Pieces.Movements.UpgradableMovements")
                     continue;
                 
+                // 임시 인스턴스로 pieceFilter 확인
+                var tempSO = ScriptableObject.CreateInstance(type) as PieceMovementSO;
+                if (tempSO == null) continue;
+                
+                // OnValidate 호출로 pieceFilter 설정
+                var onValidateMethod = type.GetMethod("OnValidate", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
+                if (onValidateMethod != null)
+                {
+                    onValidateMethod.Invoke(tempSO, null);
+                }
+                
+                string pieceFolder = ResolvePieceFolderForMovement(tempSO.PieceFilter);
+                
                 string assetName = GetMovementAssetName(type.Name);
-                string assetPath = $"Assets/ScriptableObject/{assetName}.asset";
+                string assetPath = $"Assets/ScriptableObject/Movements/UpgradableMovements/{pieceFolder}/{assetName}.asset";
                 
                 if (AssetDatabase.LoadAssetAtPath<PieceMovementSO>(assetPath) != null)
                 {
+                    UnityEngine.Object.DestroyImmediate(tempSO);
                     Debug.Log($"[UpgradeAutoGenerator] {assetName} already exists, skipping...");
                     continue;
                 }
                 
-                var so = ScriptableObject.CreateInstance(type);
-                AssetDatabase.CreateAsset(so, assetPath);
-                Debug.Log($"[UpgradeAutoGenerator] Created MovementSO: {assetPath}");
+                // 임시 SO를 에셋으로 저장
+                AssetDatabase.CreateAsset(tempSO, assetPath);
+                Debug.Log($"[UpgradeAutoGenerator] Created MovementSO: {assetPath} (Filter: {tempSO.PieceFilter})");
             }
             
             AssetDatabase.SaveAssets();
@@ -921,6 +969,20 @@ namespace LevelUpChess.Editor
             return null;
         }
 
+        private string ResolvePieceFolderForMovement(PieceTypeFilter filter)
+        {
+            return filter switch
+            {
+                PieceTypeFilter.Pawn => "Pawn",
+                PieceTypeFilter.Rook => "Rook",
+                PieceTypeFilter.Knight => "Knight",
+                PieceTypeFilter.Bishop => "Bishop",
+                PieceTypeFilter.Queen => "Queen",
+                PieceTypeFilter.King => "King",
+                _ => "General"
+            };
+        }
+
         private string ResolvePieceFolder(PieceTypeFilter filter, string topFolder)
         {
             if (topFolder == "Global") return string.Empty;
@@ -935,6 +997,30 @@ namespace LevelUpChess.Editor
                 PieceTypeFilter.King => "King",
                 _ => "Common"
             };
+        }
+
+        private PieceTypeFilter? InferPieceFilter(string assetPath, Type type)
+        {
+            string lowerPath = assetPath.ToLowerInvariant();
+            string lowerName = type.Name.ToLowerInvariant();
+
+            if (lowerPath.Contains("/pawn/") || lowerName.Contains("pawn"))
+                return PieceTypeFilter.Pawn;
+            if (lowerPath.Contains("/knight/") || lowerName.Contains("knight"))
+                return PieceTypeFilter.Knight;
+            if (lowerPath.Contains("/bishop/") || lowerName.Contains("bishop"))
+                return PieceTypeFilter.Bishop;
+            if (lowerPath.Contains("/rook/") || lowerName.Contains("rook"))
+                return PieceTypeFilter.Rook;
+            if (lowerPath.Contains("/queen/") || lowerName.Contains("queen"))
+                return PieceTypeFilter.Queen;
+            if (lowerPath.Contains("/king/") || lowerName.Contains("king"))
+                return PieceTypeFilter.King;
+
+            if (lowerPath.Contains("/common/"))
+                return PieceTypeFilter.Any;
+
+            return null;
         }
     }
 }

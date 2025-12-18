@@ -12,13 +12,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b3c754fb4fe59c648833f6585c2f904e, type: 3}
   m_Name: Upgrade_Rook_KnightAttack
   m_EditorClassIdentifier: 
-  upgradeId: RookKnightAttackUpgradeSO
   upgradeName: "\uB098\uC774\uD2B8 \uC5B4\uD0DD"
-  description: "\uB098\uC774\uD2B8 \uACF5\uACA9"
+  description: "\uB098\uC774\uD2B8\uCC98\uB7FC \uACF5\uACA9\uD569\uB2C8\uB2E4."
   icon: {fileID: 0}
   upgradeType: 0
   target: 0
   pieceFilter: 2
   rarity: 3
-  movementToAdd: {fileID: 11400000, guid: 7971d17350cca264583c10ec515e6ae8, type: 2}
+  movementToAdd: {fileID: 11400000, guid: f15f828e9a14b054a80f2b84f82f59c9, type: 2}
   replaceExisting: 0

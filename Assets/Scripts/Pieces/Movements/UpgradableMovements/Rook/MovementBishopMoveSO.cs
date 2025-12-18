@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using LevelUpChess.Core;
 using LevelUpChess.Board;
+using LevelUpChess.Upgrades;
 
 namespace LevelUpChess.Pieces.Movements.UpgradableMovements
 {
@@ -15,6 +16,14 @@ namespace LevelUpChess.Pieces.Movements.UpgradableMovements
         {
             moveType = MoveType.MoveOnly;
         }
+
+#if UNITY_EDITOR
+        protected override void OnValidate()
+        {
+            base.OnValidate();
+            pieceFilter = PieceTypeFilter.Rook;
+        }
+#endif
 
         private static readonly Vector2Int[] Directions = {
             new Vector2Int(1, 1), new Vector2Int(1, -1),

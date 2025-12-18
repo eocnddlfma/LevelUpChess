@@ -12,7 +12,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2bf224eb137f3564687f7814cf8ac1f7, type: 3}
   m_Name: BasicGlobalUpgrade
   m_EditorClassIdentifier: 
-  upgradeId: BasicGlobalUpgradeSO
   upgradeName: "\uBCA0\uC774\uC9C1 \uAE00\uB85C\uBC8C \uC5C5\uADF8\uB808\uC774\uB4DC"
   description: "\uAE30\uBCF8 \uAE00\uB85C\uBC8C \uC5C5\uADF8\uB808\uC774\uB4DC"
   icon: {fileID: 0}

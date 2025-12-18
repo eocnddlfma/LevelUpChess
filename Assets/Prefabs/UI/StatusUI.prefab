@@ -1445,7 +1445,6 @@ MonoBehaviour:
   attackText: {fileID: 2423563013443462760}
   shieldIcon: {fileID: 6571653069931740955}
   levelText: {fileID: 4522261233492457153}
-  shieldBackgroundImage: {fileID: 0}
   shieldFillImage: {fileID: 6571653069931740955}
   shieldTrailImage: {fileID: 7228003442502363435}
   fullHealthColor: {r: 0, g: 1, b: 0, a: 1}
@@ -1454,7 +1453,7 @@ MonoBehaviour:
   trailColor: {r: 1, g: 1, b: 1, a: 1}
   healthTextColor: {r: 0, g: 0, b: 0, a: 1}
   attackTextColor: {r: 1, g: 0, b: 0, a: 1}
-  shieldBarColor: {r: 0.3, g: 0.3, b: 0.3, a: 1}
+  shieldBarColor: {r: 0.63522005, g: 0.63522005, b: 0.63522005, a: 1}
   levelTextColor: {r: 0, g: 0, b: 0, a: 1}
   expBarColor: {r: 0.3, g: 0.7, b: 1, a: 1}
   expBackgroundColor: {r: 0.15, g: 0.15, b: 0.15, a: 0.8}

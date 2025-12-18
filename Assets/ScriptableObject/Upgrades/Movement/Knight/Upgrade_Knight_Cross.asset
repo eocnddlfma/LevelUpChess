@@ -12,13 +12,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c5c3bea969bb838438b44a293c798fcd, type: 3}
   m_Name: Upgrade_Knight_Cross
   m_EditorClassIdentifier: 
-  upgradeId: KnightCrossUpgradeSO
   upgradeName: "\uD06C\uB85C\uC2A4 \uC2ED\uC790"
-  description: "\uC2ED\uC790 \uBC29\uD5A5\uC73C\uB85C \uC774\uB3D9\uD560 \uC218 \uC788\uC2B5\uB2C8\uB2E4."
+  description: "\uC2ED\uC790 \uD615\uD0DC\uB85C \uC774\uB3D9\uD569\uB2C8\uB2E4."
   icon: {fileID: 0}
   upgradeType: 0
   target: 0
   pieceFilter: 3
   rarity: 3
-  movementToAdd: {fileID: 11400000, guid: 2d68c9c86cb0f414e98e0896d77bf7e0, type: 2}
+  movementToAdd: {fileID: 11400000, guid: 905bf557d05745d46994d0c3a7a05a24, type: 2}
   replaceExisting: 0

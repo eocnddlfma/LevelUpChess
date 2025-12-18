@@ -12,9 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ab6f5b56895d5dd4bbd3331711216f0e, type: 3}
   m_Name: VampirismAbility
   m_EditorClassIdentifier: 
-  upgradeId: VampirismAbilitySO
   upgradeName: "\uD761\uD608"
-  description: "\uACF5\uACA9\uC2DC \uACF5\uACA9\uB825/4\uB97C \uD68C\uBCF5\uD569\uB2C8\uB2E4."
+  description: "\uACF5\uACA9 \uC2DC \uACF5\uACA9\uB825\uC758 1/4\uB9CC\uD07C \uCCB4\uB825\uC744
+    \uD68C\uBCF5\uD569\uB2C8\uB2E4."
   icon: {fileID: 0}
   upgradeType: 2
   target: 0

@@ -12,13 +12,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e9789574d112e9e47b519935ff270792, type: 3}
   m_Name: Upgrade_Knight_Dash
   m_EditorClassIdentifier: 
-  upgradeId: KnightDashUpgradeSO
   upgradeName: "\uB300\uC2DC \uC55E\uB450\uCE78"
-  description: "\uC55E\uC73C\uB85C \uB450 \uCE78 \uB3CC\uC9C4"
+  description: "\uC55E\uC73C\uB85C \uB450 \uCE78 \uB3CC\uC9C4\uD569\uB2C8\uB2E4."
   icon: {fileID: 0}
   upgradeType: 0
   target: 0
   pieceFilter: 3
   rarity: 2
-  movementToAdd: {fileID: 11400000, guid: 0fb5aaa43053d6245969d56bd94f1b91, type: 2}
+  movementToAdd: {fileID: 11400000, guid: 905bf557d05745d46994d0c3a7a05a24, type: 2}
   replaceExisting: 0

@@ -12,7 +12,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fb36e61345caedb49bfd41d784589ebd, type: 3}
   m_Name: ExpBonusUpgrade
   m_EditorClassIdentifier: 
-  upgradeId: ExpBonusUpgradeSO
   upgradeName: "\uACBD\uD5D8\uCE58 \uBC30\uC728 \uC99D\uAC00"
   description: "\uBAA8\uB4E0 \uC544\uAD70 \uACBD\uD5D8\uCE58 \uD68D\uB4DD\uB7C9 \uBC30\uC728
     \uC99D\uAC00"
