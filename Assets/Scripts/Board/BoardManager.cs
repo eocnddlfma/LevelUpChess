@@ -170,7 +170,6 @@ namespace LevelUpChess.Board
 
         if (x < 0 || y < 0 || x >= _width || y >= _height)
         {
-            Debug.LogWarning($"[BoardManager] Coordinates out of bounds: ({x}, {y}) for size {_width}x{_height}");
             return null;
         }
         

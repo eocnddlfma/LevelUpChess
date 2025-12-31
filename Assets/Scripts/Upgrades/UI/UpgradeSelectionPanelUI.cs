@@ -1,24 +1,21 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using System.Collections.Generic;
+using LevelUpChess.Core;
 using LevelUpChess.Upgrades;
 using LevelUpChess.Pieces;
 using LevelUpChess.Managers;
-using LevelUpChess.Core;
 using LevelUpChess.Events;
+using LevelUpChess.UI;
 using Unity.Netcode;
 
 namespace LevelUpChess.Upgrades.UI
 {
-    /// <summary>
-    /// 업그레이드 선택 패널 UI
-    /// 레벨업 시 3개의 업그레이드 선택지를 표시
-    /// </summary>
     public class UpgradeSelectionPanelUI : MonoBehaviour
     {
-        private static bool isShowing = false;
-        [Header("UI References")]
+        private bool _isShowing = false;
         [SerializeField] private GameObject panelRoot;
         [SerializeField] private CanvasGroup canvasGroup;
         [SerializeField] private TextMeshProUGUI titleText;
@@ -32,6 +29,7 @@ namespace LevelUpChess.Upgrades.UI
         [Header("Animation")]
         [SerializeField] private float fadeInDuration = 0.3f;
         [SerializeField] private float cardStaggerDelay = 0.1f;
+        [SerializeField] private float pieceWaitTimeout = 2f;
 
         private ChessPiece _targetPiece;
         private bool _isVisible;
@@ -44,18 +42,27 @@ namespace LevelUpChess.Upgrades.UI
         private bool _isGlobalSelection = false;
         private UpgradeManager _upgradeManager;
         private List<UpgradeCardUI> _cards = new List<UpgradeCardUI>();
+        private Queue<IEvent> _eventQueue = new Queue<IEvent>();
+        private bool _isProcessing = false;
+        private IEvent _currentProcessingEvent = null;
 
         private void Awake()
         {
+            if (Instance != null && Instance != this)
+            {
+                Destroy(this.gameObject);
+                return;
+            }
             Instance = this;
-            // 카드 풀 생성
+            InitializeCardPool();
+        }
+
+        private void InitializeCardPool()
+        {
             for (int i = 0; i < maxCards; i++)
             {
                 if (cardPrefab == null) continue;
-
                 var card = Instantiate(cardPrefab, cardContainer);
-
-                // 보정: prefab의 크기나 pivot이 잘못되어 있는 경우 런타임에서 정렬/스케일을 초기화
                 var rt = card.GetComponent<RectTransform>();
                 if (rt != null)
                 {
@@ -66,22 +73,16 @@ namespace LevelUpChess.Upgrades.UI
                     rt.anchorMax = new Vector2(0.5f, 0.5f);
                     rt.anchoredPosition = Vector2.zero;
                 }
-
                 var cardUI = card.GetComponent<UpgradeCardUI>();
                 if (cardUI == null)
                 {
-                    Debug.LogError("[UpgradeSelectionPanelUI] Card prefab does not have UpgradeCardUI component!");
                     Destroy(card);
                     continue;
                 }
-
                 card.gameObject.SetActive(false);
-                int index = i;
                 cardUI.OnCardSelected += (cardIndex) => OnCardSelected(cardIndex);
                 _cards.Add(cardUI);
             }
-
-            // 초기 상태 숨김
             Hide(immediate: true);
         }
 
@@ -97,24 +98,16 @@ namespace LevelUpChess.Upgrades.UI
 
         private void OnGameOver(GameOverEvent eventData)
         {
-            // 게임 종료 시 업그레이드 창 닫기 (리플레이 포함)
             Hide(immediate: true);
         }
 
         private void Start()
         {
-            // UpgradeManager 이벤트 구독
             _upgradeManager = UpgradeManager.Instance;
             if (_upgradeManager != null)
             {
                 _upgradeManager.OnUpgradeSelectionAvailable += OnSelectionAvailable;
                 _upgradeManager.OnUpgradeApplied += OnUpgradeApplied;
-                _upgradeManager.OnUpgradeSelectionCancelled += OnSelectionCancelled;
-                Debug.Log("[UpgradeSelectionPanelUI] UpgradeManager 이벤트 구독 완료");
-            }
-            else
-            {
-                Debug.LogError("[UpgradeSelectionPanelUI] UpgradeManager를 찾을 수 없습니다! Instance가 null입니다.");
             }
         }
 
@@ -125,356 +118,220 @@ namespace LevelUpChess.Upgrades.UI
             {
                 _upgradeManager.OnUpgradeSelectionAvailable -= OnSelectionAvailable;
                 _upgradeManager.OnUpgradeApplied -= OnUpgradeApplied;
-                _upgradeManager.OnUpgradeSelectionCancelled -= OnSelectionCancelled;
             }
+        
         }
 
-        /// <summary>
-        /// 업그레이드 선택지 표시
-        /// </summary>
-        private void OnSelectionAvailable(List<UpgradeBaseSO> upgrades, ChessPiece piece)
+        private void SetupCards(List<UpgradeBaseSO> upgrades)
         {
-            Debug.Log($"[UpgradeSelectionPanelUI] OnSelectionAvailable called! Piece: {piece?.name}, Upgrades: {upgrades?.Count}");
-            
-            _targetPiece = piece;
-            _isGlobalSelection = false;
-            
-            // 타이틀 및 기물 이름 설정
-            if (titleText != null)
-            {
-                titleText.text = "업그레이드 선택";
-            }
-
-            if (pieceNameText != null)
-            {
-                pieceNameText.text = piece != null ? $"{piece.name} 레벨업!" : "레벨업!";
-            }
-
-            // 카드 설정
             for (int i = 0; i < _cards.Count; i++)
             {
                 if (i < upgrades.Count)
                 {
                     _cards[i].Setup(upgrades[i], i);
-                    _cards[i].SetInteractable(true);
+                    _cards[i].SetInteractable(_canSelect);
+                    if (!_cards[i].gameObject.activeSelf) _cards[i].gameObject.SetActive(true);
                 }
                 else
                 {
                     _cards[i].gameObject.SetActive(false);
                 }
             }
-
-            Show();
         }
-
-        /// <summary>
-        /// 글로벌 업그레이드 선택지 표시
-        /// </summary>
         public void ShowGlobalUpgradeSelections(List<UpgradeBaseSO> upgrades, Team team)
         {
-            Debug.Log($"[UpgradeSelectionPanelUI] ShowGlobalUpgradeSelections called! Team: {team}, Upgrades: {upgrades?.Count}");
-            
             _targetTeam = team;
             _isGlobalSelection = true;
             
-            // 타이틀 및 팀 이름 설정
-            if (titleText != null)
-            {
-                titleText.text = "단체 강화 선택";
-            }
+            if (titleText != null) titleText.text = "단체 강화 선택";
+            if (pieceNameText != null) pieceNameText.text = $"{(team == Team.White ? "백팀" : "흑팀")} 단체 강화!";
 
-            if (pieceNameText != null)
-            {
-                pieceNameText.text = $"{team}팀 단체 강화!";
-            }
-
-            // 카드 설정
-            for (int i = 0; i < _cards.Count; i++)
-            {
-                if (i < upgrades.Count)
-                {
-                    _cards[i].Setup(upgrades[i], i);
-                    _cards[i].SetInteractable(true);
-                }
-                else
-                {
-                    _cards[i].gameObject.SetActive(false);
-                }
-            }
-
+            SetupCards(upgrades);
             Show();
         }
-
-        /// <summary>
-        /// 글로벌 업그레이드 선택지 표시 (플레이어 레벨업용)
-        /// </summary>
-        public void ShowGlobalSelection(List<GlobalUpgradeSO> globalUpgrades, Team targetTeam)
-        {
-            if (globalUpgrades == null || globalUpgrades.Count == 0) return;
-
-            _targetPiece = null;
-            _targetTeam = targetTeam;
-            _isGlobalSelection = true;
-
-            // 타이틀 및 기물 이름 설정
-            if (titleText != null)
-            {
-                titleText.text = "플레이어 레벨업!";
-            }
-
-            if (pieceNameText != null)
-            {
-                pieceNameText.text = $"{targetTeam} 팀 글로벌 업그레이드 선택";
-            }
-
-            // 카드 설정
-            for (int i = 0; i < _cards.Count; i++)
-            {
-                if (i < globalUpgrades.Count)
-                {
-                    _cards[i].Setup(globalUpgrades[i], i);
-                    _cards[i].SetInteractable(true);
-                }
-                else
-                {
-                    _cards[i].gameObject.SetActive(false);
-                }
-            }
-
-            Show();
-        }
-
-        /// <summary>
-        /// 카드 선택 처리
-        /// </summary>
         private void OnCardSelected(int cardIndex)
         {
-            if (!_canSelect) return; // 선택 권한이 없으면 무시
+            foreach (var card in _cards) card.SetInteractable(false);
+            _canSelect = false;
+            StartCardSelectionAnimation(cardIndex);
+            SendUpgradeSelectionToServer(cardIndex);
+        }
 
-            // 모든 카드 비활성화 (중복 클릭 방지)
-            foreach (var card in _cards)
-            {
-                card.SetInteractable(false);
-            }
-
-            _canSelect = false; // disable further selection locally to prevent double clicks
-
-            // 선택된 카드 하이라이트 애니메이션
-            _cards[cardIndex].HighlightAsChosen(() =>
-            {
-                // 선택 카드 애니메이션이 끝난 뒤 패널 닫기
-                Hide();
-            });
-
-            // 선택되지 않은 카드들 작아지며 사라지는 애니메이션
+        private void StartCardSelectionAnimation(int cardIndex)
+        {
             for (int i = 0; i < _cards.Count; i++)
             {
-                if (i == cardIndex) continue;
-
-                _cards[i].ShrinkAndHide(() =>
-                {
-                    // 나머지 카드는 단순히 사라지기만 하면 되고,
-                    // 큐 진행 타이밍은 선택 카드 애니메이션 기준으로 맞춘다.
-                });
-            }
-
-            // 선택된 카드의 애니메이션이 끝난 후에도 Hide() 호출 (중복 방지)
-            // HighlightAsChosen의 OnComplete에 콜백 추가 필요 없음, 이미 ShrinkAndHide에서 처리
-
-            // 요청: 서버에 선택 전송
-            if (UpgradeManager.Instance != null)
-            {
-                if (_isGlobalSelection)
-                {
-                    // 글로벌 업그레이드 선택
-                    var upgradeIndex = UpgradeManager.Instance.GetUpgradeIndex(_cards[cardIndex].Upgrade);
-                    UpgradeManager.Instance.ApplyGlobalUpgradeServerRpc(cardIndex, upgradeIndex, _targetTeam);
-                }
-                else
-                {
-                    // 일반 업그레이드 선택
-                    UpgradeManager.Instance.SelectUpgradeServerRpc(cardIndex, _currentTileX, _currentTileY);
-                }
+                bool isSelected = (i == cardIndex);
+                _cards[i].StartSelectionAnimation(isSelected, isSelected ? (System.Action)(() => Hide()) : () => {}, () => {});
             }
         }
 
         /// <summary>
-        /// 업그레이드 적용 완료
+        /// 서버에 업그레이드 선택 전송
         /// </summary>
+        private void SendUpgradeSelectionToServer(int cardIndex)
+        {
+            if (UpgradeManager.Instance == null) return;
+
+            if (_isGlobalSelection)
+            {
+                // 글로벌 업그레이드 선택
+                var upgradeIndex = UpgradeManager.Instance.GetUpgradeIndex(_cards[cardIndex].Upgrade);
+                UpgradeManager.Instance.ApplyGlobalUpgradeServerRpc(cardIndex, upgradeIndex, _targetTeam);
+            }
+            else
+            {
+                // 일반 업그레이드 선택
+                UpgradeManager.Instance.SelectUpgradeServerRpc(cardIndex, _currentTileX, _currentTileY);
+            }
+        }
+
         private void OnUpgradeApplied(UpgradeBaseSO upgrade, ChessPiece piece)
         {
-            // 선택 완료 후 패널 숨김 - 애니메이션 후 OnCardSelected에서 처리하므로 여기서는 제거
-            // Hide();
         }
 
-        /// <summary>
-        /// 선택 취소
-        /// </summary>
-        private void OnSelectionCancelled()
+        private void OnSelectionAvailable(List<UpgradeBaseSO> upgrades, ChessPiece piece)
         {
-            Hide();
+            if (upgrades == null || upgrades.Count == 0) return;
+
+            var upgradeManager = UpgradeManager.Instance;
+            if (upgradeManager == null) return;
+
+            var indices = new int[upgrades.Count];
+            for (int i = 0; i < upgrades.Count; i++)
+            {
+                indices[i] = upgradeManager.GetUpgradeIndex(upgrades[i]);
+            }
+
+            if (piece == null)
+            {
+                // 글로벌 업그레이드
+                ShowGlobalUpgradeSelections(upgrades, Team.White); // 팀은 임시로 White, 필요시 조정
+            }
+            else
+            {
+                // 피스 업그레이드
+                var coord = piece.CurrentTile?.coordinate ?? Vector2Int.zero;
+                ShowWithOptions(indices, coord.x, coord.y, (int)piece.Team);
+            }
         }
 
-        /// <summary>
-        /// 스킵 버튼 클릭
-        /// </summary>
-        private void OnSkipClicked()
-        {
-            _upgradeManager?.CancelSelection();
-        }
-
-        /// <summary>
-        /// 닫기 버튼 클릭
-        /// </summary>
-        private void OnCloseClicked()
-        {
-            _upgradeManager?.CancelSelection();
-        }
-
-        /// <summary>
-        /// 패널 표시
-        /// </summary>
         public void Show()
         {
-            if (isShowing) return;
-            if (_isVisible) return;
+            if (_isShowing || _isVisible) return;
+            
+            if (panelRoot == null)
+            {
+                Debug.LogError("[UpgradeSelectionPanelUI] panelRoot is null! Cannot show panel.");
+                return;
+            }
+            
             _isVisible = true;
-            isShowing = true;
+            _isShowing = true;
 
             panelRoot.SetActive(true);
             
             if (canvasGroup != null)
             {
-                canvasGroup.alpha = 0f;
+                canvasGroup.alpha = 1f;
                 canvasGroup.interactable = true;
                 canvasGroup.blocksRaycasts = true;
-                StartCoroutine(FadeIn());
             }
-
-            // 카드 등장 애니메이션
-            StartCoroutine(AnimateCardsIn());
-
-            // 게임 일시정지 (선택적)
-            // Time.timeScale = 0f;
         }
 
-        /// <summary>
-        /// 서버에서 전달된 옵션으로 UI를 표시합니다.
-        /// </summary>
         public void ShowWithOptions(int[] upgradeIndices, int tileX, int tileY, int ownerTeam, bool isGlobal = false)
         {
             _currentTileX = tileX;
             _currentTileY = tileY;
+            DetermineSelectionPermission(ownerTeam);
+            var upgrades = LoadUpgradesFromIndices(upgradeIndices);
+            ShowUpgradeSelections(upgrades, tileX, tileY, ownerTeam, isGlobal);
+        }
 
+        private void DetermineSelectionPermission(int ownerTeam)
+        {
             var netGameMgr = ServiceLocator.Get<NetworkGameManager>();
-            _canSelect = netGameMgr != null && netGameMgr.LocalPlayerTeam == (LevelUpChess.Pieces.Team)ownerTeam;
-            _ownerClientId = netGameMgr != null && netGameMgr.LocalPlayerTeam == (LevelUpChess.Pieces.Team)ownerTeam ? NetworkManager.Singleton.LocalClientId : ulong.MaxValue;
+            if (netGameMgr != null)
+            {
+                _canSelect = netGameMgr.LocalPlayerTeam == (Team)ownerTeam;
+                _ownerClientId = _canSelect ? NetworkManager.Singleton.LocalClientId : ulong.MaxValue;
+            }
+            else
+            {
+                _canSelect = false;
+                _ownerClientId = ulong.MaxValue;
+            }
+        }
 
+        private List<UpgradeBaseSO> LoadUpgradesFromIndices(int[] upgradeIndices)
+        {
             var upgradeMgr = UpgradeManager.Instance;
-            List<UpgradeBaseSO> upgrades = new List<UpgradeBaseSO>();
+            var upgrades = new List<UpgradeBaseSO>();
             if (upgradeMgr != null)
             {
-                foreach (var idx in upgradeIndices)
-                {
-                    var up = upgradeMgr.GetUpgradeByIndex(idx);
-                    upgrades.Add(up);
-                }
+                foreach (var idx in upgradeIndices) upgrades.Add(upgradeMgr.GetUpgradeByIndex(idx));
             }
+            return upgrades;
+        }
 
-            // 좌표 기준으로 글로벌 업그레이드인지 판별 (하위 호환성 유지)
-            var coord = new UnityEngine.Vector2Int(tileX, tileY);
-            bool isGlobalUpgrade = isGlobal || (coord == UnityEngine.Vector2Int.zero);
+        private void ShowUpgradeSelections(List<UpgradeBaseSO> upgrades, int tileX, int tileY, int ownerTeam, bool isGlobal)
+        {
+            var coord = new Vector2Int(tileX, tileY);
+            bool isGlobalUpgrade = isGlobal || (coord == Vector2Int.zero);
             if (isGlobalUpgrade)
             {
-                // 글로벌 업그레이드
                 ShowGlobalUpgradeSelections(upgrades, (Team)ownerTeam);
             }
             else
             {
-                // 피스 업그레이드
-                var boardMgr = FindFirstObjectByType<LevelUpChess.Board.BoardManager>();
+                var boardMgr = FindFirstObjectByType<Board.BoardManager>();
                 ChessPiece piece = null;
-
-                if (boardMgr != null)
-                {
-                    piece = boardMgr.GetPieceAt(coord);
-                }
-
+                if (boardMgr != null) piece = boardMgr.GetPieceAt(coord);
                 if (piece != null)
                 {
                     OnSelectionAvailable(upgrades, piece);
                 }
                 else
                 {
-                    // 기물이 아직 생성되지 않았을 수 있으므로 최대 2초 동안 폴링
-                    StartCoroutine(WaitForPieceAndShow(upgrades, coord, 2f, ownerTeam));
+                    StartCoroutine(WaitForPieceAndShow(upgrades, coord, pieceWaitTimeout, ownerTeam));
                 }
-            }
-
-            // 선택 권한 결정: NetworkGameManager의 LocalPlayerTeam과 비교
-            var netGameMgrRef = ServiceLocator.Get<NetworkGameManager>();
-            if (netGameMgrRef != null)
-            {
-                _canSelect = netGameMgrRef.LocalPlayerTeam == (Team)ownerTeam;
-            }
-            else
-            {
-                _canSelect = false;
-            }
-
-            if (!_canSelect)
-            {
-                foreach (var card in _cards)
-                    card.SetInteractable(false);
             }
         }
 
-        /// <summary>
-        /// 서버가 모든 클라이언트에 선택 결과를 알렸을 때 호출
-        /// </summary>
         public void OnSelectionMade(int optionIndex, int tileX, int tileY, ulong chosenClientId)
         {
-            // 해당 타일의 선택과 일치하면 처리
             if (tileX != _currentTileX || tileY != _currentTileY) return;
 
-            // 비선택자는 어떤 항목이 선택되었는지 하이라이트
             for (int i = 0; i < _cards.Count; i++)
             {
-                if (i == optionIndex)
-                {
-                    _cards[i].HighlightAsChosen();
-                }
-                else
-                {
-                    _cards[i].SetInteractable(false);
-                }
+                if (i == optionIndex) _cards[i].HighlightAsChosen();
+                else _cards[i].SetInteractable(false);
             }
 
-            // 선택자라면 즉시 패널 닫기 (피스 업그레이드만)
-            if (NetworkManager.Singleton.LocalClientId == chosenClientId && !_isGlobalSelection)
-            {
-                Hide();
-                return;
-            }
-
-            // 비선택자 또는 글로벌 선택자는 하이라이트 애니메이션이 끝난 뒤 패널을 닫도록 함
-            StartCoroutine(HideAfterDelay(0.8f));
+            if (NetworkManager.Singleton.LocalClientId == chosenClientId && !_isGlobalSelection) Hide();
+            else StartCoroutine(HideAfterDelay(0.8f));
         }
 
-        private System.Collections.IEnumerator HideAfterDelay(float delay)
+        private IEnumerator HideAfterDelay(float delay)
         {
             yield return new WaitForSecondsRealtime(delay);
             Hide();
         }
 
-        /// <summary>
-        /// 패널 숨김
-        /// </summary>
         public void Hide(bool immediate = false)
         {
             if (!_isVisible && !immediate) return;
+            
+            if (panelRoot == null)
+            {
+                _isVisible = false;
+                _isShowing = false;
+                ProcessNextEvent();
+                return;
+            }
+            
             _isVisible = false;
-            isShowing = false;
+            _isShowing = false;
 
             if (immediate)
             {
@@ -488,123 +345,161 @@ namespace LevelUpChess.Upgrades.UI
             }
             else
             {
+                panelRoot.SetActive(false);
                 if (canvasGroup != null)
                 {
-                    StartCoroutine(FadeOut());
-                }
-                else
-                {
-                    panelRoot.SetActive(false);
+                    canvasGroup.alpha = 0f;
+                    canvasGroup.interactable = false;
+                    canvasGroup.blocksRaycasts = false;
                 }
             }
-
-            // 게임 재개 (선택적)
-            // Time.timeScale = 1f;
 
             _targetPiece = null;
+            _currentProcessingEvent = null;
+            ProcessNextEvent();
+        }
 
-             // 카드 애니메이션 및 패널 닫기가 모두 끝난 시점에서
-             // EventQueue에 현재 UI 이벤트 처리가 완료되었음을 알린다.
-            var eventQueue = EventQueue.Instance;
-            if (eventQueue != null)
+        public static void Enqueue(IEvent evt)
+        {
+            if (Instance == null) return;
+            Instance._eventQueue.Enqueue(evt);
+            if (!Instance._isProcessing) Instance.ProcessNextEvent();
+        }
+
+        private void ProcessNextEvent()
+        {
+            if (_eventQueue.Count == 0)
             {
-                eventQueue.OnUIClosed();
+                _isProcessing = false;
+                _currentProcessingEvent = null;
+                return;
+            }
+
+            if (!_isProcessing)
+            {
+                _isProcessing = true;
+                StartCoroutine(ProcessEventCoroutine());
             }
         }
 
-        private System.Collections.IEnumerator FadeIn()
+        private IEnumerator ProcessEventCoroutine()
         {
-            float elapsed = 0f;
-            while (elapsed < fadeInDuration)
+            while (_eventQueue.Count > 0)
             {
-                elapsed += Time.unscaledDeltaTime;
-                canvasGroup.alpha = Mathf.Lerp(0f, 1f, elapsed / fadeInDuration);
-                yield return null;
-            }
-            canvasGroup.alpha = 1f;
-        }
-
-        private System.Collections.IEnumerator FadeOut()
-        {
-            canvasGroup.interactable = false;
-            canvasGroup.blocksRaycasts = false;
-
-            float elapsed = 0f;
-            while (elapsed < fadeInDuration)
-            {
-                elapsed += Time.unscaledDeltaTime;
-                canvasGroup.alpha = Mathf.Lerp(1f, 0f, elapsed / fadeInDuration);
-                yield return null;
-            }
-            canvasGroup.alpha = 0f;
-            panelRoot.SetActive(false);
-        }
-
-
-        private System.Collections.IEnumerator AnimateCardsIn()
-        {
-            foreach (var card in _cards)
-            {
-                if (card.gameObject.activeSelf)
-                {
-                    // 초기 상태
-                    card.transform.localScale = Vector3.zero;
-                }
+                IEvent currentEvent = _eventQueue.Dequeue();
+                _currentProcessingEvent = currentEvent;
+                yield return StartCoroutine(ProcessEvent(currentEvent));
             }
 
-            foreach (var card in _cards)
-            {
-                if (card.gameObject.activeSelf)
-                {
-                    // 스케일 애니메이션
-                    StartCoroutine(ScaleCard(card.transform));
-                    yield return new WaitForSecondsRealtime(cardStaggerDelay);
-                }
-            }
-        }
-
-        private System.Collections.IEnumerator ScaleCard(Transform cardTransform)
-        {
-            float elapsed = 0f;
-            float duration = 0.2f;
-            
-            while (elapsed < duration)
-            {
-                elapsed += Time.unscaledDeltaTime;
-                float t = elapsed / duration;
-                // 바운스 효과
-                float scale = Mathf.Sin(t * Mathf.PI * 0.5f) * 1.1f;
-                if (t > 0.5f)
-                {
-                    scale = 1f + (1.1f - 1f) * (1f - (t - 0.5f) * 2f);
-                }
-                cardTransform.localScale = Vector3.one * Mathf.Min(scale, 1f);
-                yield return null;
-            }
-            cardTransform.localScale = Vector3.one;
+            _isProcessing = false;
+            _currentProcessingEvent = null;
         }
 
         /// <summary>
-        /// 외부에서 패널 토글
+        /// 개별 이벤트 처리
         /// </summary>
-        public void Toggle()
+        private IEnumerator ProcessEvent(IEvent currentEvent)
         {
-            if (_isVisible)
+            if (currentEvent is PieceLevelUpEvent pieceLevelUpEvent)
             {
-                Hide();
+                yield return StartCoroutine(ProcessPieceLevelUpEvent(pieceLevelUpEvent));
+            }
+            else if (currentEvent is PlayerLevelUpEvent playerLevelUpEvent)
+            {
+                yield return StartCoroutine(ProcessPlayerLevelUpEvent(playerLevelUpEvent));
+            }
+            else if (currentEvent is ShowMessageEvent messageEvent)
+            {
+                yield return StartCoroutine(ProcessShowMessageEvent(messageEvent));
             }
             else
             {
-                Show();
+                // 알 수 없는 이벤트는 무시하고 다음으로
+                Debug.LogWarning($"[UpgradeSelectionPanelUI] Unknown event type: {currentEvent.GetType().Name}. Skipping.");
             }
         }
-
-        private System.Collections.IEnumerator WaitForPieceAndShow(List<UpgradeBaseSO> upgrades, UnityEngine.Vector2Int coord, float timeout, int ownerTeam)
+        private IEnumerator WaitForUIDisplay(float timeout, string eventName)
         {
             float elapsed = 0f;
-            LevelUpChess.Pieces.ChessPiece piece = null;
-            var boardMgr = FindFirstObjectByType<LevelUpChess.Board.BoardManager>();
+            while (elapsed < timeout && !_isVisible)
+            {
+                yield return new WaitForSecondsRealtime(0.1f);
+                elapsed += 0.1f;
+            }
+            if (!_isVisible)
+            {
+                Debug.LogWarning($"[UpgradeSelectionPanelUI] UI not displayed after {timeout}s for {eventName}. Proceeding to next event.");
+            }
+        }
+        private IEnumerator ProcessPlayerLevelUpEvent(PlayerLevelUpEvent playerLevelUpEvent)
+        {
+            var upgradeManager = UpgradeManager.Instance;
+            if (upgradeManager != null)
+            {
+                upgradeManager.OfferUpgradeSelection(playerLevelUpEvent);
+                yield return StartCoroutine(WaitForUIDisplay(3f, "PlayerLevelUpEvent"));
+            }
+            else
+            {
+                Bus<PlayerLevelUpEvent>.Raise(playerLevelUpEvent);
+            }
+        }
+        private IEnumerator ProcessPieceLevelUpEvent(PieceLevelUpEvent pieceLevelUpEvent)
+        {
+            var upgradeManager = UpgradeManager.Instance;
+            if (upgradeManager != null && pieceLevelUpEvent.Piece != null)
+            {
+                upgradeManager.ClientCreateAndBroadcastSelections(pieceLevelUpEvent.Piece);
+                yield return StartCoroutine(WaitForUIDisplay(3f, "PieceLevelUpEvent"));
+            }
+            else
+            {
+                Bus<PieceLevelUpEvent>.Raise(pieceLevelUpEvent);
+            }
+        }
+        private IEnumerator ProcessShowMessageEvent(ShowMessageEvent messageEvent)
+        {
+            var messageUI = ServiceLocator.Get<GameMessageUI>();
+            if (messageUI != null)
+            {
+                bool messageCompleted = false;
+                messageUI.ShowMessage(messageEvent.Message, 2f, () =>
+                {
+                    Bus<ShowMessageEvent>.Raise(messageEvent);
+                    messageCompleted = true;
+                });
+                
+                while (!messageCompleted) yield return null;
+            }
+            else
+            {
+                Bus<ShowMessageEvent>.Raise(messageEvent);
+            }
+        }
+        /// <summary>
+        /// 이벤트 세부 정보를 문자열로 반환 (로그용)
+        /// </summary>
 
+
+
+
+
+
+
+
+
+
+        public void Toggle()
+        {
+            if (_isVisible) Hide();
+            else Show();
+        }
+
+        private IEnumerator WaitForPieceAndShow(List<UpgradeBaseSO> upgrades, Vector2Int coord, float timeout, int ownerTeam)
+        {
+            float elapsed = 0f;
+            ChessPiece piece = null;
+            var boardMgr = FindFirstObjectByType<Board.BoardManager>();
             while (elapsed < timeout)
             {
                 if (boardMgr != null)
@@ -612,42 +507,15 @@ namespace LevelUpChess.Upgrades.UI
                     piece = boardMgr.GetPieceAt(coord);
                     if (piece != null) break;
                 }
-
                 yield return new WaitForSecondsRealtime(0.1f);
                 elapsed += 0.1f;
             }
-
-            if (piece != null)
-            {
-                OnSelectionAvailable(upgrades, piece);
-            }
-            else
-            {
-                Debug.LogWarning($"[UpgradeSelectionPanelUI] Piece not found at {coord} after waiting; showing generic UI.");
-                OnSelectionAvailable(upgrades, null);
-            }
-
-            // 선택 권한 판정
-            var netGameMgr = ServiceLocator.Get<NetworkGameManager>();
-            if (netGameMgr != null)
-            {
-                _canSelect = netGameMgr.LocalPlayerTeam == (Team)ownerTeam;
-            }
-            else
-            {
-                _canSelect = false;
-            }
-
-            if (!_canSelect)
-            {
-                foreach (var card in _cards)
-                    card.SetInteractable(false);
-            }
+            if (piece != null) OnSelectionAvailable(upgrades, piece);
+            else OnSelectionAvailable(upgrades, null);
         }
 
-        /// <summary>
-        /// 현재 표시 상태
-        /// </summary>
         public bool IsVisible => _isVisible;
+
+
     }
 }

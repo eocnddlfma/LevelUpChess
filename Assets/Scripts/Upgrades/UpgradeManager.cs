@@ -116,6 +116,8 @@ namespace LevelUpChess.Upgrades
 
         public void OfferUpgradeSelection(PlayerLevelUpEvent eventData)
         {
+            Debug.Log($"[UpgradeManager] OfferUpgradeSelection called for Team {eventData.Team}, NewLevel {eventData.NewLevel}");
+            
             Team team = eventData.Team;
             int playerLevel = eventData.NewLevel;
 
@@ -151,7 +153,7 @@ namespace LevelUpChess.Upgrades
                 tempList.RemoveAt(randomIndex);
             }
 
-            var indices = new System.Collections.Generic.List<int>();
+            var indices = new List<int>();
             foreach (var upgrade in selectedUpgrades)
             {
                 indices.Add(upgradePool.GetUpgradeIndex(upgrade));
@@ -172,9 +174,8 @@ namespace LevelUpChess.Upgrades
             _pendingNetworkSelections[coord] = pending;
 
             // 모든 클라이언트에 동일한 옵션 전송
+            Debug.Log($"[UpgradeManager] Offering upgrade selection: Team {team}, Indices {string.Join(",", indices)}, Coord {coord}");
             ShowSelectionClientRpc(pending.Options, coord.x, coord.y, (int)pending.OwnerTeam, true);
-
-            
         }
 
         private void AutoLoadUpgradePool()
@@ -354,16 +355,29 @@ namespace LevelUpChess.Upgrades
         [ClientRpc]
         private void ShowSelectionClientRpc(int[] upgradeIndices, int tileX, int tileY, int ownerTeam, bool isGlobal = false)
         {
+            Debug.Log($"[UpgradeManager] ShowSelectionClientRpc called: Tile({tileX},{tileY}), OwnerTeam={ownerTeam}, IsGlobal={isGlobal}, UpgradeIndices={string.Join(",", upgradeIndices)}");
+            
             // 클라이언트 측: UI 표시
             var ui = FindFirstObjectByType<UpgradeSelectionPanelUI>();
             if (ui != null)
             {
+                Debug.Log($"[UpgradeManager] Found UpgradeSelectionPanelUI, calling ShowWithOptions.");
                 ui.ShowWithOptions(upgradeIndices, tileX, tileY, ownerTeam, isGlobal);
             }
             else
             {
                 Debug.LogWarning("[UpgradeManager] UpgradeSelectionPanelUI not found on client.");
             }
+        }
+
+        /// <summary>
+        /// 업그레이드 선택 권한 판정 함수
+        /// </summary>
+        private bool CheckSelectionAuthority(ulong senderClientId, Team ownerTeam)
+        {
+            // 기본 매핑: 호스트=White(0), 클라이언트=Black(1)
+            ulong expectedOwnerClientId = ownerTeam == Team.White ? 0UL : 1UL;
+            return senderClientId == expectedOwnerClientId;
         }
 
         [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
@@ -375,12 +389,10 @@ namespace LevelUpChess.Upgrades
 
             Debug.Log($"[UpgradeManager] SelectUpgradeServerRpc called by {rpcParams.Receive.SenderClientId} for coord {coord} (OwnerTeam: {pending?.OwnerTeam})");
 
-            // Validate sender is owner for this pending selection (basic mapping: host=White(0), client=Black(1))
-            ulong senderId = rpcParams.Receive.SenderClientId;
-            ulong expectedOwnerClientId = pending.OwnerTeam == Team.White ? 0UL : 1UL;
-            if (senderId != expectedOwnerClientId)
+            // 권한 판정 함수 호출
+            if (!CheckSelectionAuthority(rpcParams.Receive.SenderClientId, pending.OwnerTeam))
             {
-                Debug.LogWarning($"[UpgradeManager] Unauthorized select RPC from client {senderId} for team {pending.OwnerTeam}");
+                Debug.LogWarning($"[UpgradeManager] Unauthorized select RPC from client {rpcParams.Receive.SenderClientId} for team {pending.OwnerTeam}");
                 return;
             }
 
@@ -943,7 +955,7 @@ namespace LevelUpChess.Upgrades
         public void OnPlayerUpgradeSelectionCompletedClientRpc()
         {
             // UI 닫힘 후 다음 이벤트 처리는 UpgradeSelectionPanelUI.Hide()에서
-            // EventQueue.Instance.OnUIClosed()를 호출하여 처리한다.
+            // _canSelect가 true일 때 ProcessNextEvent()를 호출하여 처리한다.
         }
 
         // 네트워크/외부에서 업그레이드 인덱스로 업그레이드 정보를 얻을 수 있도록 공개 헬퍼
@@ -1097,7 +1109,7 @@ namespace LevelUpChess.Upgrades
             Debug.Log($"[UpgradeManager] Applied global upgrade '{upgrade.UpgradeName}' to team {team}");
             
             // 이벤트 큐에 메시지 추가
-            EventQueue.Instance.Enqueue(new ShowMessageEvent { Message = $"{team} 팀에 '{upgrade.UpgradeName}' 글로벌 업그레이드가 적용되었습니다!" });
+            LevelUpChess.Upgrades.UI.UpgradeSelectionPanelUI.Enqueue(new ShowMessageEvent { Message = $"{team} 팀에 '{upgrade.UpgradeName}' 글로벌 업그레이드가 적용되었습니다!" });
             
             // 클라이언트에 알림
             NotifyGlobalUpgradeAppliedClientRpc(upgrade.UpgradeHash, team);

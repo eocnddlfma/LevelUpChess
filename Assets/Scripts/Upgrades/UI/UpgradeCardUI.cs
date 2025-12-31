@@ -86,6 +86,17 @@ namespace LevelUpChess.Upgrades.UI
 
             gameObject.SetActive(true);
 
+            // 애니메이션 후 원래 상태로 초기화
+            transform.DOKill();
+            _selectionTween?.Kill();
+            transform.localScale = _originalScale;
+            _isHovered = false;
+            if (rarityBorder != null)
+            {
+                rarityBorder.DOKill();
+                rarityBorder.color = _originalBorderColor;
+            }
+
             // 이름 및 설명
             if (nameText != null)
             {
@@ -108,6 +119,7 @@ namespace LevelUpChess.Upgrades.UI
             if (rarityBorder != null)
             {
                 rarityBorder.color = GetRarityColor(upgrade.Rarity);
+                _originalBorderColor = rarityBorder.color; // 원래 색상 업데이트
             }
 
             // 타입 표시
@@ -146,6 +158,21 @@ namespace LevelUpChess.Upgrades.UI
         {
             if (!_isInteractable) return;
             OnCardSelected?.Invoke(_cardIndex);
+        }
+
+        /// <summary>
+        /// 카드 선택 애니메이션 시작 (선택된 카드와 다른 카드들 처리)
+        /// </summary>
+        public void StartSelectionAnimation(bool isSelected, System.Action onSelectedComplete = null, System.Action onOtherComplete = null)
+        {
+            if (isSelected)
+            {
+                HighlightAsChosen(onSelectedComplete);
+            }
+            else
+            {
+                ShrinkAndHide(onOtherComplete);
+            }
         }
 
         /// <summary>

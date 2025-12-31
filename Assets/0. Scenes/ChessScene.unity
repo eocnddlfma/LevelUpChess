@@ -6025,7 +6025,7 @@ RectTransform:
   m_Father: {fileID: 193325196}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0.75}
-  m_AnchorMax: {x: 1, y: 0.85}
+  m_AnchorMax: {x: 1, y: 0.8}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
@@ -7860,7 +7860,7 @@ RectTransform:
   m_Father: {fileID: 193325196}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0.85}
-  m_AnchorMax: {x: 1, y: 1}
+  m_AnchorMax: {x: 1, y: 0.9}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
@@ -7917,7 +7917,7 @@ MonoBehaviour:
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
   m_fontSizeMax: 72
-  m_fontStyle: 1
+  m_fontStyle: 0
   m_HorizontalAlignment: 2
   m_VerticalAlignment: 512
   m_textAlignment: 65535
@@ -8426,8 +8426,8 @@ MonoBehaviour:
   m_Padding:
     m_Left: 70
     m_Right: 70
-    m_Top: 50
-    m_Bottom: 50
+    m_Top: 150
+    m_Bottom: 20
   m_ChildAlignment: 0
   m_Spacing: 60
   m_ChildForceExpandWidth: 1
@@ -9906,7 +9906,6 @@ GameObject:
   - component: {fileID: 1820837523}
   - component: {fileID: 1820837525}
   - component: {fileID: 1820837524}
-  - component: {fileID: 1820837526}
   m_Layer: 0
   m_Name: Managers
   m_TagString: Untagged
@@ -9995,18 +9994,6 @@ MonoBehaviour:
   ShowTopMostFoldoutHeaderGroup: 1
   boardGenerator: {fileID: 1551606544}
   gameMessageUI: {fileID: 527288095}
---- !u!114 &1820837526
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1820837518}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fcc832e454773c244ba22e71b58a0721, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!1001 &1836970163
 PrefabInstance:
   m_ObjectHideFlags: 0

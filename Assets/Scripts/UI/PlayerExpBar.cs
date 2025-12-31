@@ -115,14 +115,14 @@ namespace LevelUpChess.UI
             BoostTeamPieces();
             
             // 그 후 업그레이드 선택을 EventQueue에 enqueue
-            var upgradeManager = LevelUpChess.Upgrades.UpgradeManager.Instance;
+            var upgradeManager = UpgradeManager.Instance;
             if (upgradeManager != null)
             {
                 // 선택 완료 콜백 등록
                 upgradeManager.OnPlayerUpgradeSelectionCompleted += OnPlayerUpgradeSelectionCompleted;
 
                 // 플레이어 레벨업 이벤트를 큐에 쌓아서 순차 처리
-                EventQueue.Instance.Enqueue(new PlayerLevelUpEvent
+                Upgrades.UI.UpgradeSelectionPanelUI.Enqueue(new PlayerLevelUpEvent
                 {
                     Team = targetTeam,
                     NewLevel = _level

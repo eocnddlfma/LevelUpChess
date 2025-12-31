@@ -450,7 +450,7 @@ namespace LevelUpChess.Pieces
         public bool TakeDamage(int amount, ChessPiece attacker = null) => _combat?.TakeDamage(amount, attacker) ?? false;
         public void ForceKill() { if (_combat != null) _combat.TakeDamage(_combat.CurrentHealth, null); }
 
-        public void ApplyStatusEffect(LevelUpChess.Upgrades.Status.StatusEffect effect)
+        public void ApplyStatusEffect(Upgrades.Status.StatusEffect effect)
         {
             _combat?.ApplyStatusEffect(effect);
         }
@@ -577,7 +577,7 @@ namespace LevelUpChess.Pieces
         
         private void AppendUpgradeInfo(StringBuilder sb)
         {
-            var upgradeManager = LevelUpChess.Upgrades.UpgradeManager.Instance;
+            var upgradeManager = UpgradeManager.Instance;
             if (upgradeManager != null)
             {
                 var appliedUpgrades = upgradeManager.GetAppliedUpgradesForPiece(this);

@@ -109,7 +109,7 @@ namespace LevelUpChess.Player
                 upgradeManager.OnPlayerUpgradeSelectionCompleted += OnPlayerUpgradeSelectionCompleted;
 
                 // 플레이어 레벨업 이벤트를 큐에 쌓아서 순차 처리
-                EventQueue.Instance.Enqueue(new PlayerLevelUpEvent
+                LevelUpChess.Upgrades.UI.UpgradeSelectionPanelUI.Enqueue(new PlayerLevelUpEvent
                 {
                     Team = _team,
                     NewLevel = _level

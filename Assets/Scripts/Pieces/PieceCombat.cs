@@ -67,7 +67,7 @@ namespace LevelUpChess.Pieces
         // 능력 시스템
         private List<IAbility> _abilities = new List<IAbility>();
         private List<StatUpgradeSO> _statUpgrades = new List<StatUpgradeSO>();
-        private List<LevelUpChess.Upgrades.Status.StatusEffect> _statusEffects = new List<LevelUpChess.Upgrades.Status.StatusEffect>();
+        private List<Upgrades.Status.StatusEffect> _statusEffects = new List<Upgrades.Status.StatusEffect>();
         
         // 임시 수정자 (턴 기반)
         private List<TemporaryModifier> _temporaryModifiers = new List<TemporaryModifier>();
@@ -352,12 +352,10 @@ namespace LevelUpChess.Pieces
                                     for (int i = 0; i < _pendingLevelUps; i++)
                                     {
                                         Debug.Log($"[PieceCombat] Enqueuing PieceLevelUpEvent for {_piece.name} to level {_level - _pendingLevelUps + i + 1}");
-                                        EventQueue.Instance.Enqueue(new PieceLevelUpEvent
+                                        LevelUpChess.Upgrades.UI.UpgradeSelectionPanelUI.Enqueue(new PieceLevelUpEvent
                                         {
                                             Piece = _piece,
                                             NewLevel = _level - _pendingLevelUps + i + 1,
-                                            AttackIncrease = 0, // 이미 증가됨
-                                            HealthIncrease = 0  // 이미 증가됨
                                         });
                                     }
                                     _pendingLevelUps = 0;
